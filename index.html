@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Higiene de manos · reloj</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/watch.css">
+<link rel="stylesheet" href="css/stage.css">
+</head>
+<body class="stage">
+
+<main class="stage__grid">
+
+  <!-- ============================ watch ============================ -->
+  <section class="stage__watch" id="stageWatch" aria-label="Reloj">
+    <div class="watch-frame" id="watchFrame">
+      <div class="watch" id="watch">
+      <div class="band band--top" aria-hidden="true"></div>
+      <div class="band band--bottom" aria-hidden="true"></div>
+
+      <div class="case">
+        <button class="crown" id="crown" type="button"
+                aria-label="Corona digital: rueda para desplazar, toca para el inicio">
+          <span class="crown-stem" aria-hidden="true"></span>
+          <span class="crown-cap" aria-hidden="true"><span class="crown-grip"></span></span>
+        </button>
+        <button class="side-button" id="sideButton" type="button"
+                aria-label="Botón lateral: quién ve esto"></button>
+
+        <div class="screen" id="screen" data-screen="home">
+          <div class="statusbar">
+            <div class="statusbar__title">
+              <span class="statusbar__moon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="currentColor" focusable="false">
+                  <path d="M20.6 14.2A8.6 8.6 0 0 1 9.8 3.4 8.6 8.6 0 1 0 20.6 14.2z"/>
+                </svg>
+              </span>
+              <span id="statusTitle">Inicio</span>
+            </div>
+            <div class="statusbar__time" id="statusTime">07:02</div>
+          </div>
+
+          <div class="viewport" id="viewport"></div>
+
+          <div class="toast" id="toast" role="status" aria-live="polite">
+            <span class="toast__dot" aria-hidden="true"></span>
+            <span id="toastText"></span>
+          </div>
+          <div class="fingertip" id="fingertip" aria-hidden="true"></div>
+        </div>
+      </div>
+      </div>
+    </div>
+
+    <p class="stage__sub" id="subtitle" role="status" aria-live="polite"></p>
+    <p class="stage__hint">Gira la corona con la rueda del mouse.
+      El botón lateral abre la privacidad.</p>
+
+    <!-- ============================ haptic strip ============================ -->
+    <div class="haptic-strip" id="hapticStrip" data-pattern="" aria-live="polite">
+      <div class="haptic-strip__head">
+        <span class="haptic-strip__mute" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+               stroke-linecap="round" stroke-linejoin="round" focusable="false">
+            <path d="M11 5 6.5 9H3v6h3.5L11 19z"/>
+            <path d="m16 9.5 5 5M21 9.5l-5 5"/>
+          </svg>
+        </span>
+        <span class="haptic-strip__name" id="hapticName"></span>
+        <span class="haptic-strip__note">Sin sonido. Nunca.</span>
+      </div>
+      <div class="haptic-strip__bars"></div>
+    </div>
+
+    <div class="note">
+      <p class="note__label">Por qué cuatro</p>
+      <p class="note__body">El aviso va al cuerpo, no a la pantalla. Ningún patrón
+        suena: la vibración llega a la muñeca y nunca delante del paciente.</p>
+      <p class="note__body">«Acuérdate» y «esto quedó mal registrado» no pueden
+        sentirse igual, así que tampoco se ven igual. Y una marca equivocada no es
+        un dato: es una decisión que le toca tomar a ella, con un toque.</p>
+    </div>
+  </section>
+
+  <!-- ============================ panel ============================ -->
+  <aside class="panel" aria-label="Simulador">
+
+    <header class="panel__head">
+      <div class="panel__eyebrow caption">Prototipo</div>
+      <h1 class="panel__title">Turno en la Unidad 4B</h1>
+      <p class="panel__lede">El reloj avisa por vibración, nunca por sonido.
+        Corrige una marca con un toque.</p>
+    </header>
+
+    <section class="panel__block" aria-label="Turno guiado">
+      <div class="panel__blockhead">
+        <span class="panel__label">Turno guiado</span>
+        <span class="panel__clock caption" id="storyClock">listo</span>
+      </div>
+      <div class="panel__row">
+        <button class="btn btn--primary" id="storyPlay" type="button">▶ Turno guiado</button>
+      </div>
+      <div class="panel__row panel__row--tight">
+        <button class="btn btn--ghost" id="storyPause" type="button" disabled>Pausar</button>
+        <button class="btn btn--ghost" id="storySkip" type="button" disabled>Saltar</button>
+        <button class="btn btn--ghost" id="storyRestart" type="button">Reiniciar</button>
+      </div>
+    </section>
+
+    <section class="panel__block" aria-label="Modo libre">
+      <div class="panel__blockhead">
+        <span class="panel__label">Modo libre</span>
+        <span class="panel__clock caption" id="freeState">activo</span>
+      </div>
+      <div class="panel__grid" id="freeMode">
+        <button class="btn btn--ghost" type="button" data-act="zona">Entrar a zona de paciente</button>
+        <button class="btn btn--ghost" type="button" data-act="lavado">Lavado detectado</button>
+        <button class="btn btn--ghost" type="button" data-act="salir">Salir sin lavado</button>
+        <button class="btn btn--ghost" type="button" data-act="dudoso">Lavado dudoso</button>
+        <button class="btn btn--ghost" type="button" data-act="codigo">Código azul</button>
+        <button class="btn btn--ghost" type="button" data-act="terminar">Terminar turno</button>
+        <button class="btn btn--ghost" type="button" data-act="reiniciar">Reiniciar</button>
+      </div>
+    </section>
+
+    <section class="panel__block" aria-label="Vocabulario de vibraciones">
+      <div class="panel__blockhead">
+        <span class="panel__label">Vocabulario</span>
+        <span class="panel__clock caption">cuatro patrones</span>
+      </div>
+      <ul class="vocab" id="vocab"></ul>
+    </section>
+
+    <section class="panel__block" aria-label="Registro de eventos">
+      <div class="panel__blockhead">
+        <span class="panel__label">Registro</span>
+        <span class="panel__clock caption" id="logCount">0</span>
+      </div>
+      <ul class="log" id="log"></ul>
+    </section>
+
+    <a class="panel__link" href="unit.html">
+      Ver lo que ve Control de infecciones
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+        <path d="M4 12h15M13 6l6 6-6 6"/>
+      </svg>
+    </a>
+  </aside>
+</main>
+
+<script src="js/haptics.js"></script>
+<script src="js/watch.js"></script>
+<script src="js/story.js"></script>
+</body>
+</html>

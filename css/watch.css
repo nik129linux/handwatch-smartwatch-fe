@@ -1,0 +1,866 @@
+/* ==========================================================================
+   watch.css — Apple Watch 46mm hardware, watch screens, motion
+   All colors come from tokens.css. No raw values in this file.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Case
+   -------------------------------------------------------------------------- */
+
+.watch {
+  position: relative;
+  width: calc(var(--watch-w) + var(--case-pad) * 2);
+  height: calc(var(--watch-h) + var(--case-pad) * 2);
+  transform: scale(var(--scale, 1));
+  transform-origin: center center;
+  transition: transform 240ms var(--ease-enter);
+}
+
+/* Haptic shake — translate only, <= 2px per pulse (Family Values) */
+@keyframes watchShake {
+  0%   { transform: scale(var(--scale, 1)) translateX(0); }
+  25%  { transform: scale(var(--scale, 1)) translateX(-1.5px); }
+  50%  { transform: scale(var(--scale, 1)) translateX(1.5px); }
+  75%  { transform: scale(var(--scale, 1)) translateX(-1px); }
+  100% { transform: scale(var(--scale, 1)) translateX(0); }
+}
+.watch--shake { animation: watchShake 140ms var(--ease-enter) 2; }
+
+/* --- Bands ---------------------------------------------------------------- */
+
+.band {
+  position: absolute;
+  left: 50%;
+  width: var(--band-w);
+  height: var(--band-h);
+  margin-left: calc(var(--band-w) / -2);
+  background:
+    linear-gradient(90deg,
+      var(--color-neutral-800) 0%,
+      var(--color-neutral-700) 22%,
+      var(--color-neutral-600) 50%,
+      var(--color-neutral-700) 78%,
+      var(--color-neutral-800) 100%);
+  z-index: -1;
+}
+.band--top {
+  bottom: calc(100% - 6px);
+  border-radius: 40px 40px 8px 8px;
+  mask-image: linear-gradient(to top, var(--color-black) 74%, transparent);
+}
+.band--bottom {
+  top: calc(100% - 6px);
+  border-radius: 8px 8px 40px 40px;
+  mask-image: linear-gradient(to bottom, var(--color-black) 74%, transparent);
+}
+
+/* --- Case body ------------------------------------------------------------ */
+
+.case {
+  position: absolute;
+  inset: 0;
+  border-radius: calc(var(--watch-r) + var(--case-pad) * 0.85);
+  background:
+    linear-gradient(146deg,
+      var(--color-neutral-400) 0%,
+      var(--color-neutral-600) 12%,
+      var(--color-neutral-800) 32%,
+      var(--color-neutral-700) 50%,
+      var(--color-neutral-400) 74%,
+      var(--color-neutral-600) 92%,
+      var(--color-neutral-500) 100%);
+  box-shadow:
+    0 0 0 1px var(--color-black),
+    0 2px 0 0 var(--color-neutral-500) inset,
+    0 -2px 0 0 var(--color-black) inset,
+    0 30px 60px -30px var(--color-black),
+    0 6px 18px -12px var(--color-black);
+}
+/* polished chamfer catching the light */
+.case::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border-radius: calc(var(--watch-r) + var(--case-pad) * 0.85 - 2px);
+  border: 1px solid var(--color-neutral-600);
+  pointer-events: none;
+}
+
+/* --- Digital Crown -------------------------------------------------------- */
+
+.crown {
+  position: absolute;
+  left: 100%;
+  top: var(--crown-top);
+  width: var(--crown-w);
+  height: var(--crown-h);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: grab;
+  z-index: 3;
+}
+.crown:active { cursor: grabbing; }
+.crown:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 4px;
+  border-radius: var(--radius-pill);
+}
+.crown-stem {
+  position: absolute;
+  right: 100%;
+  top: 50%;
+  width: 10px;
+  height: 16px;
+  transform: translateY(-50%);
+  border-radius: 3px 0 0 3px;
+  background: linear-gradient(180deg, var(--color-neutral-500), var(--color-neutral-700));
+}
+.crown-cap {
+  position: absolute;
+  inset: 0;
+  border-radius: 9px;
+  background: linear-gradient(90deg,
+    var(--color-neutral-700) 0%,
+    var(--color-neutral-500) 26%,
+    var(--color-neutral-500) 50%,
+    var(--color-neutral-400) 62%,
+    var(--color-neutral-600) 100%);
+  transform: rotate(var(--spin, 0deg));
+}
+.crown-cap::before,
+.crown-cap::after {
+  content: '';
+  position: absolute;
+  left: 3px;
+  right: 3px;
+  height: 1px;
+  background: var(--color-neutral-800);
+  opacity: 0.7;
+}
+.crown-cap::before { top: 8px; }
+.crown-cap::after { bottom: 8px; }
+/* knurling — the visible rotation cue */
+.crown-grip {
+  position: absolute;
+  inset: 4px 6px;
+  border-radius: 4px;
+  background: repeating-linear-gradient(
+    to bottom,
+    var(--color-neutral-600) 0 2px,
+    transparent 2px 4px
+  );
+  opacity: 0.85;
+}
+
+/* --- Side button ---------------------------------------------------------- */
+
+.side-button {
+  position: absolute;
+  left: 100%;
+  top: calc(var(--crown-top) + var(--crown-h) + 22px);
+  width: var(--side-w);
+  height: var(--side-h);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  cursor: pointer;
+  z-index: 3;
+  background: linear-gradient(90deg,
+    var(--color-neutral-700) 0%,
+    var(--color-neutral-500) 55%,
+    var(--color-neutral-600) 100%);
+  transition: transform var(--dur-press) var(--ease-enter),
+              filter var(--dur-press) var(--ease-enter);
+}
+.side-button:hover { filter: brightness(1.18); }
+.side-button:active { transform: scaleX(0.72); }
+.side-button:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 4px;
+  border-radius: 6px;
+}
+.side-button[aria-pressed='true'] {
+  background: linear-gradient(90deg,
+    var(--state-primary-dim) 0%,
+    var(--color-primary-500) 55%,
+    var(--state-primary-dim) 100%);
+}
+
+/* --------------------------------------------------------------------------
+   2. Screen (OLED)
+   -------------------------------------------------------------------------- */
+
+.screen {
+  position: absolute;
+  inset: var(--case-pad);
+  border-radius: var(--watch-r);
+  background: var(--bg-screen);
+  overflow: hidden;
+  isolation: isolate;
+  cursor: ns-resize;
+}
+
+.statusbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 62px;
+  padding: 20px var(--sp-6) 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  font-family: var(--font-body);
+  font-size: var(--w-caption);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.01em;
+  color: var(--text-primary);
+  z-index: 6;
+  pointer-events: none;
+}
+.statusbar__title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.statusbar__title span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.statusbar__moon {
+  width: 12px;
+  height: 12px;
+  flex: none;
+  opacity: 0;
+  transform: scale(0.4);
+  transition: opacity 240ms var(--ease-enter), transform 240ms var(--ease-enter);
+  color: var(--text-accent);
+}
+.is-paused .statusbar__moon {
+  opacity: 1;
+  transform: scale(1);
+}
+.statusbar__time {
+  font-variant-numeric: tabular-nums;
+  flex: none;
+}
+
+/* scrollable viewport — the crown drives this */
+.viewport {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+.viewport::-webkit-scrollbar { width: 0; height: 0; }
+
+.screen--pad { padding-bottom: 20px; }
+
+/* one watch screen's content. The bottom padding clears the 96 px corner
+   radius so a full-width pill is never clipped by the curve. */
+.view {
+  position: relative;
+  min-height: 100%;
+  padding: 62px var(--sp-6) 44px;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-screen);
+  border-radius: var(--watch-r);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.screen__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.screen__foot {
+  margin-top: auto;
+  padding-top: var(--sp-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+/* --- Directional transitions --------------------------------------------- */
+
+@keyframes screenInFwd {
+  from { opacity: 0; transform: translateX(26px) scale(0.97); }
+  to   { opacity: 1; transform: translateX(0) scale(1); }
+}
+@keyframes screenOutFwd {
+  from { opacity: 1; transform: translateX(0) scale(1); }
+  to   { opacity: 0; transform: translateX(-22px) scale(0.97); }
+}
+@keyframes screenInBack {
+  from { opacity: 0; transform: translateX(-24px) scale(0.98); }
+  to   { opacity: 1; transform: translateX(0) scale(1); }
+}
+@keyframes screenOutBack {
+  from { opacity: 1; transform: translateX(0) scale(1); }
+  to   { opacity: 0; transform: translateX(22px) scale(0.98); }
+}
+/* alerts come from below with a watchOS-style zoom */
+@keyframes screenInAlert {
+  from { opacity: 0; transform: translateY(22px) scale(0.92); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes screenOutAlert {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to   { opacity: 0; transform: translateY(14px) scale(0.95); }
+}
+@keyframes screenInZoom {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.view[data-anim='in-fwd']   { animation: screenInFwd var(--dur-enter) var(--ease-enter) both; }
+.view[data-anim='out-fwd']  { animation: screenOutFwd var(--dur-exit) var(--ease-exit) both; }
+.view[data-anim='in-back']  { animation: screenInBack var(--dur-enter) var(--ease-enter) both; }
+.view[data-anim='out-back'] { animation: screenOutBack var(--dur-exit) var(--ease-exit) both; }
+.view[data-anim='in-alert'] { animation: screenInAlert var(--dur-enter-slow) var(--ease-enter) both; }
+.view[data-anim='out-alert']{ animation: screenOutAlert var(--dur-exit) var(--ease-exit) both; }
+.view[data-anim='in-zoom']  { animation: screenInZoom var(--dur-enter-slow) var(--ease-enter) both; }
+
+/* --------------------------------------------------------------------------
+   3. Shared watch components
+   -------------------------------------------------------------------------- */
+
+.ring {
+  position: relative;
+  display: grid;
+  place-items: center;
+  margin: 0 auto;
+  width: var(--ring-size, 200px);
+  height: var(--ring-size, 200px);
+}
+.ring__svg {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+}
+.ring__seg {
+  fill: none;
+  stroke-linecap: butt;
+  transition: stroke-dasharray 520ms var(--ease-enter);
+  transition-delay: calc(var(--i, 0) * 34ms);
+}
+.ring__seg--track { stroke: var(--ring-track); }
+.ring__seg--fill  { stroke: var(--color-primary-500); }
+.ring__seg--head  { stroke: var(--color-primary-300); }
+.ring__center {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  z-index: 1;
+}
+
+/* Hero + number type */
+.hero-num {
+  font-family: var(--font-display);
+  font-weight: var(--weight-semibold);
+  font-size: var(--w-hero);
+  line-height: 0.95;
+  letter-spacing: -0.035em;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.num {
+  font-family: var(--font-display);
+  font-weight: var(--weight-semibold);
+  font-size: var(--w-number);
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.num--accent { color: var(--text-accent); }
+
+.title {
+  font-family: var(--font-display);
+  font-weight: var(--weight-semibold);
+  font-size: var(--w-title);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+.caption {
+  font-family: var(--font-body);
+  font-size: var(--w-caption);
+  font-weight: var(--weight-regular);
+  line-height: var(--leading-caption);
+  letter-spacing: 0.005em;
+  color: var(--text-secondary);
+}
+.caption--dim { color: var(--text-tertiary); }
+.caption--strong { color: var(--text-primary); font-weight: var(--weight-medium); }
+.caption--center { text-align: center; }
+.spacer-4 { height: var(--sp-4); }
+.spacer-6 { height: var(--sp-6); }
+.spacer-2 { height: var(--sp-2); }
+.push { flex: 1; min-height: var(--sp-4); }
+
+/* Cards — Carbon, 1px Slate hairline, no shadow */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-card-watch);
+  padding: var(--sp-4);
+}
+
+/* Pills — full width, >= 56px tall, 2 max per screen */
+.pill {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  width: 100%;
+  min-height: 56px;
+  padding: 0 var(--sp-5);
+  border-radius: var(--radius-pill);
+  border: 1px solid transparent;
+  font-family: var(--font-body);
+  font-size: var(--w-body);
+  font-weight: var(--weight-semibold);
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  transition:
+    transform var(--dur-press) var(--ease-enter),
+    background-color 200ms var(--ease-enter),
+    border-color 200ms var(--ease-enter),
+    color 200ms var(--ease-enter),
+    opacity 200ms var(--ease-enter);
+}
+.pill--primary {
+  background: var(--color-primary-500);
+  color: var(--text-inverse);
+}
+.pill--primary:hover { background: var(--color-primary-300); }
+.pill--primary:active { transform: scale(0.97); background: var(--state-primary-press); }
+.pill--secondary {
+  background: transparent;
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+.pill--secondary:hover { background: var(--bg-raised); border-color: var(--color-neutral-500); }
+.pill--secondary:active { transform: scale(0.97); }
+.pill--ghost {
+  background: transparent;
+  color: var(--text-secondary);
+  font-weight: var(--weight-medium);
+  min-height: 48px;
+  font-size: var(--w-caption);
+}
+.pill--ghost:hover { color: var(--text-primary); }
+.pill--ghost:active { transform: scale(0.97); }
+.pill:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 3px;
+}
+
+/* Wash progress ring — the ONLY place `linear` timing is allowed (a clock) */
+.wash-ring { --ring-size: 240px; }
+.wash-ring .ring__seg { stroke-linecap: round; transition: none; }
+.wash-ring .ring__seg--track { stroke: var(--ring-track); }
+.wash-ring__arc {
+  stroke: var(--color-primary-500);
+  animation: washFill var(--wash-dur, 20000ms) linear forwards;
+}
+@keyframes washFill {
+  from { stroke-dashoffset: var(--circ); }
+  to   { stroke-dashoffset: 0; }
+}
+.wash-ring__arc--done { animation: none; stroke-dashoffset: 0; }
+
+/* check that draws itself */
+.check {
+  stroke-dasharray: 48;
+  stroke-dashoffset: 48;
+  transition: stroke-dashoffset var(--dur-draw) var(--ease-enter);
+}
+.check.is-drawn { stroke-dashoffset: 0; }
+
+/* --------------------------------------------------------------------------
+   4. Screen-specific
+   -------------------------------------------------------------------------- */
+
+/* --- Inicio --------------------------------------------------------------- */
+
+.home__hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-1);
+  padding-top: var(--sp-2);
+}
+.home__headline {
+  font-family: var(--font-display);
+  font-weight: var(--weight-semibold);
+  font-size: var(--w-title);
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.home__of {
+  font-family: var(--font-body);
+  font-size: var(--w-body);
+  font-weight: var(--weight-regular);
+  color: var(--text-secondary);
+}
+.home__shift {
+  margin-top: var(--sp-1);
+}
+
+.home__below {
+  margin-top: var(--sp-8);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+.home__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+.home__label {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  color: var(--text-secondary);
+}
+.rule {
+  flex: 1;
+  height: 1px;
+  background: var(--border-card);
+}
+
+.ev {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-subtle);
+  animation: evIn 380ms var(--ease-enter) both;
+  animation-delay: calc(var(--i, 0) * 40ms);
+}
+.ev:last-child { border-bottom: 0; }
+@keyframes evIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.ev__time {
+  font-family: var(--font-body);
+  font-size: var(--w-caption);
+  font-weight: var(--weight-medium);
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  flex: none;
+  width: 46px;
+}
+.ev__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex: none;
+  background: var(--text-tertiary);
+}
+.ev__dot--ok { background: var(--color-primary-500); }
+.ev__dot--you { background: var(--text-secondary); }
+.ev__text {
+  font-family: var(--font-body);
+  font-size: var(--w-caption);
+  line-height: 1.3;
+  color: var(--text-primary);
+  min-width: 0;
+}
+.ev__text em {
+  font-style: normal;
+  color: var(--text-secondary);
+}
+
+/* --- Recordatorio --------------------------------------------------------- */
+
+.alert__glyph {
+  display: grid;
+  place-items: center;
+  width: 108px;
+  height: 108px;
+  margin: var(--sp-6) auto var(--sp-4);
+  border-radius: 50%;
+  border: 1px solid var(--border-card);
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+.alert__lines {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-1);
+  text-align: center;
+}
+.alert__when {
+  margin-top: var(--sp-2);
+  font-family: var(--font-display);
+  font-size: var(--w-number);
+  font-weight: var(--weight-semibold);
+  letter-spacing: -0.03em;
+  color: var(--text-primary);
+}
+
+/* --- Lavando -------------------------------------------------------------- */
+
+.wash {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-1);
+  padding-bottom: var(--sp-6);
+}
+.wash__sec {
+  font-family: var(--font-display);
+  font-size: var(--w-hero);
+  font-weight: var(--weight-semibold);
+  letter-spacing: -0.04em;
+  line-height: 1;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.wash__cap { margin-top: var(--sp-2); }
+.wash__done {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-3);
+  padding-top: var(--sp-4);
+}
+.wash__check {
+  width: 46px;
+  height: 46px;
+  color: var(--color-primary-500);
+}
+
+/* --- Confirmacion dudosa -------------------------------------------------- */
+
+.doubt__lines {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-1);
+  text-align: center;
+  padding-bottom: var(--sp-6);
+}
+.doubt__q {
+  font-family: var(--font-display);
+  font-size: var(--w-title);
+  font-weight: var(--weight-semibold);
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+
+/* --- Fin de turno --------------------------------------------------------- */
+
+.shift__rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin-top: var(--sp-5);
+}
+.shift__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-3) 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.shift__row:last-child { border-bottom: 0; }
+.shift__note {
+  margin-top: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--radius-sm);
+  background: var(--bg-inset);
+  border: 1px solid var(--border-subtle);
+}
+
+/* --- Quien ve esto -------------------------------------------------------- */
+
+.who__rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin-top: var(--sp-2);
+}
+.who {
+  display: flex;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--radius-card-watch);
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  animation: evIn 380ms var(--ease-enter) both;
+  animation-delay: calc(var(--i, 0) * 70ms);
+}
+.who__mark {
+  width: 10px;
+  height: 10px;
+  margin-top: 5px;
+  border-radius: 50%;
+  flex: none;
+  background: var(--text-tertiary);
+}
+.who--you .who__mark { background: var(--color-primary-500); }
+.who__body { min-width: 0; display: block; }
+.who__who {
+  display: block;
+  font-family: var(--font-body);
+  font-size: var(--w-body);
+  font-weight: var(--weight-semibold);
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.who__what {
+  display: block;
+  margin-top: 2px;
+  font-family: var(--font-body);
+  font-size: var(--w-caption);
+  line-height: 1.3;
+  color: var(--text-secondary);
+}
+
+/* --- Pausa ---------------------------------------------------------------- */
+
+.pause__glyph {
+  display: grid;
+  place-items: center;
+  width: 92px;
+  height: 92px;
+  margin: var(--sp-6) auto var(--sp-4);
+  border-radius: 50%;
+  border: 1px solid var(--border-card);
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+.pause__count {
+  font-family: var(--font-display);
+  font-size: var(--w-number);
+  font-weight: var(--weight-semibold);
+  letter-spacing: -0.03em;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --------------------------------------------------------------------------
+   5. Toast
+   -------------------------------------------------------------------------- */
+
+.toast {
+  position: absolute;
+  top: 0;
+  left: var(--sp-4);
+  right: var(--sp-4);
+  z-index: 8;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 12px var(--sp-4);
+  border-radius: var(--radius-pill);
+  background: var(--bg-raised);
+  border: 1px solid var(--border-strong);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: var(--w-caption);
+  font-weight: var(--weight-medium);
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(-26px);
+  transition:
+    opacity var(--dur-exit) var(--ease-exit),
+    transform var(--dur-exit) var(--ease-exit);
+}
+.toast.is-on {
+  opacity: 1;
+  transform: translateY(46px);
+  transition:
+    opacity var(--dur-enter) var(--ease-enter),
+    transform var(--dur-enter) var(--ease-enter);
+}
+.toast__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex: none;
+  background: var(--color-primary-500);
+}
+
+/* the animated fingertip used by the guided story */
+.fingertip {
+  position: absolute;
+  z-index: 9;
+  width: 34px;
+  height: 34px;
+  margin: -17px 0 0 -17px;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0;
+  background: color-mix(in srgb, var(--color-primary-500) 24%, transparent);
+  border: 2px solid var(--color-primary-500);
+}
+.fingertip.is-on {
+  animation: tap 900ms var(--ease-enter) 2;
+}
+@keyframes tap {
+  0%   { opacity: 0; transform: scale(0.5); }
+  18%  { opacity: 1; transform: scale(1); }
+  55%  { opacity: 1; transform: scale(0.86); }
+  70%  { opacity: 0.9; transform: scale(0.86); }
+  100% { opacity: 0; transform: scale(1.06); }
+}
+
+/* --------------------------------------------------------------------------
+   6. Reduced motion — kill transitions, animations and the shake
+   -------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 1ms !important;
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+  .watch,
+  .watch--shake,
+  .ring__seg,
+  .check,
+  .fingertip,
+  .ev,
+  .who,
+  .wash-ring__arc {
+    animation: none !important;
+    transition: none !important;
+  }
+  .watch--shake { transform: scale(var(--scale, 1)) !important; }
+  .check { stroke-dashoffset: 0 !important; }
+  .wash-ring__arc--done { stroke-dashoffset: 0 !important; }
+}
