@@ -1,3 +1,7 @@
 .playwright-cli/
 media/raw/output.log
 shots/
+.stage/
+.brief-run.md
+.last-test.log
+FIX-AUTO.md

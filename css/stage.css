@@ -675,6 +675,8 @@ body.is-ready [data-rise] {
 }
 .unit__back {
   margin-top: var(--sp-2);
+  position: relative;
+  z-index: 1;
   display: inline-flex;
   align-items: center;
   gap: 8px;

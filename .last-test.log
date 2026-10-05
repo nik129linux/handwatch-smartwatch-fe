@@ -39,13 +39,13 @@
   ✓ the strip states: No sound. Ever.
 
 7 · changing the primary propagates everywhere
-  ✓ index.html: nothing keeps rgb(166, 255, 0) (205 elements walked)
+  ✓ index.html: nothing keeps rgb(166, 255, 0) (223 elements walked)
   ✓ index.html: the new primary is in use
-  ✓ unit.html: nothing keeps rgb(166, 255, 0) (128 elements walked)
+  ✓ unit.html: nothing keeps rgb(166, 255, 0) (129 elements walked)
   ✓ unit.html: the new primary is in use
-  ✓ index.html (light): nothing keeps rgb(166, 255, 0) (205 elements walked)
+  ✓ index.html (light): nothing keeps rgb(166, 255, 0) (223 elements walked)
   ✓ index.html (light): the new primary is in use
-  ✓ unit.html (light): nothing keeps rgb(166, 255, 0) (128 elements walked)
+  ✓ unit.html (light): nothing keeps rgb(166, 255, 0) (129 elements walked)
   ✓ unit.html (light): the new primary is in use
 
 7b · light / dark switch
@@ -182,3 +182,91 @@
   ✓ the subtitle has no Spanish leftovers
   ✓ the wash runs at ×5 in the story and says so
   ✓ no console errors while driving the crown and keys
+  ✓ the guided shift reached its last beat
+  ✓ it ends on Who sees this
+  ✓ the shift closed with 15 of 17 moments
+  ✓ two marks were corrected by the nurse
+  ✓ the guided shift logs no console errors
+
+screenshots
+  ✓ no console errors while shooting home
+  ✓ no console errors while shooting recordatorio
+  ✓ no console errors while shooting lavando
+  ✓ no console errors while shooting dudoso
+  ✓ no console errors while shooting fin
+  ✓ no console errors while shooting quien
+  ✓ no console errors while shooting pausa
+
+summary
+  170 passed, 0 failed
+  screenshots → shots/
+
+
+1 · seeded scenarios at noise 0
+  ✓ wash reads as wash
+  ✓ wash is confident (>= 0.85)
+  ✓ gel reads as gel
+  ✓ gel is confident (>= 0.75)
+  ✓ door reads as other
+  ✓ typing reads as other
+  ✓ wave reads as other
+
+2 · wash at noise 0.8 goes uncertain, never gel
+  ✓ uncertain-or-none in >= 30% of 50 seeds
+  ✓ a noisy wash is never read as gel
+
+3 · same seed, same output
+  ✓ wash(9, 0.4) is byte-identical
+  ✓ gel(2, 0.55) is byte-identical
+
+4 · the verdict reads the named constants
+  ✓ CONFIDENT is 0.75
+  ✓ UNCERTAIN is 0.4
+  ✓ 0.75 is sure
+  ✓ 0.74 is unsure
+  ✓ 0.40 is unsure
+  ✓ 0.39 is nothing
+  ✓ other is nothing whatever the number
+
+5 · gel at noise 0.55, seed 2 is the unsure beat
+  ✓ still a rub, not a wash
+  ✓ confidence sits in the doubtful band
+  ✓ the verdict is unsure
+  ✓ the features line explains itself
+
+6 · noise moves the uncertain rate on a fixed seed set
+  ✓ noisy streams go unsure more often
+  ✓ the gap is wide enough to watch
+
+7 · the log schema keeps no person, purges at 24 h, deletes
+  ✓ entries carry id + ts
+  ✓ entries carry moment + outcome + corrected
+  ✓ no person field exists on the entry
+  ✓ persistence never stores a person field
+  ✓ the old event is there before the purge
+  ✓ a 25 h old event detail is purged
+  ✓ everything left is under 24 h
+  ✓ delete removes by id
+  ✓ the entry is gone
+  ✓ deleting a ghost is false
+
+8 · unit corrections come from corrected:true events
+  ✓ demo history alone is 34
+  ✓ one real correction makes 35
+  ✓ empty log + empty demo is empty
+
+  37 passed, 0 failed
+
+
+electron · Hand Hygiene Watch boots as a desktop app
+  ✓ window title is "Hand Hygiene Watch"
+  ✓ the app window has a theme toggle
+  ✓ the toggle flips data-theme (dark → light)
+  ✓ dark + light stage screenshots saved
+  ✓ Doubtful wash shows the confirm screen
+  ✓ the unit page opens inside the same window
+
+  harness error: page.waitForSelector: Timeout 5000ms exceeded.
+Call log:
+[2m  - waiting for locator('.view[data-screen="home"]') to be visible[22m
+
