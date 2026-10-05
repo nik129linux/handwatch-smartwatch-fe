@@ -203,7 +203,7 @@ var watch = (function () {
           '<div class="caption home__shift">Turno · Unidad 4B</div>' +
         '</div>' +
         '<div class="home__below">' +
-          '<div class="home__label caption"><span>Últimos 3</span><span class="rule"></span></div>' +
+          '<div class="home__label"><span class="label">Últimos 3</span><span class="rule"></span></div>' +
           '<ul class="home__list">' + rows + '</ul>' +
         '</div>' +
         '<div class="screen__foot">' + foot + '</div>';
@@ -270,10 +270,10 @@ var watch = (function () {
     anim: 'alert',
     build: function () {
       return '<div class="doubt__lines">' +
-          '<div class="title">' + esc(state.doubtWhen) + '</div>' +
+          '<div class="label">' + esc(state.doubtWhen) + '</div>' +
           '<div class="caption">' + esc(state.bed) + '</div>' +
           '<div class="doubt__q">¿Te lavaste?</div>' +
-          '<div class="caption caption--dim">No estoy seguro</div>' +
+          '<div class="caption">No estoy seguro</div>' +
         '</div>' +
         '<div class="screen__foot">' +
           '<button class="pill pill--primary" data-act="doubt-yes">Sí, me lavé</button>' +
@@ -502,7 +502,7 @@ var watch = (function () {
     var wrap = node.querySelector('.wash-ring');
     if (wrap) {
       wrap.style.transition =
-        'opacity 240ms var(--ease-exit), transform 240ms var(--ease-exit)';
+        'opacity var(--dur-rise) var(--ease-exit), transform var(--dur-rise) var(--ease-exit)';
       wrap.style.transform = 'scale(0.84)';
       wrap.style.opacity = '0';
     }

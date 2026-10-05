@@ -376,6 +376,179 @@ async function settle(page, ms) { await page.waitForTimeout(ms); }
   await rmPage.screenshot({ path: shot('reduced-motion.png') });
   await rmCtx.close();
 
+  /* =============================================================== 10. findings */
+  head('10 · the findings pass holds');
+
+  /* F1 — small text over any surface reaches 4.5:1 */
+  /* section 3 left this page paused (30 min); resume so Home rebuilds its
+     default foot before the foot-level checks. */
+  await page.evaluate(() => { watch.resume(); watch.go('home', 'zoom'); });
+  await settle(page, 500);
+  async function contrast(p, sel) {
+    return await p.evaluate((s) => {
+      const el = document.querySelector(s);
+      if (!el) return { missing: s };
+      const parse = (c) => {
+        let m = (c || '').match(/rgba?\(([^)]+)\)/);
+        if (m) {
+          const v = m[1].split(',').map(x => parseFloat(x));
+          return [v[0], v[1], v[2], v.length > 3 ? v[3] : 1];
+        }
+        m = (c || '').match(/color\(srgb\s+([0-9.]+)\s+([0-9.]+)\s+([0-9.]+)/);
+        if (m) return [parseFloat(m[1]) * 255, parseFloat(m[2]) * 255,
+          parseFloat(m[3]) * 255, 1];
+        return null;
+      };
+      const lin = (v) => {
+        v /= 255;
+        return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+      };
+      const lum = (c) => 0.2126 * lin(c[0]) + 0.7152 * lin(c[1]) + 0.0722 * lin(c[2]);
+      const fg = parse(getComputedStyle(el).color);
+      if (!fg) return { missing: s + ' (unparsable color)' };
+      let bg = null, n = el;
+      while (n) {
+        const c = parse(getComputedStyle(n).backgroundColor);
+        if (c && c[3] > 0.99) { bg = c; break; }
+        n = n.parentElement;
+      }
+      const L1 = lum(fg), L2 = lum(bg || [0, 0, 0, 1]);
+      const hi = Math.max(L1, L2), lo = Math.min(L1, L2);
+      return { ratio: (hi + 0.05) / (lo + 0.05) };
+    }, sel);
+  }
+  const contrastPairs = [
+    [page, '.home__shift'], [page, '.ev__time'], [page, '.pill--ghost'],
+    [page, '.panel__lede'], [page, '.vocab__meaning'], [page, '.note__body'],
+    [page, '.haptic-strip__note'], [page, '.vocab__pattern'], [page, '#storyClock'],
+    [unitPage, '.ucard__note'], [unitPage, '.uheat__axis'],
+    [unitPage, '.unit__eyebrow'], [unitPage, '.unotice__lock']
+  ];
+  for (const [p, sel] of contrastPairs) {
+    const r = await contrast(p, sel);
+    ok(!r.missing && r.ratio >= 4.5, 'contrast ≥ 4.5:1 — ' + sel,
+      r.missing ? 'missing' : 'ratio ' + r.ratio.toFixed(2) + ':1');
+  }
+  await page.evaluate(() => watch.go('dudoso', 'alert'));
+  await settle(page, 500);
+  const dq = await contrast(page, '.doubt__lines .caption');
+  ok(dq.ratio >= 4.5, 'contrast ≥ 4.5:1 — doubt context', 'ratio ' + dq.ratio.toFixed(2) + ':1');
+  await page.evaluate(() => watch.go('fin', 'fwd'));
+  await settle(page, 500);
+  const fn = await contrast(page, '.shift__note');
+  ok(fn.ratio >= 4.5, 'contrast ≥ 4.5:1 — shift note', 'ratio ' + fn.ratio.toFixed(2) + ':1');
+
+  /* F2 — every duration cites a motion token; easings capped at 3 */
+  const cssMotion = stripComments(read('css/watch.css') + read('css/stage.css'));
+  const durOffenders = [];
+  cssMotion.split('\n').forEach((line, i) => {
+    if (!/\d+\.?\d*ms/.test(line)) return;
+    if (/var\(--/.test(line)) return;                    /* cites a token */
+    if (/1ms\s*!important/.test(line)) return;           /* reduced-motion kill */
+    durOffenders.push('line ' + (i + 1) + ' → ' + line.trim());
+  });
+  ok(durOffenders.length === 0, 'every CSS duration cites a motion token',
+    durOffenders.slice(0, 4).join(' | '));
+  const jsMotionOff = [];
+  ['js/haptics.js', 'js/watch.js', 'js/story.js', 'js/unit.js'].forEach(f => {
+    stripComments(read(f)).split('\n').forEach((line, i) => {
+      if (!/['"]/.test(line) || !/\d+ms/.test(line)) return;
+      if (/var\(--/.test(line)) return;
+      if (/setProperty/.test(line)) return;              /* defines a token value */
+      jsMotionOff.push(f + ':' + (i + 1) + ' → ' + line.trim());
+    });
+  });
+  ok(jsMotionOff.length === 0, 'no bare ms inside JS style strings',
+    jsMotionOff.slice(0, 4).join(' | '));
+  const beziers = [...new Set(
+    (stripComments(tokens + watchCss + stageCss).match(/cubic-bezier\([^)]*\)/g) || []))];
+  ok(beziers.length <= 3 &&
+    beziers.includes('cubic-bezier(0.16, 1, 0.3, 1)') &&
+    beziers.includes('cubic-bezier(0.4, 0, 1, 1)'),
+    'at most 3 easings: enter expo + exit (press reuses enter)',
+    beziers.join(' · '));
+
+  /* F3 — the kicker tier exists and kickers use it; lime stays off kickers */
+  const labelCss = watchCss + stageCss;
+  ok(/\.label\s*\{[^}]*text-transform:\s*uppercase/s.test(labelCss) &&
+    /\.label\s*\{[^}]*letter-spacing:\s*var\(--tracking-label\)/s.test(labelCss),
+    'a .label tier exists (uppercase, +0.18em tracking)');
+  await page.evaluate(() => watch.go('home', 'zoom'));
+  await settle(page, 500);
+  const kicker = await page.evaluate(() => {
+    const el = document.querySelector('.home__label .label');
+    if (!el) return null;
+    const cs = getComputedStyle(el);
+    return { t: cs.textTransform, size: cs.fontSize, w: cs.fontWeight };
+  });
+  ok(kicker && kicker.t === 'uppercase' && kicker.size === '12px' &&
+    (kicker.w === '500' || kicker.w === '600' || parseInt(kicker.w, 10) >= 500),
+    'Últimos 3 speaks in the kicker tier', JSON.stringify(kicker));
+  const ucard = await unitPage.evaluate(() => {
+    const el = document.querySelector('.ucard__label');
+    const cs = getComputedStyle(el);
+    return { t: cs.textTransform, size: cs.fontSize };
+  });
+  ok(ucard.t === 'uppercase' && ucard.size === '12px',
+    'unit card labels speak in the kicker tier', JSON.stringify(ucard));
+  const eyebrow = await page.evaluate(() =>
+    getComputedStyle(document.querySelector('.panel__eyebrow')).color);
+  ok(eyebrow !== OLD_LIME && eyebrow !== 'rgb(255, 0, 0)',
+    'the panel kicker spends no lime', 'computed ' + eyebrow);
+
+  /* F4 — tabular numerals everywhere a number can appear */
+  for (const sel of ['.home__of', '.home__shift', '#storyClock']) {
+    const v = await page.evaluate((s) =>
+      getComputedStyle(document.querySelector(s)).fontVariantNumeric, sel);
+    ok(v === 'tabular-nums', 'tabular numerals — ' + sel, 'computed ' + v);
+  }
+  for (const sel of ['.ubar__val', '.uheat__axis', '.ucard__note']) {
+    const v = await unitPage.evaluate((s) =>
+      getComputedStyle(document.querySelector(s)).fontVariantNumeric, sel);
+    ok(v === 'tabular-nums', 'tabular numerals — ' + sel, 'computed ' + v);
+  }
+
+  /* F5 — the doubt question dominates its screen */
+  await page.evaluate(() => watch.go('dudoso', 'alert'));
+  await settle(page, 500);
+  const doubtHead = await page.evaluate(() => {
+    const q = document.querySelector('.doubt__q');
+    const first = document.querySelector('.doubt__lines').firstElementChild;
+    return {
+      q: parseFloat(getComputedStyle(q).fontSize),
+      kick: getComputedStyle(first).textTransform
+    };
+  });
+  ok(doubtHead.q >= 30, '¿Te lavaste? sets large enough to read at a glance',
+    'font-size ' + doubtHead.q + 'px');
+  ok(doubtHead.kick === 'uppercase', 'doubt context is a kicker, not a rival title',
+    'text-transform ' + doubtHead.kick);
+
+  /* F6 — every watch pill clears 56px */
+  await page.evaluate(() => watch.go('home', 'zoom'));
+  await settle(page, 500);
+  const ghostMin = await page.evaluate(() =>
+    getComputedStyle(document.querySelector('.pill--ghost')).minHeight);
+  ok(ghostMin === '56px', 'ghost pills clear the 56px gloved-hand floor',
+    'min-height ' + ghostMin);
+
+  /* F7 — no shadows on any screen surface; focus-visible everywhere */
+  const shadowed = await page.evaluate(() => {
+    const hits = [];
+    document.querySelectorAll('#screen .view *, #screen .toast').forEach(el => {
+      const cs = getComputedStyle(el);
+      if (cs.boxShadow !== 'none' || cs.textShadow !== 'none') {
+        hits.push(el.tagName + '.' + (typeof el.className === 'string'
+          ? el.className.split(' ')[0] : ''));
+      }
+    });
+    return hits;
+  });
+  ok(shadowed.length === 0, 'no shadows anywhere on the watch screens',
+    shadowed.slice(0, 4).join(' | '));
+  ok(/:focus-visible/.test(stageCss) && /:focus-visible/.test(watchCss),
+    ':focus-visible rules exist for stage and watch alike');
+
   /* =============================================================== 5. story */
   head('5 · the guided shift plays to the end');
 

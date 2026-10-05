@@ -13,7 +13,7 @@
   height: calc(var(--watch-h) + var(--case-pad) * 2);
   transform: scale(var(--scale, 1));
   transform-origin: center center;
-  transition: transform 240ms var(--ease-enter);
+  transition: transform var(--dur-rise) var(--ease-enter);
 }
 
 /* Haptic shake — translate only, <= 2px per pulse (Family Values) */
@@ -24,7 +24,7 @@
   75%  { transform: scale(var(--scale, 1)) translateX(-1px); }
   100% { transform: scale(var(--scale, 1)) translateX(0); }
 }
-.watch--shake { animation: watchShake 140ms var(--ease-enter) 2; }
+.watch--shake { animation: watchShake var(--dur-press) var(--ease-enter) 2; }
 
 /* --- Bands ---------------------------------------------------------------- */
 
@@ -239,7 +239,7 @@
   flex: none;
   opacity: 0;
   transform: scale(0.4);
-  transition: opacity 240ms var(--ease-enter), transform 240ms var(--ease-enter);
+  transition: opacity var(--dur-rise) var(--ease-enter), transform var(--dur-rise) var(--ease-enter);
   color: var(--text-accent);
 }
 .is-paused .statusbar__moon {
@@ -352,8 +352,8 @@
 .ring__seg {
   fill: none;
   stroke-linecap: butt;
-  transition: stroke-dasharray 520ms var(--ease-enter);
-  transition-delay: calc(var(--i, 0) * 34ms);
+  transition: stroke-dasharray var(--dur-sweep) var(--ease-enter);
+  transition-delay: calc(var(--i, 0) * var(--dur-step));
 }
 .ring__seg--track { stroke: var(--ring-track); }
 .ring__seg--fill  { stroke: var(--color-primary-500); }
@@ -403,10 +403,23 @@
   line-height: var(--leading-caption);
   letter-spacing: 0.005em;
   color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
 }
-.caption--dim { color: var(--text-tertiary); }
+.caption--dim { color: var(--text-secondary); }
 .caption--strong { color: var(--text-primary); font-weight: var(--weight-medium); }
 .caption--center { text-align: center; }
+/* Kicker tier — Inter 500, uppercase, ~12px, +0.18em. The small tracked
+   voice for labels, never body voice, never lime. */
+.label {
+  font-family: var(--font-body);
+  font-size: var(--text-label);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-label);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
 .spacer-4 { height: var(--sp-4); }
 .spacer-6 { height: var(--sp-6); }
 .spacer-2 { height: var(--sp-2); }
@@ -438,10 +451,10 @@
   cursor: pointer;
   transition:
     transform var(--dur-press) var(--ease-enter),
-    background-color 200ms var(--ease-enter),
-    border-color 200ms var(--ease-enter),
-    color 200ms var(--ease-enter),
-    opacity 200ms var(--ease-enter);
+    background-color var(--dur-exit) var(--ease-enter),
+    border-color var(--dur-exit) var(--ease-enter),
+    color var(--dur-exit) var(--ease-enter),
+    opacity var(--dur-exit) var(--ease-enter);
 }
 .pill--primary {
   background: var(--color-primary-500);
@@ -460,7 +473,7 @@
   background: transparent;
   color: var(--text-secondary);
   font-weight: var(--weight-medium);
-  min-height: 48px;
+  min-height: 56px;
   font-size: var(--w-caption);
 }
 .pill--ghost:hover { color: var(--text-primary); }
@@ -520,6 +533,7 @@
   font-size: var(--w-body);
   font-weight: var(--weight-regular);
   color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
 }
 .home__shift {
   margin-top: var(--sp-1);
@@ -556,8 +570,8 @@
   gap: var(--sp-3);
   padding: 10px 0;
   border-bottom: 1px solid var(--border-subtle);
-  animation: evIn 380ms var(--ease-enter) both;
-  animation-delay: calc(var(--i, 0) * 40ms);
+  animation: evIn var(--dur-item) var(--ease-enter) both;
+  animation-delay: calc(var(--i, 0) * var(--dur-step));
 }
 .ev:last-child { border-bottom: 0; }
 @keyframes evIn {
@@ -671,10 +685,12 @@
 }
 .doubt__q {
   font-family: var(--font-display);
-  font-size: var(--w-title);
+  font-size: var(--w-number);
   font-weight: var(--weight-semibold);
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
   color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
 }
 
 /* --- Fin de turno --------------------------------------------------------- */
@@ -717,8 +733,8 @@
   border-radius: var(--radius-card-watch);
   background: var(--bg-card);
   border: 1px solid var(--border-card);
-  animation: evIn 380ms var(--ease-enter) both;
-  animation-delay: calc(var(--i, 0) * 70ms);
+  animation: evIn var(--dur-item) var(--ease-enter) both;
+  animation-delay: calc(var(--i, 0) * var(--dur-step) * 2);
 }
 .who__mark {
   width: 10px;
@@ -826,7 +842,7 @@
   border: 2px solid var(--color-primary-500);
 }
 .fingertip.is-on {
-  animation: tap 900ms var(--ease-enter) 2;
+  animation: tap var(--dur-tap) var(--ease-enter) 2;
 }
 @keyframes tap {
   0%   { opacity: 0; transform: scale(0.5); }

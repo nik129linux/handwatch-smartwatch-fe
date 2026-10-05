@@ -150,7 +150,7 @@ button { font: inherit; color: inherit; }
 .haptic-strip__note {
   flex: none;
   font-size: var(--text-caption);
-  color: var(--text-tertiary);
+  color: var(--text-secondary);
 }
 
 .haptic-strip__bars {
@@ -165,11 +165,11 @@ button { font: inherit; color: inherit; }
   min-width: 6px;
   border-radius: 4px;
   background: var(--ring-track);
-  transition: background-color 200ms var(--ease-enter);
+  transition: background-color var(--dur-exit) var(--ease-enter);
 }
 .haptic-strip.is-playing .haptic-bar {
   background: var(--color-primary-500);
-  animation: barPop 240ms var(--ease-enter) both;
+  animation: barPop var(--dur-rise) var(--ease-enter) both;
   animation-delay: var(--at, 0ms);
 }
 @keyframes barPop {
@@ -188,10 +188,14 @@ button { font: inherit; color: inherit; }
   background: var(--bg-inset);
 }
 .note__label {
-  font-size: 12px;
-  letter-spacing: 0.14em;
+  font-family: var(--font-body);
+  font-size: var(--text-label);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-label);
+  letter-spacing: var(--tracking-label);
   text-transform: uppercase;
-  color: var(--text-tertiary);
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
 }
 .note__body {
   margin-top: var(--sp-3);
@@ -199,6 +203,7 @@ button { font: inherit; color: inherit; }
   line-height: var(--leading-caption);
   color: var(--text-secondary);
   max-width: 46ch;
+  font-variant-numeric: tabular-nums;
 }
 
 /* --------------------------------------------------------------------------
@@ -221,9 +226,9 @@ button { font: inherit; color: inherit; }
 }
 .panel__eyebrow {
   text-transform: uppercase;
-  letter-spacing: 0.14em;
-  font-size: 12px;
-  color: var(--text-accent);
+  letter-spacing: var(--tracking-label);
+  font-size: var(--text-label);
+  color: var(--text-secondary);
   font-weight: var(--weight-medium);
 }
 .panel__title {
@@ -262,7 +267,7 @@ button { font: inherit; color: inherit; }
   letter-spacing: var(--tracking-body);
   color: var(--text-primary);
 }
-.panel__clock { color: var(--text-tertiary); }
+.panel__clock { color: var(--text-secondary); font-variant-numeric: tabular-nums; }
 .panel__clock.is-off { color: var(--text-accent); }
 
 .panel__row { display: flex; flex-direction: column; gap: var(--sp-2); }
@@ -288,10 +293,10 @@ button { font: inherit; color: inherit; }
   text-align: center;
   transition:
     transform var(--dur-press) var(--ease-enter),
-    background-color 200ms var(--ease-enter),
-    border-color 200ms var(--ease-enter),
-    color 200ms var(--ease-enter),
-    opacity 200ms var(--ease-enter);
+    background-color var(--dur-exit) var(--ease-enter),
+    border-color var(--dur-exit) var(--ease-enter),
+    color var(--dur-exit) var(--ease-enter),
+    opacity var(--dur-exit) var(--ease-enter);
 }
 .btn--primary {
   background: var(--color-primary-500);
@@ -334,8 +339,8 @@ button { font: inherit; color: inherit; }
   cursor: pointer;
   transition:
     transform var(--dur-press) var(--ease-enter),
-    background-color 200ms var(--ease-enter),
-    border-color 200ms var(--ease-enter);
+    background-color var(--dur-exit) var(--ease-enter),
+    border-color var(--dur-exit) var(--ease-enter);
 }
 .vocab__play:hover {
   background: var(--color-primary-500);
@@ -344,7 +349,7 @@ button { font: inherit; color: inherit; }
 .vocab__play:hover .vocab__tri { fill: var(--text-inverse); }
 .vocab__play:active { transform: scale(0.92); }
 .vocab__play svg { width: 9px; height: 11px; }
-.vocab__tri { fill: var(--text-primary); transition: fill 200ms var(--ease-enter); }
+.vocab__tri { fill: var(--text-primary); transition: fill var(--dur-exit) var(--ease-enter); }
 
 .vocab__body { flex: 1; min-width: 0; }
 .vocab__name {
@@ -375,15 +380,15 @@ button { font: inherit; color: inherit; }
   margin-top: 3px;
   font-size: 11px;
   letter-spacing: 0.02em;
-  color: var(--text-tertiary);
+  color: var(--text-secondary);
 }
 .vocab__pattern {
   flex: none;
   font-size: 12px;
-  color: var(--text-tertiary);
+  color: var(--text-secondary);
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.02em;
-  transition: color 200ms var(--ease-enter);
+  transition: color var(--dur-exit) var(--ease-enter);
 }
 .vocab__row.is-active .vocab__pattern { color: var(--text-accent); }
 .vocab__row.is-active .vocab__name { color: var(--text-accent); }
@@ -399,8 +404,8 @@ button { font: inherit; color: inherit; }
   padding: 9px 0;
   border-bottom: 1px solid var(--border-subtle);
   font-size: 13px;
-  animation: evIn 320ms var(--ease-enter) both;
-  animation-delay: calc(var(--i, 0) * 40ms);
+  animation: evIn var(--dur-item) var(--ease-enter) both;
+  animation-delay: calc(var(--i, 0) * var(--dur-step));
 }
 .log__row:last-child { border-bottom: 0; }
 .log__row:first-child { animation: none; }
@@ -418,10 +423,10 @@ button { font: inherit; color: inherit; }
 }
 .log__dot--ok { background: var(--color-primary-500); }
 .log__dot--off { background: transparent; border: 1px solid var(--color-neutral-500); }
-.log__text { color: var(--text-primary); line-height: 1.35; }
+.log__text { color: var(--text-primary); line-height: 1.35; font-variant-numeric: tabular-nums; }
 .log:empty::after {
   content: 'Todavía nada';
-  color: var(--text-tertiary);
+  color: var(--text-secondary);
   font-size: 13px;
 }
 
@@ -443,8 +448,8 @@ button { font: inherit; color: inherit; }
   font-size: var(--text-caption);
   font-weight: var(--weight-medium);
   transition:
-    background-color 200ms var(--ease-enter),
-    border-color 200ms var(--ease-enter),
+    background-color var(--dur-exit) var(--ease-enter),
+    border-color var(--dur-exit) var(--ease-enter),
     transform var(--dur-press) var(--ease-enter);
 }
 .panel__link:hover { background: var(--bg-card); border-color: var(--color-neutral-500); }
@@ -482,7 +487,7 @@ button { font: inherit; color: inherit; }
   align-items: center;
   gap: var(--sp-3);
   font-size: var(--text-caption);
-  color: var(--text-tertiary);
+  color: var(--text-secondary);
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -512,7 +517,7 @@ button { font: inherit; color: inherit; }
   gap: 8px;
   font-size: var(--text-caption);
   color: var(--text-secondary);
-  transition: color 200ms var(--ease-enter);
+  transition: color var(--dur-exit) var(--ease-enter);
 }
 .unit__back:hover { color: var(--text-primary); }
 .unit__back svg { width: 14px; height: 14px; transform: scaleX(-1); }
@@ -563,8 +568,14 @@ button { font: inherit; color: inherit; }
 }
 .ucard--wide { grid-column: 1 / -1; }
 .ucard__label {
-  font-size: var(--text-caption);
+  font-family: var(--font-body);
+  font-size: var(--text-label);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-label);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
   color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
 }
 .ucard__title {
   margin-top: var(--sp-2);
@@ -581,6 +592,7 @@ button { font: inherit; color: inherit; }
   line-height: var(--leading-caption);
   color: var(--text-secondary);
   max-width: 52ch;
+  font-variant-numeric: tabular-nums;
 }
 
 /* --- bars by WHO moment -------------------------------------------------- */
@@ -621,9 +633,9 @@ button { font: inherit; color: inherit; }
   border-radius: var(--radius-pill);
   background: var(--bar-fill);
   transform-origin: left center;
-  animation: barGrow 760ms var(--ease-enter) both;
-  animation-delay: calc(var(--i, 0) * 40ms);
-  transition: background-color 200ms var(--ease-enter);
+  animation: barGrow var(--dur-grow) var(--ease-enter) both;
+  animation-delay: calc(var(--i, 0) * var(--dur-step));
+  transition: background-color var(--dur-exit) var(--ease-enter);
 }
 .ubar__fill:hover { background: var(--bar-fill-hover); }
 @keyframes barGrow {
@@ -644,8 +656,8 @@ button { font: inherit; color: inherit; }
   border-radius: 4px;
   background: var(--heat-1);
   transform-origin: center;
-  animation: cellIn 520ms var(--ease-enter) both;
-  animation-delay: calc(var(--i, 0) * 14ms);
+  animation: cellIn var(--dur-sweep) var(--ease-enter) both;
+  animation-delay: calc(var(--i, 0) * var(--dur-step-sm));
 }
 @keyframes cellIn {
   from { opacity: 0; transform: scale(0.5); }
@@ -656,7 +668,7 @@ button { font: inherit; color: inherit; }
   display: flex;
   justify-content: space-between;
   font-size: 12px;
-  color: var(--text-tertiary);
+  color: var(--text-secondary);
   font-variant-numeric: tabular-nums;
 }
 .uheat__marker {
@@ -738,7 +750,7 @@ button { font: inherit; color: inherit; }
   align-items: center;
   gap: 8px;
   flex: none;
-  color: var(--text-tertiary);
+  color: var(--text-secondary);
 }
 .unotice__lock svg { width: 14px; height: 14px; }
 
