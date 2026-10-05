@@ -19,7 +19,7 @@ const WATCH_FILES = ['index.html', 'js/watch.js', 'css/watch.css', 'js/story.js'
 const SCANNED = [
   'index.html', 'unit.html',
   'css/tokens.css', 'css/watch.css', 'css/stage.css',
-  'js/haptics.js', 'js/watch.js', 'js/story.js', 'js/unit.js'
+  'js/haptics.js', 'js/watch.js', 'js/story.js', 'js/unit.js', 'js/stage.js'
 ];
 
 /* ---------------------------------------------------------------- runner */
@@ -548,6 +548,94 @@ async function settle(page, ms) { await page.waitForTimeout(ms); }
     shadowed.slice(0, 4).join(' | '));
   ok(/:focus-visible/.test(stageCss) && /:focus-visible/.test(watchCss),
     ':focus-visible rules exist for stage and watch alike');
+
+  /* =============================================================== 11. design */
+  head('11 · the design pass holds');
+
+  /* the serif headline reveals word by word (blur + rise, staggered) */
+  const words = await page.locator('.masthead__title .blur-word').count();
+  ok(words >= 4, 'the blur-in headline exists (' + words + ' words)',
+    'found ' + words);
+  const stagger = await page.evaluate(() => {
+    const ws = [...document.querySelectorAll('.masthead__title .blur-word')];
+    return ws.map(w => w.style.getPropertyValue('--i').trim());
+  });
+  ok(new Set(stagger).size === stagger.length && stagger.length >= 4,
+    'headline words carry staggered indices', stagger.join(','));
+
+  /* the simulator panel is a quiet strip: no card-style bordered boxes.
+     A "box" is an element with a visible border on all four sides;
+     single hairlines between groups do not count. */
+  const boxed = await page.evaluate(() => {
+    const hits = [];
+    document.querySelectorAll('.panel, .panel *').forEach(el => {
+      const cs = getComputedStyle(el);
+      const ws = [cs.borderTopWidth, cs.borderRightWidth,
+        cs.borderBottomWidth, cs.borderLeftWidth];
+      if (!ws.every(x => parseFloat(x) > 0)) return;
+      if (cs.borderTopStyle === 'none' || cs.borderTopStyle === 'hidden') return;
+      const cols = [cs.borderTopColor, cs.borderRightColor,
+        cs.borderBottomColor, cs.borderLeftColor];
+      const seen = cols.some(c => {
+        const m = (c || '').match(/rgba?\(([^)]+)\)/);
+        if (!m) return c !== 'transparent';
+        const parts = m[1].split(',').map(x => parseFloat(x));
+        return (parts[3] === undefined ? 1 : parts[3]) > 0;
+      });
+      if (seen) {
+        hits.push(el.tagName + '.' +
+          (typeof el.className === 'string' ? el.className.split(' ')[0] : ''));
+      }
+    });
+    return hits;
+  });
+  ok(boxed.length <= 4,
+    'the simulator panel has no card-style bordered boxes (≤ 4)',
+    boxed.length + ' boxed: ' + boxed.slice(0, 6).join(' | '));
+
+  /* one lime action, not ten pills: exactly one primary button in the panel */
+  const primaries = await page.locator('.panel .btn--primary').count();
+  ok(primaries === 1, 'Turno guiado is ONE lime pill', 'found ' + primaries);
+
+  /* narrow viewport still renders the stage, the doubt screen and the unit */
+  const narrow = await browser.newContext({
+    viewport: { width: 375, height: 900 }
+  });
+  const nPage = await narrow.newPage();
+  const nErrs = watchErrors(nPage);
+  await nPage.goto(INDEX, { waitUntil: 'load' });
+  await nPage.waitForSelector('.view[data-screen="home"]');
+  await settle(nPage, 1200);
+  await nPage.screenshot({ path: shot('home-375.png') });
+  await nPage.click('#freeMode [data-act="dudoso"]');
+  await nPage.waitForSelector('.view[data-screen="dudoso"]');
+  await settle(nPage, 700);
+  await nPage.evaluate(() => window.scrollTo(0, 0));
+  await settle(nPage, 300);
+  await nPage.screenshot({ path: shot('dudoso-375.png') });
+  const nUnit = await narrow.newPage();
+  await nUnit.goto(UNIT, { waitUntil: 'load' });
+  await nUnit.waitForSelector('#momentBars .ubar');
+  await settle(nUnit, 1600);
+  await nUnit.screenshot({ path: shot('unit-375.png'), fullPage: true });
+  ok(nErrs.length === 0, 'no console errors at 375px', nErrs.join(' | '));
+  await narrow.close();
+
+  /* wide viewport stills on a fresh page (untouched by the token swap) */
+  const still = await ctx.newPage();
+  await still.goto(INDEX, { waitUntil: 'load' });
+  await still.waitForSelector('.view[data-screen="home"]');
+  await settle(still, 1400);
+  await still.evaluate(() => window.scrollTo(0, 0));
+  await settle(still, 300);
+  await still.screenshot({ path: shot('home-1440.png') });
+  await still.click('#freeMode [data-act="dudoso"]');
+  await still.waitForSelector('.view[data-screen="dudoso"]');
+  await settle(still, 700);
+  await still.evaluate(() => window.scrollTo(0, 0));
+  await settle(still, 300);
+  await still.screenshot({ path: shot('dudoso-1440.png') });
+  await still.close();
 
   /* =============================================================== 5. story */
   head('5 · the guided shift plays to the end');

@@ -6,17 +6,28 @@
 <title>Higiene de manos · reloj</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600&family=Inter:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/tokens.css">
 <link rel="stylesheet" href="css/watch.css">
 <link rel="stylesheet" href="css/stage.css">
 </head>
 <body class="stage">
 
+<div class="stage__atmosphere" aria-hidden="true">
+  <div class="stage__bloom" id="bloom"></div>
+</div>
+
+<header class="masthead">
+  <p class="panel__eyebrow masthead__kick" data-rise style="--i:0">Prototipo · Unidad 4B</p>
+  <h1 class="masthead__title" id="pageTitle" data-blur>Turno en la Unidad 4B</h1>
+  <p class="panel__lede masthead__lede" data-rise style="--i:1">El reloj avisa por vibración, nunca por sonido.
+    Corrige una marca con un toque.</p>
+</header>
+
 <main class="stage__grid">
 
   <!-- ============================ watch ============================ -->
-  <section class="stage__watch" id="stageWatch" aria-label="Reloj">
+  <section class="stage__watch" id="stageWatch" aria-label="Reloj" data-rise style="--i:1">
     <div class="watch-frame" id="watchFrame">
       <div class="watch" id="watch">
       <div class="band band--top" aria-hidden="true"></div>
@@ -63,20 +74,13 @@
     <!-- ============================ haptic strip ============================ -->
     <div class="haptic-strip" id="hapticStrip" data-pattern="" aria-live="polite">
       <div class="haptic-strip__head">
-        <span class="haptic-strip__mute" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
-               stroke-linecap="round" stroke-linejoin="round" focusable="false">
-            <path d="M11 5 6.5 9H3v6h3.5L11 19z"/>
-            <path d="m16 9.5 5 5M21 9.5l-5 5"/>
-          </svg>
-        </span>
         <span class="haptic-strip__name" id="hapticName"></span>
         <span class="haptic-strip__note">Sin sonido. Nunca.</span>
       </div>
       <div class="haptic-strip__bars"></div>
     </div>
 
-    <div class="note">
+    <div class="note" data-rise style="--i:2">
       <p class="note__label">Por qué cuatro</p>
       <p class="note__body">El aviso va al cuerpo, no a la pantalla. Ningún patrón
         suena: la vibración llega a la muñeca y nunca delante del paciente.</p>
@@ -89,61 +93,54 @@
   <!-- ============================ panel ============================ -->
   <aside class="panel" aria-label="Simulador">
 
-    <header class="panel__head">
-      <div class="panel__eyebrow caption">Prototipo</div>
-      <h1 class="panel__title">Turno en la Unidad 4B</h1>
-      <p class="panel__lede">El reloj avisa por vibración, nunca por sonido.
-        Corrige una marca con un toque.</p>
-    </header>
-
-    <section class="panel__block" aria-label="Turno guiado">
-      <div class="panel__blockhead">
-        <span class="panel__label">Turno guiado</span>
+    <section class="group" aria-label="Turno guiado" data-rise style="--i:2">
+      <div class="group__head">
+        <span class="group__title">Turno guiado</span>
         <span class="panel__clock caption" id="storyClock">listo</span>
       </div>
-      <div class="panel__row">
-        <button class="btn btn--primary" id="storyPlay" type="button">▶ Turno guiado</button>
-      </div>
-      <div class="panel__row panel__row--tight">
-        <button class="btn btn--ghost" id="storyPause" type="button" disabled>Pausar</button>
-        <button class="btn btn--ghost" id="storySkip" type="button" disabled>Saltar</button>
-        <button class="btn btn--ghost" id="storyRestart" type="button">Reiniciar</button>
+      <button class="btn btn--primary story-pill" id="storyPlay" type="button">▶ Turno guiado</button>
+      <div class="ctl-row">
+        <button class="btn ctl-btn" id="storyPause" type="button" disabled>Pausar</button>
+        <span class="ctl-sep" aria-hidden="true">·</span>
+        <button class="btn ctl-btn" id="storySkip" type="button" disabled>Saltar</button>
+        <span class="ctl-sep" aria-hidden="true">·</span>
+        <button class="btn ctl-btn" id="storyRestart" type="button">Reiniciar</button>
       </div>
     </section>
 
-    <section class="panel__block" aria-label="Modo libre">
-      <div class="panel__blockhead">
-        <span class="panel__label">Modo libre</span>
+    <section class="group" aria-label="Modo libre" data-rise style="--i:3">
+      <div class="group__head">
+        <span class="group__title">Modo libre</span>
         <span class="panel__clock caption" id="freeState">activo</span>
       </div>
-      <div class="panel__grid" id="freeMode">
-        <button class="btn btn--ghost" type="button" data-act="zona">Entrar a zona de paciente</button>
-        <button class="btn btn--ghost" type="button" data-act="lavado">Lavado detectado</button>
-        <button class="btn btn--ghost" type="button" data-act="salir">Salir sin lavado</button>
-        <button class="btn btn--ghost" type="button" data-act="dudoso">Lavado dudoso</button>
-        <button class="btn btn--ghost" type="button" data-act="codigo">Código azul</button>
-        <button class="btn btn--ghost" type="button" data-act="terminar">Terminar turno</button>
-        <button class="btn btn--ghost" type="button" data-act="reiniciar">Reiniciar</button>
+      <div class="free-list" id="freeMode">
+        <button class="btn free-btn" type="button" data-act="zona">Entrar a zona de paciente</button>
+        <button class="btn free-btn" type="button" data-act="lavado">Lavado detectado</button>
+        <button class="btn free-btn" type="button" data-act="salir">Salir sin lavado</button>
+        <button class="btn free-btn" type="button" data-act="dudoso">Lavado dudoso</button>
+        <button class="btn free-btn" type="button" data-act="codigo">Código azul</button>
+        <button class="btn free-btn" type="button" data-act="terminar">Terminar turno</button>
+        <button class="btn free-btn" type="button" data-act="reiniciar">Reiniciar</button>
       </div>
     </section>
 
-    <section class="panel__block" aria-label="Vocabulario de vibraciones">
-      <div class="panel__blockhead">
-        <span class="panel__label">Vocabulario</span>
+    <section class="group" aria-label="Vocabulario de vibraciones" data-rise style="--i:4">
+      <div class="group__head">
+        <span class="group__title">Vocabulario</span>
         <span class="panel__clock caption">cuatro patrones</span>
       </div>
       <ul class="vocab" id="vocab"></ul>
     </section>
 
-    <section class="panel__block" aria-label="Registro de eventos">
-      <div class="panel__blockhead">
-        <span class="panel__label">Registro</span>
+    <section class="group" aria-label="Registro de eventos" data-rise style="--i:5">
+      <div class="group__head">
+        <span class="group__title">Registro</span>
         <span class="panel__clock caption" id="logCount">0</span>
       </div>
       <ul class="log" id="log"></ul>
     </section>
 
-    <a class="panel__link" href="unit.html">
+    <a class="panel__link" href="unit.html" data-rise style="--i:6">
       Ver lo que ve Control de infecciones
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
@@ -156,5 +153,6 @@
 <script src="js/haptics.js"></script>
 <script src="js/watch.js"></script>
 <script src="js/story.js"></script>
+<script src="js/stage.js"></script>
 </body>
 </html>

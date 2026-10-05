@@ -6,7 +6,7 @@
 <title>Unidad 4B · Control de infecciones</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600&family=Inter:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/tokens.css">
 <link rel="stylesheet" href="css/watch.css">
 <link rel="stylesheet" href="css/stage.css">
@@ -15,21 +15,23 @@
 
 <header class="unit__head">
   <div class="unit__eyebrow">
-    <a class="unit__back" href="index.html">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
-        <path d="M4 12h15M13 6l6 6-6 6"/>
-      </svg>
-      Volver al reloj
-    </a>
+    <span>Control de infecciones</span>
     <span class="unit__badge">Datos de demostración</span>
   </div>
 
   <h1 class="unit__name">Unidad 4B</h1>
 
-  <p class="manifesto">
+  <p class="manifesto" data-rise style="--i:1">
     <em>Mide </em><strong>el proceso</strong><em>, no a las personas.</em>
   </p>
+
+  <a class="unit__back" href="index.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+      <path d="M4 12h15M13 6l6 6-6 6"/>
+    </svg>
+    Volver al reloj
+  </a>
 
 </header>
 
@@ -80,5 +82,6 @@
 </footer>
 
 <script src="js/unit.js"></script>
+<script src="js/stage.js"></script>
 </body>
 </html>
