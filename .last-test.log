@@ -1,0 +1,184 @@
+
+1 · index.html and unit.html load with zero console errors
+  ✓ index.html has no console errors
+  ✓ the watch boots on Home
+  ✓ unit.html has no console errors
+  ✓ unit.html renders 5 WHO-moment rows
+  ✓ unit.html renders a 24-cell heatmap
+
+2 · free mode drives the screens
+  ✓ Enter patient zone → Reminder visible
+  ✓ Reminder offers one pill: "Already did it"
+  ✓ Wash detected → Washing visible
+  ✓ Home counter incremented by 1 after the wash
+  ✓ Doubtful wash → Did you wash? visible
+  ✓ the screen asks "Did you wash?"
+  ✓ two pills, no form fields
+  ✓ no input fields on the correction screen
+  ✓ toast says "Noted. Thanks."
+  ✓ the doubt screen closes after one tap
+
+3 · a code azul silences the reminders
+  ✓ Code blue → Pause visible
+  ✓ a moon glyph shows in the status bar while paused
+  ✓ Enter patient zone while paused does NOT show Reminder
+  ✓ the swallowed reminder is logged as "muted"
+
+4 · end of shift and privacy
+  ✓ End shift → Shift over visible
+  ✓ Shift over shows the moment count
+  ✓ Shift over shows how many she fixed herself
+  ✓ Shift over states the 24 h window
+  ✓ the side button opens Who sees this
+  ✓ three rows: You · Infection control · No one
+  ✓ the unit sees totals without names
+
+6 · the vibration vocabulary reaches navigator.vibrate
+  ✓ each pattern plays its exact ms array
+  ✓ the panel documents 4 patterns
+  ✓ the strip states: No sound. Ever.
+
+7 · changing the primary propagates everywhere
+  ✓ index.html: nothing keeps rgb(166, 255, 0) (205 elements walked)
+  ✓ index.html: the new primary is in use
+  ✓ unit.html: nothing keeps rgb(166, 255, 0) (128 elements walked)
+  ✓ unit.html: the new primary is in use
+  ✓ index.html (light): nothing keeps rgb(166, 255, 0) (205 elements walked)
+  ✓ index.html (light): the new primary is in use
+  ✓ unit.html (light): nothing keeps rgb(166, 255, 0) (128 elements walked)
+  ✓ unit.html (light): the new primary is in use
+
+7b · light / dark switch
+  ✓ index.html has a theme toggle labelled "Switch theme"
+  ✓ index.html toggle carries sun + moon icons
+  ✓ unit.html has a theme toggle labelled "Switch theme"
+  ✓ unit.html toggle carries sun + moon icons
+  ✓ the toggle flips data-theme to light
+  ✓ the light choice persists across reload (localStorage)
+  ✓ the toggle flips back to dark
+  ✓ the watch screen stays pure black in dark
+  ✓ the watch screen stays pure black in light
+  ✓ contrast ≥ 4.5:1 in dark — .masthead__title
+  ✓ contrast ≥ 4.5:1 in dark — .panel__lede
+  ✓ contrast ≥ 4.5:1 in dark — .group__title
+  ✓ contrast ≥ 4.5:1 in dark — .free-btn
+  ✓ contrast ≥ 4.5:1 in dark — #storyClock
+  ✓ contrast ≥ 4.5:1 in dark — .note__body
+  ✓ contrast ≥ 4.5:1 in dark — .haptic-strip__note
+  ✓ contrast ≥ 4.5:1 in dark — .vocab__meaning
+  ✓ contrast ≥ 4.5:1 in dark — .ucard__note
+  ✓ contrast ≥ 4.5:1 in dark — .unit__eyebrow
+  ✓ contrast ≥ 4.5:1 in light — .masthead__title
+  ✓ contrast ≥ 4.5:1 in light — .panel__lede
+  ✓ contrast ≥ 4.5:1 in light — .group__title
+  ✓ contrast ≥ 4.5:1 in light — .free-btn
+  ✓ contrast ≥ 4.5:1 in light — #storyClock
+  ✓ contrast ≥ 4.5:1 in light — .note__body
+  ✓ contrast ≥ 4.5:1 in light — .haptic-strip__note
+  ✓ contrast ≥ 4.5:1 in light — .vocab__meaning
+  ✓ contrast ≥ 4.5:1 in light — .ucard__note
+  ✓ contrast ≥ 4.5:1 in light — .unit__eyebrow
+
+8 · source rules
+  ✓ no hex / rgb / hsl literals outside css/tokens.css
+  ✓ tokens.css declares --color-primary-500
+  ✓ tokens.css declares --color-neutral-950
+  ✓ tokens.css declares --color-neutral-900
+  ✓ tokens.css declares --color-neutral-700
+  ✓ tokens.css declares --color-neutral-600
+  ✓ tokens.css declares --color-neutral-400
+  ✓ tokens.css declares --color-neutral-50
+  ✓ tokens.css declares --color-black
+  ✓ tokens.css declares --ring-spectrum-1
+  ✓ "linear" appears only in the wash ring rule
+  ✓ no Spanish stopwords remain in static UI strings
+  ✓ no Spanish stopwords remain in rendered UI strings
+  ✓ no watch screen accuses: failure / violation / non-compliance / fault / error / negligence
+  ✓ all rendered UI copy is English (no Spanish stopwords)
+
+9 · reduced motion
+  ✓ watch.css has a prefers-reduced-motion block
+  ✓ it kills transitions
+  ✓ it kills animations
+  ✓ it kills the haptic shake
+  ✓ stage.css has a prefers-reduced-motion block
+  ✓ enter easing is cubic-bezier(0.16, 1, 0.3, 1)
+  ✓ exit easing is cubic-bezier(0.4, 0, 1, 1)
+  ✓ the enter easing is in use
+  ✓ the exit easing is in use
+  ✓ press feedback is scale(.97)
+  ✓ the check mark draws with stroke-dashoffset
+  ✓ reduced motion still draws the static bars
+  ✓ index.html has no console errors under reduced motion
+
+10 · the findings pass holds
+  ✓ contrast ≥ 4.5:1 — .home__shift
+  ✓ contrast ≥ 4.5:1 — .ev__time
+  ✓ contrast ≥ 4.5:1 — .pill--ghost
+  ✓ contrast ≥ 4.5:1 — .panel__lede
+  ✓ contrast ≥ 4.5:1 — .vocab__meaning
+  ✓ contrast ≥ 4.5:1 — .note__body
+  ✓ contrast ≥ 4.5:1 — .haptic-strip__note
+  ✓ contrast ≥ 4.5:1 — .vocab__pattern
+  ✓ contrast ≥ 4.5:1 — #storyClock
+  ✓ contrast ≥ 4.5:1 — .ucard__note
+  ✓ contrast ≥ 4.5:1 — .uheat__axis
+  ✓ contrast ≥ 4.5:1 — .unit__eyebrow
+  ✓ contrast ≥ 4.5:1 — .unotice__lock
+  ✓ contrast ≥ 4.5:1 — doubt context
+  ✓ contrast ≥ 4.5:1 — shift note
+  ✓ every CSS duration cites a motion token
+  ✓ no bare ms inside JS style strings
+  ✓ at most 3 easings: enter expo + exit (press reuses enter)
+  ✓ a .label tier exists (uppercase, +0.18em tracking)
+  ✓ Last 3 speaks in the kicker tier
+  ✓ unit card labels speak in the kicker tier
+  ✓ the panel kicker spends no lime
+  ✓ tabular numerals — .home__of
+  ✓ tabular numerals — .home__shift
+  ✓ tabular numerals — #storyClock
+  ✓ tabular numerals — .ubar__val
+  ✓ tabular numerals — .uheat__axis
+  ✓ tabular numerals — .ucard__note
+  ✓ Did you wash? sets large enough to read at a glance
+  ✓ doubt context is a kicker, not a rival title
+  ✓ ghost pills clear the 56px gloved-hand floor
+  ✓ no shadows anywhere on the watch screens
+  ✓ :focus-visible rules exist for stage and watch alike
+
+11 · the design pass holds
+  ✓ the blur-in headline exists (5 words)
+  ✓ headline words carry staggered indices
+  ✓ the simulator panel has no card-style bordered boxes (≤ 4)
+  ✓ Turno guiado is ONE lime pill
+  ✓ no console errors at 375px
+
+12 · the stage polish holds
+  ✓ the case clears 55% of the viewport height
+  ✓ the hint clears the bottom band by 24px
+  ✓ the hint is one line
+  ✓ the strip is "Live vibration"
+  ✓ idle is one flat line, no static block row
+  ✓ a single Reset in the panel
+  ✓ no console errors on the wide stage
+  ✓ at 375px the watch sits above the panel
+  ✓ no horizontal scroll at 375px
+  ✓ the headline wraps at 375px
+  ✓ no console errors on the narrow stage
+
+5 · the guided shift plays to the end
+  ✓ Home has content below the fold
+  ✓ the crown wheel scrolls the current screen
+  ✓ the crown rotates as it scrolls
+  ✓ Home shows the last 3 events
+  ✓ the event list grows the scrollable area below the fold
+  ✓ the progress ring is 12 segments with gaps
+  ✓ the fill is partial, not all-or-nothing
+  ✓ every lit segment has a real length
+  ✓ the leading segment is partially drawn
+  ✓ Esc goes back to Home
+  ✓ every free-mode button is reachable by keyboard
+  ✓ the story shows a one-line English subtitle
+  ✓ the subtitle has no Spanish leftovers
+  ✓ the wash runs at ×5 in the story and says so
+  ✓ no console errors while driving the crown and keys
