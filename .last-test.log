@@ -151,7 +151,9 @@
   ✓ headline words carry staggered indices
   ✓ the simulator panel has no card-style bordered boxes (≤ 4)
   ✓ Turno guiado is ONE lime pill
+  ✓ one opaque screen at settle (dudoso, 375px)
   ✓ no console errors at 375px
+  ✓ one opaque screen at settle (dudoso, 1440px)
 
 12 · the stage polish holds
   ✓ the case clears 55% of the viewport height
@@ -163,7 +165,7 @@
   ✓ no console errors on the wide stage
   ✓ at 375px the watch sits above the panel
   ✓ no horizontal scroll at 375px
-  ✓ the headline wraps at 375px
+  ✓ the compact headline fits at 375px
   ✓ no console errors on the narrow stage
 
 5 · the guided shift plays to the end
@@ -217,23 +219,62 @@
   ✓ no console errors across the hostile pass
 
 screenshots · 6 key moments x 2 themes
+  ✓ one opaque screen at settle while shooting home (dark)
   ✓ no console errors while shooting home (dark)
+  ✓ one opaque screen at settle while shooting recordatorio (dark)
   ✓ no console errors while shooting recordatorio (dark)
+  ✓ one opaque screen at settle while shooting lavando (dark)
   ✓ no console errors while shooting lavando (dark)
+  ✓ one opaque screen at settle while shooting dudoso (dark)
   ✓ no console errors while shooting dudoso (dark)
+  ✓ one opaque screen at settle while shooting fin (dark)
   ✓ no console errors while shooting fin (dark)
+  ✓ one opaque screen at settle while shooting quien (dark)
   ✓ no console errors while shooting quien (dark)
+  ✓ one opaque screen at settle while shooting pausa (dark)
   ✓ no console errors while shooting pausa (dark)
+  ✓ one opaque screen at settle while shooting home (light)
   ✓ no console errors while shooting home (light)
+  ✓ one opaque screen at settle while shooting recordatorio (light)
   ✓ no console errors while shooting recordatorio (light)
+  ✓ one opaque screen at settle while shooting lavando (light)
   ✓ no console errors while shooting lavando (light)
+  ✓ one opaque screen at settle while shooting dudoso (light)
   ✓ no console errors while shooting dudoso (light)
+  ✓ one opaque screen at settle while shooting fin (light)
   ✓ no console errors while shooting fin (light)
+  ✓ one opaque screen at settle while shooting quien (light)
   ✓ no console errors while shooting quien (light)
+  ✓ one opaque screen at settle while shooting pausa (light)
   ✓ no console errors while shooting pausa (light)
 
+15 · W4 polish: fold, short watch copy, settled transitions
+  ✓ the whole watch clears the fold at 1440x900
+  ✓ Guided shift clears the fold at 1440x900
+  ✓ no console errors at 1440x900
+  ✓ the whole watch clears the fold at 1280x720
+  ✓ Guided shift clears the fold at 1280x720
+  ✓ no console errors at 1280x720
+  ✓ watch lines stay <= 4 words on home
+  ✓ no diagnostic line on the watch (home)
+  ✓ watch lines stay <= 4 words on recordatorio
+  ✓ no diagnostic line on the watch (recordatorio)
+  ✓ watch lines stay <= 4 words on lavando
+  ✓ no diagnostic line on the watch (lavando)
+  ✓ watch lines stay <= 4 words on dudoso
+  ✓ no diagnostic line on the watch (dudoso)
+  ✓ watch lines stay <= 4 words on fin
+  ✓ no diagnostic line on the watch (fin)
+  ✓ watch lines stay <= 4 words on quien
+  ✓ no diagnostic line on the watch (quien)
+  ✓ watch lines stay <= 4 words on pausa
+  ✓ no diagnostic line on the watch (pausa)
+  ✓ the scope panel keeps the why line
+  ✓ watch:settled fires with the new screen
+  ✓ one opaque screen at settle after the event
+
 summary
-  201 passed, 0 failed
+  240 passed, 0 failed
   screenshots → shots/
 
 
@@ -297,13 +338,20 @@ electron · Hand Hygiene Watch boots as a desktop app
   ✓ window title is "Hand Hygiene Watch"
   ✓ the app window has a theme toggle
   ✓ the toggle flips data-theme (light → dark)
-  ✓ dark + light stage screenshots saved
+  ✓ the whole watch clears the fold at 1440x900
+  ✓ Guided shift clears the fold at 1440x900
+  ✓ the whole watch clears the fold at 1280x720
+  ✓ Guided shift clears the fold at 1280x720
+  ✓ dark + light stage screenshots saved (idle, doubtful, wash)
   ✓ Doubtful wash shows the confirm screen
+  ✓ the watch carries no diagnostic line
   ✓ the unit page opens inside the same window
+  ✓ every unit section revealed after scrolling
+  ✓ bar fills and heat cells finished growing
   ✓ unit page links back to the watch
   ✓ no console errors inside the app window
 
 summary
-  8 passed, 0 failed
+  15 passed, 0 failed
   screenshots → shots/app-*.png
 
