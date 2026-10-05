@@ -11,6 +11,7 @@
 <link rel="stylesheet" href="css/tokens.css">
 <link rel="stylesheet" href="css/watch.css">
 <link rel="stylesheet" href="css/stage.css">
+<link rel="stylesheet" href="css/ai.css">
 <script src="js/theme.js"></script>
 </head>
 <body class="unit">
@@ -64,6 +65,18 @@
     <div class="uheat" id="heat"></div>
   </section>
 
+  <section class="ucard ucard--wide" aria-labelledby="t-fix">
+    <p class="ucard__label">System fixes</p>
+    <h2 class="ucard__title" id="t-fix">Where the process slips</h2>
+    <p class="ucard__note">From anonymous totals only: the weakest moment
+      and the quietest hours, with the numbers behind each fix.</p>
+    <ol class="fix__list" id="fixList"></ol>
+    <div class="fix__head">
+      <span class="ai-badge" id="fixBadge">Rules</span>
+      <button class="ai-ghost" id="fixModel" type="button" hidden>Improve with Ollama</button>
+    </div>
+  </section>
+
   <section class="ucard ucard--wide" data-io aria-labelledby="t-corr">
     <p class="ucard__label">Staff corrections</p>
     <h2 class="ucard__title" id="t-corr">The watch was wrong</h2>
@@ -93,6 +106,7 @@
 </footer>
 
 <script src="js/log.js"></script>
+<script src="js/ai.js"></script>
 <script src="js/unit.js"></script>
 <script src="js/stage.js"></script>
 </body>

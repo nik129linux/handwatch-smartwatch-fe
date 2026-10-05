@@ -47,7 +47,8 @@ var story = (function () {
         watch.bump();
         return 'quiet';
       }
-      var run = Sense.run('wash', { seed: opts && opts.seed, noise: Sense.noise }, true);
+      var run = Sense.run('wash', { seed: opts && opts.seed, noise: Sense.noise,
+        moment: 'before-patient' }, true);
       return routeDetection(run, opts || {}, 'before-patient', null);
     },
 
@@ -60,7 +61,7 @@ var story = (function () {
         return 'swallowed';
       }
       var run = Sense.run(Sense.DOUBT_SCENARIO,
-        { seed: Sense.DOUBT_SEED, noise: Sense.DOUBT_NOISE }, true);
+        { seed: Sense.DOUBT_SEED, noise: Sense.DOUBT_NOISE, moment: momentFor(when) }, true);
       return routeDetection(run, {}, momentFor(when), when || 'On exit');
     },
 
@@ -108,10 +109,14 @@ var story = (function () {
       watch.state.lastWhy = Sense.whyLine();
       haptics.play('doubtful');
       Log.record(moment, 'unsure', false);
+      /* the console row carries what an explanation needs and nothing
+         more: the moment plus the live run (confidence, noise). */
+      pendingFacts = { entry: { moment: moment }, run: run };
       watch.addEvent({
         text: 'Doubt · ' + watch.state.bed,
         kind: 'you'
       });
+      pendingFacts = null;
       watch.go('dudoso', 'alert');
       return 'shown';
     }
@@ -132,21 +137,60 @@ var story = (function () {
 
   /* ------------------------------------------------------------ the log */
 
-  function pushLog(time, text, kind) {
-    logLines.unshift({ time: time, text: text, kind: kind || 'you' });
+  /* Facts for the next console row (set by routeDetection around the
+     watch.addEvent that logs a doubt, consumed by the listener below). */
+  var pendingFacts = null;
+
+  function pushLog(time, text, kind, facts) {
+    logLines.unshift({ time: time, text: text, kind: kind || 'you', facts: facts || null });
     if (logLines.length > 8) logLines.pop();
     renderLog();
+  }
+
+  function escLog(s) {
+    return String(s).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
   }
 
   function renderLog() {
     if (!el.log) return;
     el.log.innerHTML = logLines.map(function (l, i) {
-      return '<li class="log__row" style="--i:' + i + '">' +
+      var row = '<li class="log__row" style="--i:' + i + '">' +
         '<span class="log__time">' + l.time + '</span>' +
         '<span class="log__dot log__dot--' + l.kind + '"></span>' +
-        '<span class="log__text">' + l.text + '</span></li>';
+        '<span class="log__text">' + l.text + '</span>';
+      if (l.facts) {
+        row += '<button class="log__why" type="button" data-why="' + i + '">Why</button>' +
+          '<span class="log__explain" data-explain="' + i + '" hidden></span>';
+      }
+      return row + '</li>';
     }).join('');
     el.logCount.textContent = String(logLines.length);
+  }
+
+  /* One neutral line on why the watch may have been wrong. Rules answer
+     immediately; the model only with consent over the exact payload. */
+  function explainRow(ix, btn) {
+    var line = logLines[ix];
+    if (!line || !line.facts || typeof AI === 'undefined') return;
+    var host = el.log.querySelector('[data-explain="' + ix + '"]');
+    if (!host || !host.hidden) return;
+    btn.disabled = true;
+    var transport = null;
+    try { transport = AI.browserTransport(); } catch (e) { transport = null; }
+    AI.requestExplain(line.facts.entry, line.facts.run, {
+      transport: transport,
+      consent: null,
+      onConsent: AI.requestConsent
+    }).then(function (r) {
+      if (!r || !r.line) return;
+      host.innerHTML = '<p class="log__line"></p><span class="ai-badge"></span>';
+      host.querySelector('.log__line').textContent = r.line;
+      host.querySelector('.ai-badge').textContent = r.source;
+      host.hidden = false;
+    }).catch(function () { /* the row stays as it was */ })
+      .then(function () { btn.disabled = false; });
   }
 
   /* ------------------------------------------------------------ fingertip */
@@ -409,7 +453,14 @@ var story = (function () {
       mirrorPause(ev.detail.paused);
     });
     document.addEventListener('watch:log', function (ev) {
-      pushLog(ev.detail.time, ev.detail.text, ev.detail.kind === 'ok' ? 'ok' : 'you');
+      pushLog(ev.detail.time, ev.detail.text, ev.detail.kind === 'ok' ? 'ok' : 'you',
+        pendingFacts);
+    });
+
+    el.log.addEventListener('click', function (ev) {
+      var btn = ev.target.closest('[data-why]');
+      if (!btn) return;
+      explainRow(parseInt(btn.getAttribute('data-why'), 10) || 0, btn);
     });
 
     window.addEventListener('resize', function () { watch.fit(); });

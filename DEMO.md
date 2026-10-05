@@ -31,6 +31,11 @@ correct it yourself. Turn the crown with the mouse wheel; **Esc** goes back.
 End on **See what Infection Control sees**: bars by WHO moment, no names,
 *Measure the process, not the people.*
 
+**1:50 — The watch learns (optional).** Correct the same doubt twice: Home
+reads *Learning · fewer marks* — the threshold moved, not the nurse.
+On the unit page, *Where the process slips* names the weakest moment with
+numbers and a dispenser fix. Every line carries its source: Rules, or Ollama.
+
 ## Real vs simulated
 
 Real: the on-device classifier (`js/classifier.js` + `js/signal.js`) — every

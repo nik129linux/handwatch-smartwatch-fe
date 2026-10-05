@@ -1,0 +1,164 @@
+/* ==========================================================================
+   ai.css — the improvement layer dressing: learning note, source
+   badges, consent sheet, pattern-finder card. Tokens only, no raw
+   colors; every duration cites a motion token.
+   ========================================================================== */
+
+/* --- the quiet learning note on Home (same voice as the shift line) --- */
+.home__learn {
+  margin-top: var(--sp-1);
+  color: var(--text-secondary);
+}
+
+/* --- source badge: Rules, or the model that wrote the line --- */
+.ai-badge {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: var(--leading-micro);
+  letter-spacing: var(--tracking-micro);
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  background: var(--bg-raised);
+  border-radius: var(--radius-pill);
+  padding: var(--sp-1) var(--sp-2);
+  margin-left: var(--sp-2);
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+/* --- the "Why" affordance on a log row: a quiet text button --- */
+.log__why {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  letter-spacing: var(--tracking-micro);
+  text-transform: uppercase;
+  color: var(--text-accent);
+  background: transparent;
+  border: 0;
+  padding: var(--sp-1) var(--sp-2);
+  margin-left: auto;
+  cursor: pointer;
+  flex: none;
+}
+.log__why:hover {
+  text-decoration: underline;
+}
+.log__line {
+  font-size: var(--text-caption);
+  line-height: var(--leading-caption);
+  color: var(--text-secondary);
+  margin: var(--sp-1) 0 0;
+}
+.log__row {
+  flex-wrap: wrap;
+}
+.log__explain {
+  flex-basis: 100%;
+}
+
+/* --- pattern-finder card on the unit page --- */
+.fix__list {
+  list-style: none;
+  margin: var(--sp-4) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+.fix__item {
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.fix__head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-top: var(--sp-4);
+}
+.ai-ghost {
+  font-family: var(--font-body);
+  font-size: var(--text-caption);
+  color: var(--text-secondary);
+  background: var(--bg-raised);
+  border: 0;
+  border-radius: var(--radius-pill);
+  padding: var(--sp-2) var(--sp-4);
+  cursor: pointer;
+}
+.ai-ghost:hover {
+  color: var(--text-primary);
+}
+
+/* --- consent sheet: the exact payload before the first model call --- */
+.ai-consent {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-6);
+  background: color-mix(in srgb, var(--color-black) 62%, transparent);
+}
+.ai-consent[hidden] {
+  display: none;
+}
+.ai-consent__card {
+  max-width: 560px;
+  width: 100%;
+  background: var(--bg-card);
+  border-radius: var(--radius-card-watch);
+  padding: var(--sp-6);
+}
+.ai-consent__title {
+  font-size: var(--text-subheading);
+  line-height: var(--leading-subheading);
+  color: var(--text-primary);
+  margin: 0 0 var(--sp-2);
+}
+.ai-consent__body {
+  font-size: var(--text-caption);
+  line-height: var(--leading-caption);
+  color: var(--text-secondary);
+  margin: 0 0 var(--sp-3);
+}
+.ai-consent__payload {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: var(--leading-micro);
+  color: var(--text-secondary);
+  background: var(--bg-inset);
+  border-radius: var(--radius-sm);
+  padding: var(--sp-3);
+  max-height: 220px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 0 0 var(--sp-4);
+}
+.ai-consent__row {
+  display: flex;
+  gap: var(--sp-3);
+  justify-content: flex-end;
+}
+.ai-ok {
+  font-family: var(--font-body);
+  font-size: var(--text-caption);
+  font-weight: var(--weight-medium);
+  color: var(--text-inverse);
+  background: var(--color-primary-500);
+  border: 0;
+  border-radius: var(--radius-pill);
+  padding: var(--sp-2) var(--sp-4);
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .log__why:hover,
+  .ai-ghost:hover {
+    text-decoration: none;
+  }
+}

@@ -145,12 +145,70 @@ var unit = (function () {
     return (demo || 0) + (real || 0);
   }
 
+  /* --- system fixes: rules first, model only with consent ---------------- */
+
+  /* Aggregates only — the same anonymous totals the bars already show. */
+  function aggregates() {
+    return {
+      unit: '4B',
+      moments: MOMENTS.map(function (m) {
+        return { name: m.name, done: m.done, total: m.total, pct: m.pct };
+      }),
+      hours: HOURS.slice(),
+      shiftChangeHour: SHIFT_CHANGE,
+      corrections: aggregateCorrections(CORRECTIONS, realCorrected())
+    };
+  }
+
+  function paintFixes(findings, source) {
+    var host = document.getElementById('fixList');
+    if (host) {
+      host.innerHTML = findings.map(function (f, i) {
+        return '<li class="fix__item" style="--i:' + i + '">' + esc(f.text) + '</li>';
+      }).join('');
+      observeNew(host);
+    }
+    var badge = document.getElementById('fixBadge');
+    if (badge) badge.textContent = source;
+  }
+
+  function fixes() {
+    var agg, payload, first;
+    try {
+      agg = aggregates();
+      payload = AI.buildUnitPayload(agg);
+      first = AI.rulesFindings(payload);
+    } catch (e) { return; }
+    if (!first.length) return;
+    paintFixes(first, 'Rules');
+    /* The model button exists only where the Electron bridge does:
+       plain browsers stay rules-only, with no dead control. */
+    var btn = document.getElementById('fixModel');
+    if (!btn) return;
+    var transport = null;
+    try { transport = AI.browserTransport(); } catch (e) { transport = null; }
+    if (!transport) return;
+    btn.hidden = false;
+    btn.addEventListener('click', function () {
+      btn.disabled = true;
+      AI.requestFindings(agg, {
+        transport: transport,
+        consent: null,
+        onConsent: AI.requestConsent
+      }).then(function (r) {
+        if (r && r.findings && r.findings.length) paintFixes(r.findings, r.source);
+      }).catch(function () { /* rules already on screen — keep them */ })
+        .then(function () { btn.disabled = false; });
+    });
+  }
+
   function pad2(n) { return (n < 10 ? '0' : '') + n; }
 
   function mount() {
     momentBars();
     heatmap();
     corrections();
+    fixes();
     /* the Electron file copy can land after first paint — re-count then */
     if (typeof document !== 'undefined') {
       document.addEventListener('watch:log-sync', corrections);

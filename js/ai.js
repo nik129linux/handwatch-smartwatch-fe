@@ -341,6 +341,62 @@ var AI = (function () {
     return { line: r.value, source: r.source, payload: facts };
   }
 
+  /* --- consent: the exact payload before the first model call ----------- */
+
+  /* One remembered answer per page load. The sheet shows the exact JSON
+     that would leave the process — aggregates only, by construction —
+     with Allow / Not now buttons (no inputs, so unit-page anonymity
+     assertions about filter controls keep holding). Node has no
+     document: decline, rules answer. */
+  var consentMemory = null;
+
+  function requestConsent(payload) {
+    if (consentMemory) return Promise.resolve(consentMemory);
+    if (typeof document === 'undefined') return Promise.resolve('no');
+    return new Promise(function (resolve) {
+      var host = document.createElement('div');
+      host.className = 'ai-consent';
+      host.innerHTML =
+        '<div class="ai-consent__card" role="dialog" aria-label="Share anonymous totals">' +
+        '<p class="ai-consent__title">Share anonymous totals?</p>' +
+        '<p class="ai-consent__body">Only this leaves the page ' +
+        '(no names, no people, no free text). The model may only cite ' +
+        'these numbers back.</p>' +
+        '<pre class="ai-consent__payload"></pre>' +
+        '<div class="ai-consent__row">' +
+        '<button class="ai-ghost" type="button" data-ai-no>Not now</button>' +
+        '<button class="ai-ok" type="button" data-ai-yes>Allow once</button>' +
+        '</div></div>';
+      host.querySelector('.ai-consent__payload').textContent =
+        JSON.stringify(payload, null, 2);
+      function done(answer) {
+        consentMemory = answer;
+        try { host.parentNode.removeChild(host); } catch (e) {}
+        resolve(answer);
+      }
+      host.querySelector('[data-ai-no]').addEventListener('click', function () {
+        done('no');
+      });
+      host.querySelector('[data-ai-yes]').addEventListener('click', function () {
+        done('yes');
+      });
+      document.body.appendChild(host);
+      var ok = host.querySelector('[data-ai-yes]');
+      if (ok && ok.focus) { try { ok.focus(); } catch (e) {} }
+    });
+  }
+
+  /* The renderer bridge: prompts go to Electron main, which asks Ollama
+     on localhost. Absent in a plain browser — then pages use rules only. */
+  function browserTransport() {
+    try {
+      if (typeof window !== 'undefined' && window.__aiAPI && window.__aiAPI.query) {
+        return { query: function (prompt) { return window.__aiAPI.query(prompt); } };
+      }
+    } catch (e) { /* plain browser — rules only */ }
+    return null;
+  }
+
   return {
     EXPLAIN_MAX: EXPLAIN_MAX,
     FINDING_MAX: FINDING_MAX,
@@ -353,7 +409,9 @@ var AI = (function () {
     parseFindings: parseFindings,
     parseExplanation: parseExplanation,
     requestFindings: requestFindings,
-    requestExplain: requestExplain
+    requestExplain: requestExplain,
+    requestConsent: requestConsent,
+    browserTransport: browserTransport
   };
 })();
 

@@ -41,7 +41,12 @@ var Sense = (function () {
     if (!S || !C) {
       throw new Error('sense needs signal.js and classifier.js loaded first');
     }
-    return { Signal: S, Classifier: C };
+    /* Learning is optional: without the script every verdict is raw. */
+    var K = (typeof Calibrate !== 'undefined') ? Calibrate : null;
+    if (!K && typeof require === 'function') {
+      try { K = require('./calibrate.js'); } catch (e) { K = null; }
+    }
+    return { Signal: S, Classifier: C, Calibrate: K };
   }
 
   function nextSeed() {
@@ -70,7 +75,19 @@ var Sense = (function () {
     var stream = d.Signal.generate(scenario, { seed: seed, noise: nz });
     var result = d.Classifier.classify(stream);
     var word = d.Classifier.verdict(result);
-    last = { stream: stream, result: result, verdict: word, seed: seed, noise: nz };
+    /* On-device learning re-reads the same result against the lifted
+       threshold for this (moment, noise) context. At zero lift the floor
+       is the classifier's own 0.40, so unworn watches read identically. */
+    var learned = false;
+    if (opts.moment && d.Calibrate) {
+      try {
+        var dec = d.Calibrate.decide(result, { moment: opts.moment, noise: nz });
+        word = dec.verdict;
+        learned = dec.adjusted;
+      } catch (e) { /* a full store reads as raw — the watch keeps going */ }
+    }
+    last = { stream: stream, result: result, verdict: word, seed: seed,
+      noise: nz, moment: opts.moment || null, learned: learned };
     if (typeof document !== 'undefined' && document.dispatchEvent) {
       document.dispatchEvent(new CustomEvent('sense:run', {
         detail: { scenario: scenario, seed: seed, noise: nz, drive: !!drive }

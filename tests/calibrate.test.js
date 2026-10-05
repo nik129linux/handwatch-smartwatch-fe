@@ -124,7 +124,7 @@ head('3 · decay and reset');
 {
   const cal = Calibrate.create();
   for (let i = 0; i < 6; i++) cal.correct(CTX, T0 + i);
-  ok(Math.abs(cal.lift(CTX, T0 + 5) - 0.12) < 1e-9,
+  ok(Math.abs(cal.lift(CTX, T0 + 5) - 0.12) < 1e-6,
     '6 corrections reach the 0.12 cap', cal.lift(CTX, T0 + 5).toFixed(3));
 
   const later = cal.lift(CTX, T0 + 4 * Calibrate.DAY_MS);

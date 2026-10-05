@@ -40,15 +40,17 @@ async function withTimeout(fetchImpl, url, opts, timeoutMs) {
   }
 }
 
-/* First model without remote_host; else the first model at all.
-   A cloud-tagged list (gemma4:31b-cloud) is valid: it is the only
-   model on some machines. */
+/* Model policy: OLLAMA_MODEL env wins, otherwise a gemma model (cloud-tagged
+   gemma4:31b-cloud is fine). Never auto-pick another local model: a big local
+   one can freeze the PC. No gemma = null = rules. */
 function pickModel(models) {
-  if (!Array.isArray(models) || !models.length) return null;
+  if (!Array.isArray(models)) return null;
+  const want = process.env.OLLAMA_MODEL;
   for (const m of models) {
-    if (m && !m.remote_host) return m.name || null;
+    const n = m && m.name;
+    if (n && (want ? n === want : /^gemma/i.test(n))) return n;
   }
-  return (models[0] && models[0].name) || null;
+  return null;
 }
 
 async function listModels(opts) {

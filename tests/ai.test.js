@@ -140,10 +140,10 @@ const EXPLAIN_OK = JSON.stringify({
   {
     const payload = AI.buildUnitPayload(demoAgg());
     const text = JSON.stringify({ findings: [{ text: AI.rulesFindings(payload)[0].text }] });
-    const t = transportFor(mockFetch([{ name: 'qwen3:8b' }], text));
+    const t = transportFor(mockFetch([{ name: 'gemma4:31b-cloud' }], text));
     const r = await AI.requestFindings(demoAgg(),
       { transport: t, consent: 'yes' });
-    ok(r.source === 'Ollama · qwen3:8b', 'source badge names the model', r.source);
+    ok(r.source === 'Ollama · gemma4:31b-cloud', 'source badge names the model', r.source);
     ok(r.findings.length === 1, 'the model findings are used');
   }
 
@@ -159,7 +159,7 @@ const EXPLAIN_OK = JSON.stringify({
   /* 6 · invalid JSON: back to rules -------------------------------------- */
   head('6 · invalid JSON');
   {
-    const t = transportFor(mockFetch([{ name: 'qwen3:8b' }], 'not json {'));
+    const t = transportFor(mockFetch([{ name: 'gemma4:31b-cloud' }], 'not json {'));
     const r = await AI.requestFindings(demoAgg(), { transport: t, consent: 'yes' });
     ok(r.source === 'Rules', 'garbage JSON reads as Rules', r.source);
   }
@@ -168,7 +168,7 @@ const EXPLAIN_OK = JSON.stringify({
   head('7 · hallucinated number rejected');
   {
     const text = JSON.stringify({ findings: [{ text: 'After the surroundings reads 41% vs 97% unit mean. Move a dispenser.' }] });
-    const t = transportFor(mockFetch([{ name: 'qwen3:8b' }], text));
+    const t = transportFor(mockFetch([{ name: 'gemma4:31b-cloud' }], text));
     const r = await AI.requestFindings(demoAgg(), { transport: t, consent: 'yes' });
     ok(r.source === 'Rules', 'ungrounded numbers fall back to rules', r.source);
     ok(/62%/.test(r.findings[0].text), 'the rules fix cites the real number');
@@ -180,8 +180,9 @@ const EXPLAIN_OK = JSON.stringify({
     const models = [{ name: 'gemma4:31b-cloud', remote_host: 'https://x' }];
     ok(Ollama.pickModel(models) === 'gemma4:31b-cloud',
       'the only model is picked, cloud tag and all');
-    ok(Ollama.pickModel([{ name: 'a', remote_host: 'h' }, { name: 'b' }]) === 'b',
-      'a local model is preferred when present');
+    ok(Ollama.pickModel([{ name: 'qwen:4b' }, { name: 'gemma4:31b-cloud', remote_host: 'h' }]) === 'gemma4:31b-cloud',
+      'gemma wins over another local model');
+    ok(Ollama.pickModel([{ name: 'qwen:4b' }]) === null, 'no gemma means rules, never qwen');
     const t = transportFor(mockFetch(models, EXPLAIN_OK));
     const r = await AI.requestExplain({ moment: 'before-patient' },
       { result: { confidence: 0.5 }, noise: 0.55 },
@@ -195,7 +196,7 @@ const EXPLAIN_OK = JSON.stringify({
   head('9 · consent and timeout');
   {
     let asked = null;
-    const t = transportFor(mockFetch([{ name: 'qwen3:8b' }], EXPLAIN_OK));
+    const t = transportFor(mockFetch([{ name: 'gemma4:31b-cloud' }], EXPLAIN_OK));
     const declined = await AI.requestExplain({ moment: 'before-patient' },
       { result: { confidence: 0.5 }, noise: 0.55 },
       { transport: t, consent: null, onConsent: async (p) => { asked = p; return 'no'; } });
