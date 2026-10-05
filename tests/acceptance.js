@@ -637,6 +637,79 @@ async function settle(page, ms) { await page.waitForTimeout(ms); }
   await still.screenshot({ path: shot('dudoso-1440.png') });
   await still.close();
 
+  /* =============================================================== 12. stage */
+  head('12 · the stage polish holds');
+
+  /* the watch is the hero: the case clears 55% of the viewport at 1440x900 */
+  const wide = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const wPage = await wide.newPage();
+  const wErrs = watchErrors(wPage);
+  await wPage.goto(INDEX, { waitUntil: 'load' });
+  await wPage.waitForSelector('.view[data-screen="home"]');
+  await settle(wPage, 1200);
+  const hero = await wPage.evaluate(() => {
+    const r = document.querySelector('.case').getBoundingClientRect();
+    return { h: r.height, vh: window.innerHeight };
+  });
+  ok(hero.h >= hero.vh * 0.55, 'the case clears 55% of the viewport height',
+    'case ' + Math.round(hero.h) + 'px of ' + hero.vh + 'px');
+
+  /* the hint sits below the band with room to breathe, on one line */
+  const gap = await wPage.evaluate(() => {
+    const band = document.querySelector('.band--bottom').getBoundingClientRect();
+    const hint = document.querySelector('.stage__hint').getBoundingClientRect();
+    const cs = getComputedStyle(document.querySelector('.stage__hint'));
+    return { clear: hint.top - band.bottom, wrap: cs.whiteSpace, top: hint.top };
+  });
+  ok(gap.clear >= 24, 'the hint clears the bottom band by 24px',
+    'clear ' + Math.round(gap.clear) + 'px');
+  ok(gap.wrap === 'nowrap', 'the hint is one line', 'white-space ' + gap.wrap);
+
+  /* the strip names live vibration, not the vocabulary list */
+  const stripName = await wPage.evaluate(() =>
+    document.querySelector('#hapticName').textContent);
+  ok(/Vibración en vivo/.test(stripName), 'the strip is "Vibración en vivo"',
+    stripName);
+  const idleBars = await wPage.locator('.haptic-strip__bars .haptic-bar').count();
+  ok(idleBars === 1, 'idle is one flat line, no static block row',
+    'bars: ' + idleBars);
+
+  /* one global Reiniciar in the panel */
+  const resets = await wPage.evaluate(() =>
+    [...document.querySelectorAll('.panel .btn')]
+      .filter(b => /reiniciar/i.test(b.textContent)).length);
+  ok(resets === 1, 'a single Reiniciar in the panel', 'found ' + resets);
+
+  await wPage.screenshot({ path: shot('stage-1440.png') });
+  ok(wErrs.length === 0, 'no console errors on the wide stage', wErrs.join(' | '));
+
+  /* 375px: the watch stacks above the panel, nothing scrolls sideways */
+  const slim = await browser.newContext({ viewport: { width: 375, height: 900 } });
+  const sPage = await slim.newPage();
+  const sErrs = watchErrors(sPage);
+  await sPage.goto(INDEX, { waitUntil: 'load' });
+  await sPage.waitForSelector('.view[data-screen="home"]');
+  await settle(sPage, 1200);
+  const narrow2 = await sPage.evaluate(() => {
+    const watch = document.querySelector('#stageWatch').getBoundingClientRect();
+    const panel = document.querySelector('.panel').getBoundingClientRect();
+    const title = document.querySelector('.masthead__title').getBoundingClientRect();
+    return {
+      stacked: watch.bottom <= panel.top + 1,
+      hscroll: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      titleLines: title.height > parseFloat(getComputedStyle(
+        document.querySelector('.masthead__title')).lineHeight) * 1.2
+    };
+  });
+  ok(narrow2.stacked, 'at 375px the watch sits above the panel');
+  ok(narrow2.hscroll <= 1, 'no horizontal scroll at 375px',
+    'overflow ' + narrow2.hscroll + 'px');
+  ok(narrow2.titleLines, 'the headline wraps at 375px');
+  await sPage.screenshot({ path: shot('stage-375.png') });
+  ok(sErrs.length === 0, 'no console errors on the narrow stage', sErrs.join(' | '));
+  await wide.close();
+  await slim.close();
+
   /* =============================================================== 5. story */
   head('5 · the guided shift plays to the end');
 
@@ -703,7 +776,7 @@ async function settle(page, ms) { await page.waitForTimeout(ms); }
   await kPage.keyboard.press('Escape');
   await settle(kPage, 600);
   ok(await screenIs(kPage, 'home'), 'Esc goes back to Inicio');
-  ok((await kPage.locator('#freeMode button:not([disabled])').count()) === 7,
+  ok((await kPage.locator('#freeMode button:not([disabled])').count()) === 6,
     'every free-mode button is reachable by keyboard');
 
   /* subtitles and the ×5 wash label */

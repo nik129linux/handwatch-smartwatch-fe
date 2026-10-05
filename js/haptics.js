@@ -103,11 +103,12 @@ var haptics = (function () {
     strip.dataset.pattern = name;
     if (nameEl) {
       nameEl.innerHTML =
-        '<span class="haptic-strip__name-k">' + v.label + '</span>' +
-        '<span class="haptic-strip__name-m">' + v.meaning + '</span>';
+        '<span class="haptic-strip__name-k">Vibración en vivo</span>' +
+        '<span class="haptic-strip__name-m">' + v.label + ' · ' + v.meaning + '</span>';
     }
     if (!barsEl) return;
 
+    barsEl.classList.remove('is-idle');
     barsEl.innerHTML = '';
     ps.forEach(function (p) {
       var bar = document.createElement('span');
@@ -123,22 +124,20 @@ var haptics = (function () {
     strip.classList.toggle('is-playing', !!playing);
   }
 
-  /* A neutral resting state so the strip is never empty. */
+  /* Idle: a thin flat line. The strip shows only the pattern in flight;
+     at rest the watch is silent, so the strip is too. */
   function resetStrip() {
     if (!strip) return;
     strip.dataset.pattern = '';
     strip.classList.remove('is-playing');
     if (nameEl) {
       nameEl.innerHTML =
-        '<span class="haptic-strip__name-k">Vocabulario</span>' +
-        '<span class="haptic-strip__name-m">Toca para sentir</span>';
+        '<span class="haptic-strip__name-k">Vibración en vivo</span>' +
+        '<span class="haptic-strip__name-m"></span>';
     }
     if (barsEl) {
-      barsEl.innerHTML =
-        '<span class="haptic-bar" style="width:34px;height:38%"></span>' +
-        '<span class="haptic-bar" style="width:52px;height:38%"></span>' +
-        '<span class="haptic-bar" style="width:20px;height:38%"></span>' +
-        '<span class="haptic-bar" style="width:64px;height:38%"></span>';
+      barsEl.classList.add('is-idle');
+      barsEl.innerHTML = '<span class="haptic-bar haptic-bar--flat"></span>';
     }
   }
 
@@ -175,7 +174,7 @@ var haptics = (function () {
     if (liveTimer) window.clearTimeout(liveTimer);
     var settle = Math.round((duration(name) + 260) * (window.__timeScale || 1));
     liveTimer = window.setTimeout(function () {
-      drawStrip(name, false);
+      resetStrip();
     }, Math.max(120, settle));
 
     return v.pattern.slice();

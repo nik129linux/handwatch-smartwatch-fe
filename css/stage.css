@@ -18,6 +18,7 @@ body {
   font-family: var(--font-body);
   font-size: var(--text-body);
   line-height: var(--leading-body);
+  overflow-x: clip;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -96,7 +97,7 @@ button { font: inherit; color: inherit; }
 .masthead__title {
   font-family: var(--font-serif);
   font-weight: 400;
-  font-size: clamp(64px, 8vw, 110px);
+  font-size: clamp(44px, 7vw, 84px);
   line-height: 0.98;
   letter-spacing: -0.01em;
   color: var(--text-primary);
@@ -160,14 +161,17 @@ body.is-ready [data-rise] {
   min-width: 0;
 }
 
-/* the wrapper carries the scale so it can reserve the scaled height plus the
-   band stubs that stick out above and below */
+/* the wrapper carries the scale so it can reserve the scaled height: the full
+   band stubs on both ends plus 24px of clear air under the bottom stub */
 .watch-frame {
   width: 100%;
   height: calc(
-    ((var(--watch-h) + var(--case-pad) * 2) + 2 * 68px) * var(--scale, 1));
+    ((var(--watch-h) + var(--case-pad) * 2) + 2 * var(--band-h)) * var(--scale, 1)
+    + var(--sp-6));
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   place-items: center;
+  overflow: visible;
 }
 
 .stage__sub {
@@ -185,14 +189,20 @@ body.is-ready [data-rise] {
 }
 .stage__sub:empty { opacity: 0; }
 
+/* one-line mono label: the frame above already reserves 24px of clear air,
+   the flex gap adds the rest, so this never touches the bottom band stub */
 .stage__hint {
   position: relative;
   z-index: var(--z-hint);
-  max-width: 52ch;
+  max-width: none;
   text-align: center;
-  font-size: var(--text-caption);
-  line-height: var(--leading-caption);
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: var(--leading-micro);
+  letter-spacing: var(--tracking-micro);
+  text-transform: uppercase;
   color: var(--text-secondary);
+  white-space: nowrap;
 }
 
 /* --------------------------------------------------------------------------
@@ -255,6 +265,17 @@ body.is-ready [data-rise] {
   align-items: flex-end;
   gap: 5px;
   height: 44px;
+}
+/* idle state: one thin flat line, the watch is silent */
+.haptic-strip__bars.is-idle {
+  align-items: center;
+  height: var(--sp-4);
+}
+.haptic-bar--flat {
+  width: 100%;
+  height: 2px;
+  min-width: 0;
+  border-radius: 2px;
 }
 .haptic-bar {
   display: block;
@@ -598,7 +619,7 @@ body.is-ready [data-rise] {
     gap: var(--sp-8);
     padding: var(--sp-6) var(--sp-4) var(--sp-12);
   }
-  .stage__hint { max-width: 40ch; }
+  .stage__hint { max-width: 40ch; white-space: normal; }
   .stage__bloom { left: -30%; top: 12%; }
   .free-list { grid-template-columns: minmax(0, 1fr); }
   .free-btn:last-child { grid-column: auto; }

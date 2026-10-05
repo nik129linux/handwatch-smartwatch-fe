@@ -691,14 +691,22 @@ var watch = (function () {
     fit();
   }
 
-  /* Fit the whole watch into the stage with one transform. */
+  /* Fit the whole watch into the stage with one transform. The case is the
+     hero: it targets 65% of the viewport height, clamped so the whole
+     watch plus both band stubs always fits (width reserves the crown that
+     sticks out on the right, height reserves the full frame plus clear). */
   function fit() {
     if (!el.watch || !el.frame) return;
-    var needW = el.watch.offsetWidth / scaleVal;
-    var needH = el.watch.offsetHeight / scaleVal;
-    var availW = el.frame.clientWidth - 8;
-    var availH = window.innerHeight - 300;
-    scaleVal = Math.max(0.5, Math.min(1, availW / needW, availH / needH));
+    var vh = window.innerHeight;
+    var needW = el.watch.offsetWidth;
+    var needH = el.watch.offsetHeight;
+    var crownW = 30;
+    var bandPad = 152;
+    var clear = 24;
+    var target = (vh * 0.65) / needH;
+    var byWidth = (el.frame.clientWidth - 8) / (needW + crownW);
+    var byHeight = (vh - clear) / (needH + bandPad);
+    scaleVal = Math.max(0.5, Math.min(target, byWidth, byHeight));
     el.frame.style.setProperty('--scale', scaleVal.toFixed(3));
   }
 
