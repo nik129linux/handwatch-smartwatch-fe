@@ -42,7 +42,7 @@ function createWindow() {
     width: 1440,
     height: 900,
     minWidth: 1100,
-    minHeight: 760,
+    minHeight: 640,
     title: 'Hand Hygiene Watch',
     autoHideMenuBar: true,
     backgroundColor: '#101010',

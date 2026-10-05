@@ -44,15 +44,17 @@ function watchErrors(page) {
   await page.evaluate(() => { window.__timeScale = 0.02; });
   const doubt = await page.evaluate(() => {
     window.__bus.dudoso('On exit');
-    const f = document.querySelector('.view[data-screen="dudoso"] [data-features]');
+    const w = document.querySelector('#screen [data-features], #screen .doubt__why');
     return {
       screen: document.getElementById('screen').dataset.screen,
-      features: f ? f.textContent : ''
+      watchWhy: w ? w.textContent : null,
+      scopeWhy: document.getElementById('scopeWhy').textContent
     };
   });
   ok(doubt.screen === 'dudoso', 'gel under noise opens Did you wash?');
-  ok(/rhythm \d\.\d\d · \d+ of \d+ s · \d\.\d Hz -> unsure/.test(doubt.features),
-    'the doubt screen carries the classifier features line', doubt.features);
+  ok(doubt.watchWhy === null, 'the watch carries no diagnostic line');
+  ok(/rhythm \d\.\d\d · \d+ of \d+ s · \d\.\d Hz -> unsure/.test(doubt.scopeWhy),
+    'the scope panel carries the classifier features line', doubt.scopeWhy);
   const logged = await page.evaluate(() =>
     Log.list().map((e) => e.outcome).join(','));
   ok(/unsure/.test(logged), 'the unsure detection is logged', logged);
@@ -64,10 +66,11 @@ function watchErrors(page) {
   await page.goto(INDEX, { waitUntil: 'load' });
   await page.waitForSelector('.view[data-screen="home"]');
   await page.evaluate(() => { window.__storySpeed = 4; });
-  /* catch the doubtful beat mid-flight and read its features line */
+  /* catch the doubtful beat mid-flight and read the scope why line */
   const seen = page.waitForFunction(() => {
-    const f = document.querySelector('.view[data-screen="dudoso"] [data-features]');
-    return f && f.textContent.length > 10 ? f.textContent : false;
+    const v = document.querySelector('.view[data-screen="dudoso"]');
+    const w = (document.getElementById('scopeWhy') || {}).textContent || '';
+    return v && w.length > 10 && /-> unsure/.test(w) ? w : false;
   }, { timeout: 90000 }).then((h) => h.jsonValue()).catch(() => null);
   await page.click('#storyPlay');
   const beatLine = await seen;
@@ -144,7 +147,7 @@ function watchErrors(page) {
   });
   await page.waitForTimeout(400);
   const youRow = await page.locator('.view[data-screen="quien"]').textContent();
-  ok(/2 events on this watch/.test(youRow), 'the You row counts the live log',
+  ok(/2 events, 24 h/.test(youRow), 'the You row counts the live log',
     youRow.replace(/\s+/g, ' ').slice(0, 120));
 
   /* 3 · the noise slider --------------------------------------------------- */

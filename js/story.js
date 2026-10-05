@@ -109,7 +109,7 @@ var story = (function () {
       haptics.play('doubtful');
       Log.record(moment, 'unsure', false);
       watch.addEvent({
-        text: 'Doubt: ' + watch.state.doubtWhen.toLowerCase() + ' · ' + watch.state.bed,
+        text: 'Doubt · ' + watch.state.bed,
         kind: 'you'
       });
       watch.go('dudoso', 'alert');

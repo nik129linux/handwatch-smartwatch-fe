@@ -120,28 +120,30 @@ button { font: inherit; color: inherit; }
   z-index: 1;
 }
 
-/* editorial masthead: mono kicker, poster serif, quiet lede */
+/* editorial masthead: mono kicker, poster serif, quiet lede.
+   Compact by design: the whole watch plus the Guided shift pill must
+   clear the fold at 1280x720, so the title stays on one line. */
 .masthead {
   max-width: 1360px;
   margin: 0 auto;
-  padding: var(--sp-16) var(--sp-10) 0;
+  padding: var(--sp-4) var(--sp-10) 0;
 }
 
-.masthead__kick { margin-bottom: var(--sp-4); }
+.masthead__kick { margin-bottom: var(--sp-2); }
 
 .masthead__title {
   font-family: var(--font-serif);
   font-weight: 400;
-  font-size: clamp(44px, 7vw, 84px);
-  line-height: 0.98;
+  font-size: clamp(30px, 3.2vw, 42px);
+  line-height: 1;
   letter-spacing: -0.01em;
   color: var(--text-primary);
-  max-width: 12ch;
+  max-width: none;
   text-wrap: balance;
 }
 
 .masthead__lede {
-  margin-top: var(--sp-5);
+  margin-top: var(--sp-2);
   max-width: 52ch;
 }
 
@@ -184,7 +186,7 @@ body.is-ready [data-rise] {
   gap: var(--sp-12);
   max-width: 1360px;
   margin: 0 auto;
-  padding: var(--sp-10) var(--sp-10) var(--sp-16);
+  padding: var(--sp-6) var(--sp-10) var(--sp-16);
   align-items: start;
 }
 

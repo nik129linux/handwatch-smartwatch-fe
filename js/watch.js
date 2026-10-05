@@ -271,7 +271,8 @@ var watch = (function () {
     }
   };
 
-  /* 4 — Did you wash? */
+  /* 4 — Did you wash? The classifier's "why" line lives ONLY on the
+     stage scope panel (scopeWhy): the watch asks in <= 4-word lines. */
   VIEWS.dudoso = {
     title: 'Confirm',
     anim: 'alert',
@@ -281,16 +282,11 @@ var watch = (function () {
           '<div class="caption">' + esc(state.bed) + '</div>' +
           '<div class="doubt__q">Did you wash?</div>' +
           '<div class="caption">Not sure</div>' +
-          '<div class="caption doubt__why" data-features></div>' +
         '</div>' +
         '<div class="screen__foot">' +
           '<button class="pill pill--primary" data-act="doubt-yes">Yes, I did</button>' +
           '<button class="pill pill--secondary" data-act="doubt-no">Couldn\'t</button>' +
         '</div>';
-    },
-    after: function (node) {
-      var w = node.querySelector('[data-features]');
-      if (w) w.textContent = state.lastWhy || '';
     }
   };
 
@@ -308,7 +304,7 @@ var watch = (function () {
             '<span class="num num--accent">' + state.corrections + '</span>' +
             '<span class="caption">fixed<br>by you</span></div>' +
         '</div>' +
-        '<div class="shift__note caption">Only you see this. Gone in 24 h.</div>' +
+        '<div class="shift__note caption">Only you see this.<br>Gone in 24 h.</div>' +
         '<div class="screen__foot">' +
           '<button class="pill pill--ghost" data-act="home">Back to start</button>' +
         '</div>';
@@ -320,15 +316,15 @@ var watch = (function () {
     title: 'Who sees this',
     anim: 'fwd',
     build: function () {
-      /* the 'You' row reads the real on-watch log: how many events are
-         kept on this watch right now, gone in 24 h */
+      /* the 'You' row reads the real on-watch log. Every line stays
+         at <= 4 words ("N events, 24 h" counts as four). */
       var kept = 0;
       try {
         if (window.Log) kept = window.Log.count();
       } catch (e) { kept = 0; }
       var youWhat = kept === 0
-        ? 'no events kept · 24 hours'
-        : kept + (kept === 1 ? ' event' : ' events') + ' on this watch · 24 hours';
+        ? 'Empty · 24 h'
+        : kept + (kept === 1 ? ' event, 24 h' : ' events, 24 h');
       var rows = [
         ['You', youWhat, 'you'],
         ['Infection control', 'unit totals, no names', ''],
@@ -356,7 +352,7 @@ var watch = (function () {
       return '<div class="pause__glyph">' + GLYPH.bell + '</div>' +
         '<div class="doubt__lines">' +
           '<div class="title">Silence 30 min</div>' +
-          '<div class="caption">For a code or emergency</div>' +
+          '<div class="caption">For emergencies</div>' +
           '<div class="pause__count" data-pausecount>30:00</div>' +
         '</div>' +
         '<div class="screen__foot">' +
@@ -373,7 +369,7 @@ var watch = (function () {
 
   /* ---------------------------------------------------------------- router */
 
-  function animateIn(node, dir) {
+  function animateIn(node, dir, name) {
     node.style.position = 'absolute';
     node.style.inset = '0';
     node.style.zIndex = '2';
@@ -384,6 +380,10 @@ var watch = (function () {
       node.style.inset = '';
       node.style.zIndex = '';
       node.removeAttribute('data-anim');
+      /* the transition is over: exactly one screen is opaque now */
+      document.dispatchEvent(new CustomEvent('watch:settled', {
+        detail: { screen: name }
+      }));
     }, ms(480));
   }
 
@@ -425,7 +425,7 @@ var watch = (function () {
       }, ms(EX + 20));
     }
 
-    animateIn(node, dir || def.anim || 'zoom');
+    animateIn(node, dir || def.anim || 'zoom', name);
     if (from && opts.keepScroll) el.viewport.scrollTop = opts.keepScroll;
     else el.viewport.scrollTop = 0;
     current = node;
@@ -660,7 +660,7 @@ var watch = (function () {
         if (state.screen !== 'recordatorio') return;
         state.done += 1;
         state.pending = false;
-        addEvent({ text: 'Marked by you · ' + state.bed, kind: 'ok' });
+        addEvent({ text: 'Marked · ' + state.bed, kind: 'ok' });
         logOutcome('done', false);
         toast('Noted. Thanks.');
         haptics.play('ok');
@@ -674,7 +674,7 @@ var watch = (function () {
         state.done += 1;
         state.corrections += 1;
         state.pending = false;
-        addEvent({ text: 'Fixed by you · ' + state.bed, kind: 'ok' });
+        addEvent({ text: 'Fixed · ' + state.bed, kind: 'ok' });
         logOutcome('confirmed', true);
         haptics.play('ok');
         toast('Noted. Thanks.');
@@ -683,7 +683,7 @@ var watch = (function () {
       case 'doubt-no':
         if (state.screen !== 'dudoso' || doubtLock) return;
         doubtLock = true;
-        addEvent({ text: 'Just for you · ' + state.bed, kind: 'you' });
+        addEvent({ text: 'Yours · ' + state.bed, kind: 'you' });
         logOutcome('declined', false);
         toast('Stays with you.');
         window.setTimeout(function () { home(); }, ms(460));
@@ -752,10 +752,11 @@ var watch = (function () {
     fit();
   }
 
-  /* Fit the whole watch into the stage with one transform. The case is the
-     hero: it targets 65% of the viewport height, clamped so the whole
-     watch plus both band stubs always fits (width reserves the crown that
-     sticks out on the right, height reserves the full frame plus clear). */
+  /* Fit the whole watch into the stage with one transform. The scale is
+     solved from the space above the fold: frame top (document offset, so
+     scroll never matters) plus the full band-to-band height must land
+     inside the viewport with clear air to spare. Width reserves the crown
+     that sticks out on the right. */
   function fit() {
     if (!el.watch || !el.frame) return;
     var vh = window.innerHeight;
@@ -764,10 +765,10 @@ var watch = (function () {
     var crownW = 30;
     var bandPad = 152;
     var clear = 24;
-    var target = (vh * 0.65) / needH;
+    var frameTop = el.frame.getBoundingClientRect().top + window.scrollY;
     var byWidth = (el.frame.clientWidth - 8) / (needW + crownW);
-    var byHeight = (vh - clear) / (needH + bandPad);
-    scaleVal = Math.max(0.5, Math.min(target, byWidth, byHeight));
+    var byHeight = (vh - frameTop - clear) / (needH + bandPad);
+    scaleVal = Math.max(0.5, Math.min(byWidth, byHeight));
     el.frame.style.setProperty('--scale', scaleVal.toFixed(3));
   }
 

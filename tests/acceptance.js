@@ -65,6 +65,25 @@ async function screenIs(page, name) {
 }
 async function settle(page, ms) { await page.waitForTimeout(ms); }
 
+/* W4 — every screenshot waits for the transition to end: exactly one
+   .view in the DOM, no data-anim left (the router fires watch:settled at
+   that same moment), and that view fully opaque. */
+async function settledScreen(page, name) {
+  await page.waitForSelector(`.view[data-screen="${name}"]`, { timeout: 8000 });
+  await page.waitForFunction((n) => {
+    const views = Array.from(document.querySelectorAll('#viewport .view'));
+    if (views.length !== 1) return false;
+    if (views[0].getAttribute('data-screen') !== n) return false;
+    if (views[0].hasAttribute('data-anim')) return false;
+    return getComputedStyle(views[0]).opacity === '1';
+  }, name, { timeout: 8000 });
+}
+async function opaqueScreens(page) {
+  return await page.evaluate(() =>
+    Array.from(document.querySelectorAll('#viewport .view'))
+      .filter(v => getComputedStyle(v).opacity === '1').length);
+}
+
 /* ---------------------------------------------------------------- main */
 
 (async () => {
@@ -715,8 +734,8 @@ async function settle(page, ms) { await page.waitForTimeout(ms); }
   await settle(nPage, 1200);
   await nPage.screenshot({ path: shot('home-375.png') });
   await nPage.click('#freeMode [data-act="dudoso"]');
-  await nPage.waitForSelector('.view[data-screen="dudoso"]');
-  await settle(nPage, 700);
+  await settledScreen(nPage, 'dudoso');
+  ok(await opaqueScreens(nPage) === 1, 'one opaque screen at settle (dudoso, 375px)');
   await nPage.evaluate(() => window.scrollTo(0, 0));
   await settle(nPage, 300);
   await nPage.screenshot({ path: shot('dudoso-375.png') });
@@ -737,8 +756,8 @@ async function settle(page, ms) { await page.waitForTimeout(ms); }
   await settle(still, 300);
   await still.screenshot({ path: shot('home-1440.png') });
   await still.click('#freeMode [data-act="dudoso"]');
-  await still.waitForSelector('.view[data-screen="dudoso"]');
-  await settle(still, 700);
+  await settledScreen(still, 'dudoso');
+  ok(await opaqueScreens(still) === 1, 'one opaque screen at settle (dudoso, 1440px)');
   await still.evaluate(() => window.scrollTo(0, 0));
   await settle(still, 300);
   await still.screenshot({ path: shot('dudoso-1440.png') });
@@ -804,14 +823,13 @@ async function settle(page, ms) { await page.waitForTimeout(ms); }
     return {
       stacked: watch.bottom <= panel.top + 1,
       hscroll: document.documentElement.scrollWidth - document.documentElement.clientWidth,
-      titleLines: title.height > parseFloat(getComputedStyle(
-        document.querySelector('.masthead__title')).lineHeight) * 1.2
+      titleFits: title.right <= document.documentElement.clientWidth + 1
     };
   });
   ok(narrow2.stacked, 'at 375px the watch sits above the panel');
   ok(narrow2.hscroll <= 1, 'no horizontal scroll at 375px',
     'overflow ' + narrow2.hscroll + 'px');
-  ok(narrow2.titleLines, 'the headline wraps at 375px');
+  ok(narrow2.titleFits, 'the compact headline fits at 375px');
   await sPage.screenshot({ path: shot('stage-375.png') });
   ok(sErrs.length === 0, 'no console errors on the narrow stage', sErrs.join(' | '));
   await wide.close();
@@ -1157,21 +1175,15 @@ async function settle(page, ms) { await page.waitForTimeout(ms); }
 
   const shots = [
     ['home', async () => {}],
-    ['recordatorio', async (p) => { await p.click('#freeMode [data-act="zona"]');
-      await p.waitForSelector('.view[data-screen="recordatorio"]'); }],
+    ['recordatorio', async (p) => { await p.click('#freeMode [data-act="zona"]'); }],
     ['lavando', async (p) => {
       await p.evaluate(() => { watch.state.washMs = 6000; watch.startWash({}); });
-      await p.waitForSelector('.view[data-screen="lavando"]');
       await p.waitForTimeout(2600);
     }],
-    ['dudoso', async (p) => { await p.click('#freeMode [data-act="dudoso"]');
-      await p.waitForSelector('.view[data-screen="dudoso"]'); }],
-    ['fin', async (p) => { await p.click('#freeMode [data-act="terminar"]');
-      await p.waitForSelector('.view[data-screen="fin"]'); }],
-    ['quien', async (p) => { await p.click('#sideButton');
-      await p.waitForSelector('.view[data-screen="quien"]'); }],
-    ['pausa', async (p) => { await p.click('#freeMode [data-act="codigo"]');
-      await p.waitForSelector('.view[data-screen="pausa"]'); }]
+    ['dudoso', async (p) => { await p.click('#freeMode [data-act="dudoso"]'); }],
+    ['fin', async (p) => { await p.click('#freeMode [data-act="terminar"]'); }],
+    ['quien', async (p) => { await p.click('#sideButton'); }],
+    ['pausa', async (p) => { await p.click('#freeMode [data-act="codigo"]'); }]
   ];
 
   for (const theme of ['dark', 'light']) {
@@ -1185,7 +1197,12 @@ async function settle(page, ms) { await page.waitForTimeout(ms); }
       await sp.evaluate(() => { window.__timeScale = 1; });
       await settle(sp, 1100);
       await drive(sp);
-      await settle(sp, 700);
+      /* W4: never shoot a cross-fade frame — wait for the transition to
+         end (data-anim gone, watch:settled fired) and demand exactly one
+         opaque screen before the still. */
+      await settledScreen(sp, name);
+      ok(await opaqueScreens(sp) === 1,
+        'one opaque screen at settle while shooting ' + name + ' (' + theme + ')');
       await sp.locator('#watch').screenshot({ path: shot('watch-' + name + suffix + '.png') });
       ok(errs.length === 0, 'no console errors while shooting ' + name + ' (' + theme + ')',
         errs.join(' | '));
@@ -1221,6 +1238,104 @@ async function settle(page, ms) { await page.waitForTimeout(ms); }
     });
     await uShot.screenshot({ path: shot('unit-' + theme + '.png'), fullPage: true });
     await uShot.close();
+  }
+
+  /* =============================================================== 15. W4 polish */
+  head('15 · W4 polish: fold, short watch copy, settled transitions');
+
+  /* 15a — above the fold at both Electron window sizes: the WHOLE watch
+     (case + both band stubs) and the Guided shift pill clear the fold */
+  for (const [fw, fh] of [[1440, 900], [1280, 720]]) {
+    const fCtx = await browser.newContext({ viewport: { width: fw, height: fh } });
+    const fPage = await fCtx.newPage();
+    const fErrs = watchErrors(fPage);
+    await fPage.goto(INDEX, { waitUntil: 'load' });
+    await fPage.waitForSelector('.view[data-screen="home"]');
+    await settledScreen(fPage, 'home');
+    const fold = await fPage.evaluate(() => {
+      window.scrollTo(0, 0);
+      const r = (sel) => {
+        const e = document.querySelector(sel);
+        if (!e) return null;
+        const b = e.getBoundingClientRect();
+        return { top: b.top, bottom: b.bottom, left: b.left, right: b.right };
+      };
+      const parts = ['.case', '.band--top', '.band--bottom'].map(r);
+      return {
+        vh: window.innerHeight, vw: window.innerWidth,
+        top: Math.min(...parts.map(p => p.top)),
+        bottom: Math.max(...parts.map(p => p.bottom)),
+        pill: r('#storyPlay')
+      };
+    });
+    ok(fold.top >= 0 && fold.bottom <= fold.vh,
+      'the whole watch clears the fold at ' + fw + 'x' + fh,
+      'watch ' + Math.round(fold.top) + '–' + Math.round(fold.bottom) + 'px of ' + fold.vh + 'px');
+    ok(fold.pill.top >= 0 && fold.pill.bottom <= fold.vh,
+      'Guided shift clears the fold at ' + fw + 'x' + fh,
+      'pill ' + Math.round(fold.pill.top) + '–' + Math.round(fold.pill.bottom) + 'px of ' + fold.vh + 'px');
+    ok(fErrs.length === 0, 'no console errors at ' + fw + 'x' + fh, fErrs.join(' | '));
+    await fCtx.close();
+  }
+
+  /* 15b — watch copy rule: <= 4 words per rendered line, every screen.
+     The classifier "why" line lives ONLY on the stage scope panel now. */
+  {
+    const cPage = await ctx.newPage();
+    await cPage.goto(INDEX, { waitUntil: 'load' });
+    await cPage.waitForSelector('.view[data-screen="home"]');
+    await cPage.evaluate(() => { window.__timeScale = 1; });
+    /* seed every event flavor so the Home list shows real copy */
+    await cPage.evaluate(() => {
+      watch.addEvent({ text: 'Reminder · Bed 3', kind: 'you' });
+      watch.addEvent({ text: 'Marked · Bed 3', kind: 'ok' });
+      watch.addEvent({ text: 'Fixed · Bed 3', kind: 'ok' });
+      watch.bump();
+    });
+    const names = ['home', 'recordatorio', 'lavando', 'dudoso', 'fin', 'quien', 'pausa'];
+    for (const n of names) {
+      await cPage.evaluate((s) => {
+        if (s === 'lavando') { watch.state.washMs = 20000; watch.startWash({}); }
+        else watch.go(s, 'zoom');
+      }, n);
+      await settledScreen(cPage, n);
+      const lines = await cPage.evaluate(() =>
+        document.getElementById('screen').innerText.split('\n')
+          .map(l => l.trim()).filter(l => l.length > 0));
+      const long = lines.filter(l => l.split(/\s+/).length > 4);
+      ok(long.length === 0, 'watch lines stay <= 4 words on ' + n,
+        long.slice(0, 3).join(' // '));
+      const why = await cPage.evaluate(() =>
+        document.querySelector('#screen [data-features], #screen .doubt__why') !== null);
+      ok(why === false, 'no diagnostic line on the watch (' + n + ')');
+      await cPage.evaluate(() => { watch.resume(); });
+    }
+    /* the why line still exists — on the scope panel only */
+    await cPage.evaluate(() => { window.__bus.dudoso('On exit'); });
+    await settledScreen(cPage, 'dudoso');
+    const scopeWhy = await cPage.locator('#scopeWhy').textContent();
+    ok(/rhythm \d\.\d\d · \d+ of \d+ s · \d\.\d Hz -> unsure/.test(scopeWhy),
+      'the scope panel keeps the why line', scopeWhy);
+    await cPage.close();
+  }
+
+  /* 15c — the router announces the end of every transition */
+  {
+    const sPage = await ctx.newPage();
+    await sPage.goto(INDEX, { waitUntil: 'load' });
+    await sPage.waitForSelector('.view[data-screen="home"]');
+    const heard = await sPage.evaluate(() => new Promise((res, rej) => {
+      const t = setTimeout(() => rej(new Error('no watch:settled within 8s')), 8000);
+      document.addEventListener('watch:settled', function h(e) {
+        clearTimeout(t);
+        res(e.detail && e.detail.screen);
+      }, { once: true });
+      watch.go('dudoso', 'alert');
+    }));
+    ok(heard === 'dudoso', 'watch:settled fires with the new screen', String(heard));
+    await settledScreen(sPage, 'dudoso');
+    ok(await opaqueScreens(sPage) === 1, 'one opaque screen at settle after the event');
+    await sPage.close();
   }
 
   await browser.close();

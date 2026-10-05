@@ -57,22 +57,92 @@ function head(s) { console.log('\n' + s); }
 
   await window.evaluate(() => window.__setTheme('dark'));
   await window.waitForTimeout(600);
-  await window.screenshot({ path: path.join(SHOTS, 'app-dark.png') });
-  await window.evaluate(() => window.__setTheme('light'));
+
+  /* W4 — above the fold at both window sizes: the whole watch
+     (case + both band stubs) and Guided shift need no scrolling */
+  async function foldState() {
+    return await window.evaluate(() => {
+      window.scrollTo(0, 0);
+      const r = (sel) => document.querySelector(sel).getBoundingClientRect();
+      const parts = ['.case', '.band--top', '.band--bottom'].map(r);
+      const pill = r('#storyPlay');
+      return {
+        vh: window.innerHeight,
+        top: Math.min(...parts.map(p => p.top)),
+        bottom: Math.max(...parts.map(p => p.bottom)),
+        pillTop: pill.top, pillBottom: pill.bottom
+      };
+    });
+  }
+  for (const [fw, fh] of [[1440, 900], [1280, 720]]) {
+    await app.evaluate(({ BrowserWindow }, [w, h]) => {
+      BrowserWindow.getAllWindows()[0].setSize(w, h);
+    }, [fw, fh]);
+    await window.waitForTimeout(800);
+    const f = await foldState();
+    ok(f.top >= 0 && f.bottom <= f.vh,
+      'the whole watch clears the fold at ' + fw + 'x' + fh,
+      'watch ' + Math.round(f.top) + '–' + Math.round(f.bottom) + 'px of ' + f.vh + 'px');
+    ok(f.pillTop >= 0 && f.pillBottom <= f.vh,
+      'Guided shift clears the fold at ' + fw + 'x' + fh,
+      'pill ' + Math.round(f.pillTop) + '–' + Math.round(f.pillBottom) + 'px of ' + f.vh + 'px');
+  }
+  await app.evaluate(({ BrowserWindow }) => {
+    BrowserWindow.getAllWindows()[0].setSize(1440, 900);
+  });
   await window.waitForTimeout(600);
-  await window.screenshot({ path: path.join(SHOTS, 'app-light.png') });
-  ok(fs.existsSync(path.join(SHOTS, 'app-dark.png')) &&
-    fs.existsSync(path.join(SHOTS, 'app-light.png')),
-    'dark + light stage screenshots saved');
+
+  /* stage stills, both themes: idle, doubtful, wash in progress */
+  async function settled(name) {
+    await window.waitForSelector(`.view[data-screen="${name}"]`, { timeout: 8000 });
+    await window.waitForFunction((n) => {
+      const views = Array.from(document.querySelectorAll('#viewport .view'));
+      if (views.length !== 1) return false;
+      if (views[0].getAttribute('data-screen') !== n) return false;
+      if (views[0].hasAttribute('data-anim')) return false;
+      return getComputedStyle(views[0]).opacity === '1';
+    }, name, { timeout: 8000 });
+  }
+  for (const theme of ['dark', 'light']) {
+    const suffix = theme === 'light' ? '-light' : '';
+    await window.evaluate((t) => window.__setTheme(t), theme);
+    await window.waitForTimeout(600);
+    await window.evaluate(() => { window.scrollTo(0, 0); watch.home(); });
+    await settled('home');
+    await window.screenshot({ path: path.join(SHOTS, 'app-' + theme + '.png') });
+    await window.locator('#freeMode [data-act="dudoso"]').click();
+    await settled('dudoso');
+    await window.screenshot({ path: path.join(SHOTS, 'app-doubt' + suffix + '.png') });
+    await window.evaluate(() => {
+      watch.state.washMs = 20000; watch.startWash({});
+    });
+    await settled('lavando');
+    await window.waitForTimeout(1200);
+    await window.screenshot({ path: path.join(SHOTS, 'app-wash' + suffix + '.png') });
+    /* two Escapes unwind the trail (wash -> doubt -> home) and the
+       first one already killed the wash timer, so no credit lands */
+    await window.keyboard.press('Escape');
+    await settled('dudoso');
+    await window.keyboard.press('Escape');
+    await settled('home');
+  }
+  /* the old names survive: app-dark.png / app-light.png are the idle stills */
+  await window.evaluate(() => { watch.resume(); watch.home(); });
+  await settled('home');
+  ok(['app-dark.png', 'app-light.png', 'app-doubt.png', 'app-doubt-light.png',
+    'app-wash.png', 'app-wash-light.png'].every(f => fs.existsSync(path.join(SHOTS, f))),
+    'dark + light stage screenshots saved (idle, doubtful, wash)');
 
   /* free mode: Doubtful wash opens the confirm screen */
   await window.evaluate(() => window.__setTheme('dark'));
   await window.waitForTimeout(400);
   await window.locator('#freeMode [data-act="dudoso"]').click();
-  await window.waitForSelector('.view[data-screen="dudoso"]', { timeout: 5000 });
+  await settled('dudoso');
   const q = (await window.locator('.doubt__q').textContent()).trim();
   ok(q === 'Did you wash?', 'Doubtful wash shows the confirm screen', q);
-  await window.screenshot({ path: path.join(SHOTS, 'app-doubt.png') });
+  ok(await window.evaluate(() =>
+    document.querySelector('#screen [data-features], #screen .doubt__why') === null),
+    'the watch carries no diagnostic line');
 
   /* the Infection Control link navigates inside the same window */
   await window.evaluate(() => { watch.home(); });
@@ -81,6 +151,36 @@ function head(s) { console.log('\n' + s); }
   await window.waitForSelector('#momentBars .ubar', { timeout: 5000 });
   ok(/Unit 4B/.test(await window.title()) || (await window.locator('.unit__name').count()) === 1,
     'the unit page opens inside the same window');
+  /* unit sections reveal on scroll ([data-io] → .is-in) and the bar /
+     heat keyframes hang off the same class: stroll down first, or a
+     fullPage still captures them at opacity 0 / scaleX(0) */
+  for (const sel of ['#momentBars', '#heat', '#corrN']) {
+    await window.locator(sel).scrollIntoViewIfNeeded();
+    await window.waitForTimeout(600);
+  }
+  /* park on the bars: a fullPage capture from scrollY 0 drops finished
+     keyframe fills in this Electron build, mid-page captures fine */
+  await window.locator('#momentBars').scrollIntoViewIfNeeded();
+  await window.waitForTimeout(600);
+  const hidden = await window.evaluate(() =>
+    Array.from(document.querySelectorAll('[data-io]'))
+      .filter(e => !e.classList.contains('is-in')).length);
+  ok(hidden === 0, 'every unit section revealed after scrolling', hidden + ' still hidden');
+  const grown = await window.evaluate(() => {
+    const f = document.querySelector('.ubar__fill');
+    const c = document.querySelector('.uheat__cell');
+    if (!f || !c) return 'missing nodes';
+    const t = getComputedStyle(f).transform;
+    const o = getComputedStyle(c).opacity;
+    return (t === 'matrix(1, 0, 0, 1, 0, 0)' && o === '1')
+      ? 'ok' : 'fill ' + t + ' / cell opacity ' + o;
+  });
+  ok(grown === 'ok', 'bar fills and heat cells finished growing', grown);
+  /* the fixed notice would stitch mid-page in a full-height capture */
+  await window.evaluate(() => {
+    const n = document.querySelector('.unotice');
+    if (n) n.style.display = 'none';
+  });
   await window.evaluate(() => window.__setTheme('dark'));
   await window.waitForTimeout(1200);
   await window.screenshot({ path: path.join(SHOTS, 'app-unit-dark.png'), fullPage: true });
