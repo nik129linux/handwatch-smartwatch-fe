@@ -83,36 +83,59 @@ var Scope = (function () {
     ctx.lineTo(W, mid + 0.5);
     ctx.stroke();
 
-    /* waveform up to the playhead */
+    /* waveform up to the playhead: midpoint-smoothed, no jagged segments */
     ctx.strokeStyle = secondary;
     ctx.lineWidth = 1.5;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
     ctx.beginPath();
     var last = Math.max(1, Math.min(n, upto));
-    for (var x = 0; x < W; x++) {
+    var px = 0, py = mid - mag(samples[0]) * amp;
+    ctx.moveTo(0.5, py);
+    for (var x = 1; x < W; x++) {
       var idx = Math.min(last - 1, Math.floor((x / W) * n));
       var y = mid - mag(samples[idx]) * amp;
-      if (x === 0) ctx.moveTo(x + 0.5, y);
-      else ctx.lineTo(x + 0.5, y);
+      var mx = (px + x) / 2 + 0.5, my = (py + y) / 2;
+      ctx.quadraticCurveTo(px + 0.5, py, mx, my);
+      px = x; py = y;
     }
+    ctx.lineTo(W - 0.5, py);
     ctx.stroke();
 
-    /* the motion inside the window, overdrawn in the primary */
+    /* the motion inside the window, overdrawn in the primary with a glow:
+       this is the second the classifier judged */
+    ctx.save();
     ctx.strokeStyle = primary;
-    ctx.lineWidth = 1.5;
+    ctx.shadowColor = primary;
+    ctx.shadowBlur = 12;
+    ctx.lineWidth = 2;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
     ctx.beginPath();
     var started = false;
+    var qx = 0, qy = 0, hasQ = false;
     for (var k = 0; k < W; k++) {
       var j = Math.floor((k / W) * n);
       if (j < w0 || j > head) continue;
       var yy = mid - mag(samples[j]) * amp;
       if (!started) { ctx.moveTo(k + 0.5, yy); started = true; }
-      else ctx.lineTo(k + 0.5, yy);
+      else if (!hasQ) { qx = k; qy = yy; hasQ = true; }
+      else {
+        ctx.quadraticCurveTo(qx + 0.5, qy, (qx + k) / 2 + 0.5, (qy + yy) / 2);
+        qx = k; qy = yy;
+      }
     }
+    if (hasQ) ctx.lineTo(qx + 0.5, qy);
     ctx.stroke();
+    ctx.restore();
 
     /* playhead */
+    ctx.save();
     ctx.fillStyle = primary;
+    ctx.shadowColor = primary;
+    ctx.shadowBlur = 8;
     ctx.fillRect((head / n) * W - 1, 0, 2, H);
+    ctx.restore();
   }
 
   function stopLoop() {

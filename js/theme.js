@@ -35,10 +35,39 @@
     }
   }
 
-  function toggle() {
+  /* Circular reveal from the toggle point (View Transitions API);
+     falls back to the 300ms expo crossover. Always cleans up: no class,
+     no inline var left behind. */
+  function toggle(ev) {
     var next = document.documentElement.getAttribute('data-theme') === 'light'
       ? 'dark' : 'light';
-    /* 300ms expo crossover while the tokens swap underneath */
+
+    var x = window.innerWidth - 60, y = 60;
+    try {
+      var btn = (ev && ev.currentTarget) ||
+        document.querySelector('.theme-toggle');
+      if (btn && btn.getBoundingClientRect) {
+        var r = btn.getBoundingClientRect();
+        x = r.left + r.width / 2;
+        y = r.top + r.height / 2;
+      }
+    } catch (e) { /* fallback point stands */ }
+
+    var reduce = window.matchMedia &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (!reduce && document.startViewTransition) {
+      document.documentElement.style.setProperty('--vtx', Math.round(x) + 'px');
+      document.documentElement.style.setProperty('--vty', Math.round(y) + 'px');
+      var tr = document.startViewTransition(function () {
+        apply(next);
+        save(next);
+      });
+      tr.finished.then(cleanupVT, cleanupVT);
+      return next;
+    }
+
+    /* fallback: 300ms expo crossover while the tokens swap underneath */
     document.documentElement.classList.add('is-switching');
     apply(next);
     save(next);
@@ -46,6 +75,13 @@
       document.documentElement.classList.remove('is-switching');
     }, 340);
     return next;
+  }
+
+  function cleanupVT() {
+    try {
+      document.documentElement.style.removeProperty('--vtx');
+      document.documentElement.style.removeProperty('--vty');
+    } catch (e) { /* already clean */ }
   }
 
   apply(current());

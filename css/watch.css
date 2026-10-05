@@ -11,20 +11,17 @@
   position: relative;
   width: calc(var(--watch-w) + var(--case-pad) * 2);
   height: calc(var(--watch-h) + var(--case-pad) * 2);
-  transform: scale(var(--scale, 1));
+  /* --rx/--ry are written every frame by a damped spring (stage.js):
+     no CSS transition here, the spring is the smoothing. */
+  transform: scale(var(--scale, 1)) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
   transform-origin: center center;
-  transition: transform var(--dur-rise) var(--ease-enter);
+  will-change: transform;
 }
 
-/* Haptic shake — translate only, <= 2px per pulse (Family Values) */
-@keyframes watchShake {
-  0%   { transform: scale(var(--scale, 1)) translateX(0); }
-  25%  { transform: scale(var(--scale, 1)) translateX(-1.5px); }
-  50%  { transform: scale(var(--scale, 1)) translateX(1.5px); }
-  75%  { transform: scale(var(--scale, 1)) translateX(-1px); }
-  100% { transform: scale(var(--scale, 1)) translateX(0); }
-}
-.watch--shake { animation: watchShake var(--dur-press) var(--ease-enter) 2; }
+/* Haptic shake — the spring lives in haptics.js and writes the `translate`
+   property (independent of `transform`, so tilt and shake compose). This
+   class is only a hook the spring reads; reduced motion kills the loop. */
+.watch--shake { will-change: translate; }
 
 /* --- Bands ---------------------------------------------------------------- */
 
@@ -176,7 +173,8 @@
               filter var(--dur-press) var(--ease-enter);
 }
 .side-button:hover { filter: brightness(1.18); }
-.side-button:active { transform: scaleX(0.72); }
+/* press depth: the button sinks into the case (narrower, darker, inset) */
+.side-button:active { transform: scaleX(0.6) translateX(2px); filter: brightness(0.82); }
 .side-button:focus-visible {
   outline: 2px solid var(--border-focus);
   outline-offset: 4px;
@@ -264,6 +262,23 @@
 .viewport::-webkit-scrollbar { width: 0; height: 0; }
 
 .screen--pad { padding-bottom: 20px; }
+
+/* Specular glare on the glass: a soft neutral sheen whose center follows
+   the pointer via --gx/--gy (written by the same spring loop as the tilt).
+   Neutral token only, never the primary; static under reduced motion. */
+.screen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(circle at var(--gx, 32%) var(--gy, 18%),
+    color-mix(in srgb, var(--color-neutral-50) 16%, transparent) 0%,
+    color-mix(in srgb, var(--color-neutral-50) 5%, transparent) 26%,
+    transparent 58%);
+  opacity: var(--glare, 0.9);
+}
 
 /* one watch screen's content. The bottom padding clears the 96 px corner
    radius so a full-width pill is never clipped by the curve. */
@@ -826,9 +841,14 @@
 .toast.is-on {
   opacity: 1;
   transform: translateY(46px);
-  transition:
-    opacity var(--dur-enter) var(--ease-enter),
-    transform var(--dur-enter) var(--ease-enter);
+  /* spring settle: overshoots 4px past rest, then comes back */
+  animation: toastIn var(--dur-item) var(--ease-enter) both;
+}
+@keyframes toastIn {
+  0%   { opacity: 0; transform: translateY(-26px); }
+  55%  { opacity: 1; transform: translateY(50px); }
+  78%  { opacity: 1; transform: translateY(44px); }
+  100% { opacity: 1; transform: translateY(46px); }
 }
 .toast__dot {
   width: 7px;

@@ -36,6 +36,8 @@ var watch = (function () {
   var washInt = null;
   var scaleVal = 1;
   var extraSpin = 0;     /* decaying extra crown rotation from wheel input */
+  var spinV = 0;         /* crown angular velocity: the wheel kicks it, the
+                            damping settles it — inertia, not steps */
   var spinRaf = null;
 
   /* ---------------------------------------------------------------- utils */
@@ -580,14 +582,22 @@ var watch = (function () {
     el.crownCap.style.setProperty('--spin', (base + extraSpin).toFixed(2) + 'deg');
   }
   function decaySpin() {
-    if (Math.abs(extraSpin) < 0.3) { extraSpin = 0; paintSpin(); spinRaf = null; return; }
+    /* inertia: velocity carries the crown past the scroll stop, both the
+       velocity and the offset damp out, so it lands instead of snapping */
+    extraSpin += spinV;
+    spinV *= 0.92;
     extraSpin *= 0.9;
     paintSpin();
+    if (Math.abs(extraSpin) < 0.05 && Math.abs(spinV) < 0.05) {
+      extraSpin = 0; spinV = 0; paintSpin(); spinRaf = null; return;
+    }
     spinRaf = requestAnimationFrame(decaySpin);
   }
   function kick(delta) {
     if (REDUCED) return;
-    extraSpin += delta;
+    spinV += delta * 0.35;
+    if (spinV > 24) spinV = 24;
+    if (spinV < -24) spinV = -24;
     if (!spinRaf) spinRaf = requestAnimationFrame(decaySpin);
   }
 

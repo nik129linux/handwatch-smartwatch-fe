@@ -55,6 +55,20 @@ var haptics = (function () {
   var watchEl = null;    // the watch body, for the shake
   var log = [];          // every pattern played, for the acceptance test
   var liveTimer = null;
+  var springRaf = null;  // the bar-spring loop
+  var shakeRaf = null;   // the shake-spring loop
+  var REDUCED = !!(window.matchMedia &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+  /* A hand-written damped spring (semi-implicit Euler), shared by the bars
+     and the shake. Underdamped, so it overshoots once and settles — the
+     physical read the strip and the case both need. */
+  function springStep(s, target, k, c, dt) {
+    var f = -k * (s.x - target) - c * s.v;
+    s.v += f * dt;
+    s.x += s.v * dt;
+    return Math.abs(s.x - target) < 0.002 && Math.abs(s.v) < 0.002;
+  }
 
   /* Colors are read from CSS, never written here (tokens.css is the only
      place a raw value is allowed to live). */
@@ -110,7 +124,7 @@ var haptics = (function () {
 
     barsEl.classList.remove('is-idle');
     barsEl.innerHTML = '';
-    ps.forEach(function (p) {
+    var bars = ps.map(function (p) {
       var bar = document.createElement('span');
       bar.className = 'haptic-bar';
       /* width = duration (scaled), height = how the pattern rises */
@@ -119,9 +133,46 @@ var haptics = (function () {
       bar.style.setProperty('--at', p.at + 'ms');
       if (playing && accent) bar.style.setProperty('--live', accent);
       barsEl.appendChild(bar);
+      return { node: bar, at: p.at, s: { x: 0.18, v: 0 } };
     });
 
     strip.classList.toggle('is-playing', !!playing);
+    if (playing) springBars(bars);
+  }
+
+  /* Bars pop with spring physics, each starting at its own pattern offset.
+     Reduced motion: rest state immediately, no loop. */
+  function springBars(bars) {
+    if (springRaf) { cancelAnimationFrame(springRaf); springRaf = null; }
+    if (REDUCED || document.hidden) {
+      bars.forEach(function (b) {
+        b.node.style.transform = 'scaleY(1)';
+        b.node.style.opacity = '1';
+      });
+      return;
+    }
+    var t0 = performance.now();
+    var scale = window.__timeScale || 1;
+    (function frame(t) {
+      var dt = Math.min(0.05, (t - (frame.last || t)) / 1000 || 0.016);
+      frame.last = t;
+      var done = true;
+      bars.forEach(function (b) {
+        var local = (t - t0) / Math.max(0.05, scale) - b.at;
+        if (local < 0) { /* not its turn yet */
+          b.node.style.transform = 'scaleY(0.18)';
+          b.node.style.opacity = '0.35';
+          done = false;
+          return;
+        }
+        if (!springStep(b.s, 1, 170, 13, dt)) done = false;
+        b.node.style.transform = 'scaleY(' + Math.max(0.02, b.s.x).toFixed(3) + ')';
+        b.node.style.opacity = String(Math.min(1, 0.35 + b.s.x * 0.65).toFixed(3));
+      });
+      if (!done && strip && strip.classList.contains('is-playing')) {
+        springRaf = requestAnimationFrame(frame);
+      } else { springRaf = null; }
+    })(t0);
   }
 
   /* Idle: a thin flat line. The strip shows only the pattern in flight;
@@ -141,17 +192,56 @@ var haptics = (function () {
     }
   }
 
-  /* --- The shake ---------------------------------------------------------- */
-  /* translate only, <= 2px per pulse. Never a sound, never a colour flash. */
+  /* --- The shake ----------------------------------------------------------
+     The case shakes once per pulse (<= 2px), driven by the same damped
+     spring as the bars: each pulse kicks the velocity, the spring settles.
+     translate (independent property) so tilt (transform) is never disturbed.
+     Never a sound, never a colour flash. */
 
-  function shake(pulseCount) {
-    if (!watchEl) return;
-    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    watchEl.classList.remove('watch--shake');
-    void watchEl.offsetWidth; // restart the animation
-    watchEl.style.setProperty('--pulses', String(Math.min(3, Math.max(1, pulseCount))));
-    watchEl.classList.add('watch--shake');
-    window.setTimeout(function () { watchEl.classList.remove('watch--shake'); }, 700);
+  function shake(pattern) {
+    if (!watchEl || REDUCED) return;
+    if (shakeRaf) { cancelAnimationFrame(shakeRaf); shakeRaf = null; }
+    var s = { x: 0, v: 0 };
+    var scale = window.__timeScale || 1;
+    var timers = [];
+    var alive = true;
+
+    function loop(t) {
+      if (!alive || document.hidden) { shakeRaf = null; return; }
+      var dt = Math.min(0.05, (t - (loop.last || t)) / 1000 || 0.016);
+      loop.last = t;
+      var atRest = springStep(s, 0, 220, 11, dt);
+      watchEl.style.translate = s.x.toFixed(3) + 'px 0px';
+      if (!atRest || loop.kicks > 0) {
+        shakeRaf = requestAnimationFrame(loop);
+      } else {
+        watchEl.style.translate = '0px 0px';
+        shakeRaf = null;
+      }
+    }
+    loop.kicks = 0;
+
+    /* one kick per pulse, at the pulse's own offset in the pattern */
+    var t = 0;
+    for (var i = 0; i < pattern.length; i += 2) {
+      (function (at, first) {
+        loop.kicks++;
+        timers.push(window.setTimeout(function () {
+          loop.kicks--;
+          /* alternate direction, <= 2px peak: the body answers each tap */
+          s.v += first ? -46 : (s.v >= 0 ? -38 : 38);
+          if (!shakeRaf && alive) {
+            loop.last = performance.now();
+            shakeRaf = requestAnimationFrame(loop);
+          }
+        }, Math.max(16, Math.round(at * scale))));
+      })(t, i === 0);
+      t += pattern[i] + (pattern[i + 1] || 0);
+    }
+    timers.push(window.setTimeout(function () {
+      alive = false;
+      timers.forEach(function (id) { window.clearTimeout(id); });
+    }, Math.max(120, Math.round((t + 700) * scale))));
   }
 
   /* --- Play --------------------------------------------------------------- */
@@ -169,7 +259,11 @@ var haptics = (function () {
 
     drawStrip(name, true);
     markRow(name);
-    shake(v.heights.length);
+    shake(v.pattern.slice());
+
+    try {
+      document.dispatchEvent(new CustomEvent('haptic:play', { detail: { name: name } }));
+    } catch (e) { /* listeners are decorative */ }
 
     if (liveTimer) window.clearTimeout(liveTimer);
     var settle = Math.round((duration(name) + 260) * (window.__timeScale || 1));

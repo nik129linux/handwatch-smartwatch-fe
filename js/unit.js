@@ -26,6 +26,10 @@ var unit = (function () {
     33, 29, 12, 5, 1
   ];
 
+  /* The ripple starts at the shift-change hour: --i is the distance
+     |hour - 19|, so the stagger delay is monotonic in distance outward. */
+  var SHIFT_CHANGE = 19;
+
   var CORRECTIONS = 34;
   var MAX_HOUR = Math.max.apply(null, HOURS);
 
@@ -49,8 +53,10 @@ var unit = (function () {
   function momentBars() {
     var host = document.getElementById('momentBars');
     if (!host) return;
+    host.setAttribute('data-io', '');
+    host.classList.add('is-in');
     host.innerHTML = MOMENTS.map(function (m, i) {
-      return '<div class="ubar" style="--i:' + i + '">' +
+      return '<div class="ubar" data-io style="--i:' + i + '">' +
         '<div class="ubar__top">' +
           '<span class="ubar__name">' + esc(m.name) + '</span>' +
           '<span class="ubar__val">' + m.pct + '%<small>' +
@@ -61,23 +67,47 @@ var unit = (function () {
         '</div>' +
       '</div>';
     }).join('');
+    observeNew(host);
   }
 
   function heatmap() {
     var host = document.getElementById('heat');
     if (!host) return;
     var cells = HOURS.map(function (v, i) {
-      return '<span class="uheat__cell" style="--i:' + i +
+      return '<span class="uheat__cell" style="--i:' + Math.abs(i - SHIFT_CHANGE) +
         ';background:var(--heat-' + heatStep(v) + ')" ' +
         'title="' + pad2(i) + ':00 · ' + v + ' washes"></span>';
     }).join('');
 
     host.innerHTML =
+      '<div class="uheat uheat__cells-host" data-io>' +
       '<div class="uheat__cells">' + cells + '</div>' +
       '<div class="uheat__axis"><span>00</span><span>06</span><span>12</span>' +
         '<span>18</span><span>23</span></div>' +
       '<div class="uheat__marker">19:00 · Shift change: the highest peak ' +
-        'and the highest risk of a skipped wash.</div>';
+        'and the highest risk of a skipped wash.</div></div>';
+    observeNew(host);
+  }
+
+  /* Rows rendered after stage.js already ran its first IO pass still need
+     observing; under reduced motion everything shows immediately. */
+  function observeNew(host) {
+    var els = host.querySelectorAll('[data-io]');
+    var reduced = window.matchMedia &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduced || !('IntersectionObserver' in window)) {
+      for (var a = 0; a < els.length; a++) els[a].classList.add('is-in');
+      return;
+    }
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) {
+          e.target.classList.add('is-in');
+          io.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.12 });
+    for (var i = 0; i < els.length; i++) io.observe(els[i]);
   }
 
   function corrections() {

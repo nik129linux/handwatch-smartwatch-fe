@@ -180,6 +180,8 @@
   --dur-stagger: 60ms;
   --dur-word: 800ms;
   --dur-theme: 300ms;
+  --dur-rise-watch: 700ms;
+  --dur-breathe: 4200ms;
 
   /* --- Watch hardware --------------------------------------------------- */
   --watch-w: 416px;

@@ -76,7 +76,42 @@ button { font: inherit; color: inherit; }
   background: radial-gradient(circle,
     var(--glow-primary) 0%, transparent 65%);
   transform: translate3d(var(--bx, 0px), var(--by, 0px), 0);
-  will-change: transform;
+  will-change: transform, opacity;
+  transition: opacity var(--dur-enter-slow) var(--ease-enter),
+    filter var(--dur-enter-slow) var(--ease-enter);
+}
+
+/* --- state-driven atmosphere (no red, ever) ------------------------------
+   ok: one soft primary pulse. doubtful: a slow neutral breathe while the
+   doubt screen is open. paused: desaturated and dimmed. end of shift:
+   the bloom settles small and quiet. */
+
+/* one soft primary pulse */
+.stage__bloom.is-pulse { animation: bloomPulse var(--dur-tap) var(--ease-enter) 1; }
+@keyframes bloomPulse {
+  0%   { opacity: 0.55; transform: translate3d(var(--bx, 0px), var(--by, 0px), 0) scale(1); }
+  35%  { opacity: 1; transform: translate3d(var(--bx, 0px), var(--by, 0px), 0) scale(1.12); }
+  100% { opacity: 0.55; transform: translate3d(var(--bx, 0px), var(--by, 0px), 0) scale(1); }
+}
+/* slow neutral breathe: cool veil, never the primary, never red */
+.stage__bloom.is-breathe {
+  background: radial-gradient(circle,
+    var(--veil-cool) 0%, transparent 65%);
+  animation: bloomBreathe var(--dur-breathe) var(--ease-enter) infinite;
+}
+@keyframes bloomBreathe {
+  0%, 100% { opacity: 0.5; transform: translate3d(var(--bx, 0px), var(--by, 0px), 0) scale(1); }
+  50%      { opacity: 0.9; transform: translate3d(var(--bx, 0px), var(--by, 0px), 0) scale(1.07); }
+}
+/* paused: desaturated and dimmed */
+.stage__bloom.is-muted {
+  opacity: 0.35;
+  filter: saturate(0.25);
+}
+/* end of shift: settled small and quiet */
+.stage__bloom.is-settled {
+  opacity: 0.4;
+  transform: translate3d(var(--bx, 0px), var(--by, 0px), 0) scale(0.86);
 }
 
 .stage__grid,
@@ -162,7 +197,9 @@ body.is-ready [data-rise] {
 }
 
 /* the wrapper carries the scale so it can reserve the scaled height: the full
-   band stubs on both ends plus 24px of clear air under the bottom stub */
+   band stubs on both ends plus 24px of clear air under the bottom stub.
+   It also owns the 3D perspective: the tilt spring writes --rx/--ry on
+   .watch, which rotates inside this perspective. */
 .watch-frame {
   width: 100%;
   height: calc(
@@ -172,6 +209,13 @@ body.is-ready [data-rise] {
   grid-template-columns: minmax(0, 1fr);
   place-items: center;
   overflow: visible;
+  perspective: 1400px;
+  /* entrance: the watch rises into place, 700ms expo, usable immediately */
+  animation: frameRise var(--dur-rise-watch) var(--ease-enter) both;
+}
+@keyframes frameRise {
+  from { opacity: 0; transform: translateY(64px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 .stage__sub {
@@ -287,12 +331,10 @@ body.is-ready [data-rise] {
 }
 .haptic-strip.is-playing .haptic-bar {
   background: var(--color-primary-500);
-  animation: barPop var(--dur-rise) var(--ease-enter) both;
-  animation-delay: var(--at, 0ms);
-}
-@keyframes barPop {
-  from { transform: scaleY(0.18); opacity: 0.35; }
-  to   { transform: scaleY(1); opacity: 1; }
+  /* the pop is a JS spring (haptics.js) writing transform scaleY per frame,
+     staggered by --at; no CSS animation here so tilt/shake stay independent */
+  transform-origin: bottom center;
+  will-change: transform;
 }
 
 /* --- the note under the strip: plain editorial text, one hairline --- */
@@ -893,6 +935,38 @@ body.is-ready [data-rise] {
   color: var(--text-secondary);
 }
 
+/* --- scroll choreography (Mostar): IntersectionObserver adds .is-in ------
+   Sections rest low and blurred until they enter the viewport, then rise
+   once. Bars and heat cells key their own keyframes off the same class
+   with per-item stagger, so nothing animates off-screen. */
+[data-io] {
+  opacity: 0;
+  transform: translateY(28px);
+  filter: blur(6px);
+}
+[data-io].is-in {
+  opacity: 1;
+  transform: translateY(0);
+  filter: blur(0);
+  transition:
+    opacity var(--dur-grow) var(--ease-enter),
+    transform var(--dur-grow) var(--ease-enter),
+    filter var(--dur-grow) var(--ease-enter);
+}
+/* bars grow only once their row is in view, one token step apart */
+.ubar__fill { transform: scaleX(0); animation: none; }
+.ubar.is-in .ubar__fill {
+  animation: barGrow var(--dur-grow) var(--ease-enter) both;
+  animation-delay: calc(var(--i, 0) * var(--dur-step));
+}
+/* heat cells ripple outward from the shift-change hour: --i IS the
+   distance |hour - 19|, so the delay is monotonic in distance */
+.uheat__cell { opacity: 0; transform: scale(0.5); animation: none; }
+.uheat.is-in .uheat__cell {
+  animation: cellIn var(--dur-sweep) var(--ease-enter) both;
+  animation-delay: calc(var(--i, 0) * var(--dur-step-sm) + var(--dur-exit));
+}
+
 /* --- fixed notice -------------------------------------------------------- */
 
 .unotice {
@@ -910,7 +984,11 @@ body.is-ready [data-rise] {
   gap: var(--sp-4);
   font-size: var(--text-caption);
   color: var(--text-secondary);
+  /* slides in after the first scroll, expo settle */
+  transform: translateY(110%);
+  transition: transform var(--dur-enter-slow) var(--ease-enter);
 }
+.unotice.is-docked { transform: translateY(0); }
 .unotice strong { color: var(--text-primary); font-weight: var(--weight-medium); }
 .unotice__lock {
   display: inline-flex;
@@ -947,6 +1025,21 @@ html.is-switching body *::after {
     border-color var(--dur-theme) var(--ease-enter),
     fill var(--dur-theme) var(--ease-enter),
     stroke var(--dur-theme) var(--ease-enter) !important;
+}
+
+/* circular theme reveal from the toggle (View Transitions API):
+   the new frame clips in from the toggle point, expo 300ms */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--dur-theme);
+  animation-timing-function: var(--ease-enter);
+}
+::view-transition-new(root) {
+  animation-name: vtClip;
+}
+@keyframes vtClip {
+  from { clip-path: circle(0px at var(--vtx, 50%) var(--vty, 8%)); }
+  to   { clip-path: circle(150% at var(--vtx, 50%) var(--vty, 8%)); }
 }
 
 /* sun/moon toggle: quiet text button, top-right of stage and unit page */
@@ -1030,18 +1123,25 @@ html.is-switching body *::after {
   .uheat__cell,
   .blur-word,
   [data-rise],
+  [data-io],
+  .unotice,
   .stage__bloom,
+  .watch-frame,
   .watch,
   .watch--shake {
     animation: none !important;
     transition: none !important;
   }
   [data-rise],
+  [data-io],
+  .ubar__fill,
+  .uheat__cell,
   .blur-word {
     opacity: 1 !important;
     transform: none !important;
     filter: none !important;
   }
+  .unotice { transform: none !important; }
   .haptic-strip.is-playing .haptic-bar { background: var(--color-primary-500); }
   .ubar__fill { transform: scaleX(1) !important; }
 }
