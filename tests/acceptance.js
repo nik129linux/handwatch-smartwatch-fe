@@ -908,6 +908,16 @@ async function settle(page, ms) { await page.waitForTimeout(ms); }
 
   const storyPage = await ctx.newPage();
   const storyErrs = watchErrors(storyPage);
+  await storyPage.addInitScript(() => {
+    window.__longtasks = [];
+    try {
+      new PerformanceObserver((list) => {
+        list.getEntries().forEach(e => {
+          if (e.entryType === 'longtask') window.__longtasks.push(e.duration);
+        });
+      }).observe({ entryTypes: ['longtask'] });
+    } catch (e) { /* longtask unsupported — nothing to assert */ }
+  });
   await storyPage.addInitScript(() => { window.__storySpeed = 20; });
   await storyPage.goto(INDEX, { waitUntil: 'load' });
   await storyPage.waitForSelector('.view[data-screen="home"]');
@@ -926,10 +936,139 @@ async function settle(page, ms) { await page.waitForTimeout(ms); }
   ok(storyErrs.length === 0, 'the guided shift logs no console errors',
     storyErrs.join(' | '));
   await storyPage.screenshot({ path: shot('story-end.png') });
+
+  /* no long task (> 100ms) while the guided story played: only count tasks
+     that started after the run began (load is excluded on purpose) */
+  const longMax = await storyPage.evaluate(() =>
+    (window.__longtasks || []).reduce((m, d) => Math.max(m, d), 0));
+  const longN = await storyPage.evaluate(() =>
+    (window.__longtasks || []).filter(d => d > 100).length);
+  ok(longN === 0, 'no long task over 100ms during the guided story',
+    'max ' + longMax.toFixed(1) + 'ms');
   await storyPage.close();
 
+  /* =============================================================== 13. visual */
+  head('13 · the visual signature holds');
+
+  /* tilt: the pointer bends the case, the glare follows; +-8deg max */
+  const tiltPage = await ctx.newPage();
+  await tiltPage.goto(INDEX, { waitUntil: 'load' });
+  await tiltPage.waitForSelector('.view[data-screen="home"]');
+  await tiltPage.evaluate(() => window.__setTheme('dark'));
+  await settle(tiltPage, 900);
+  ok(await tiltPage.evaluate(() => !!window.__tilt),
+    'the tilt spring is installed (fine pointer, full motion)');
+  await tiltPage.mouse.move(1320, 500);
+  await settle(tiltPage, 900);
+  const bent = await tiltPage.evaluate(() => ({
+    rx: document.getElementById('watch').style.getPropertyValue('--rx'),
+    ry: document.getElementById('watch').style.getPropertyValue('--ry'),
+    gx: document.getElementById('screen').style.getPropertyValue('--gx')
+  }));
+  ok(Math.abs(parseFloat(bent.ry)) >= 5,
+    'the case yaws toward the pointer (>' + ' 5deg)', JSON.stringify(bent));
+  ok(Math.abs(parseFloat(bent.rx)) <= 8 && Math.abs(parseFloat(bent.ry)) <= 8,
+    'tilt never exceeds +-8deg', JSON.stringify(bent));
+  ok(bent.gx !== '' && Math.abs(parseFloat(bent.gx) - 32) > 4,
+    'the glass glare follows the pointer', 'gx ' + bent.gx);
+  const watchBox = await tiltPage.locator('#watch').boundingBox();
+  await tiltPage.mouse.move(watchBox.x + watchBox.width / 2, watchBox.y + watchBox.height / 2);
+  await settle(tiltPage, 1500);
+  const flat = await tiltPage.evaluate(() => ({
+    rx: document.getElementById('watch').style.getPropertyValue('--rx'),
+    ry: document.getElementById('watch').style.getPropertyValue('--ry')
+  }));
+  ok(Math.abs(parseFloat(flat.rx)) < 1 && Math.abs(parseFloat(flat.ry)) < 1,
+    'the case settles flat under the pointer', JSON.stringify(flat));
+
+  /* bloom answers the watch state, in primary and neutrals only */
+  await tiltPage.evaluate(() => haptics.play('ok'));
+  await settle(tiltPage, 250);
+  ok(await tiltPage.evaluate(() =>
+    document.getElementById('bloom').classList.contains('is-pulse')),
+    'an ok wash pulses the bloom once');
+  await tiltPage.evaluate(() => haptics.play('doubtful'));
+  await settle(tiltPage, 250);
+  ok(await tiltPage.evaluate(() =>
+    document.getElementById('bloom').classList.contains('is-breathe')),
+    'a doubtful mark starts the neutral breathe');
+  const bloomBg = await tiltPage.evaluate(() =>
+    getComputedStyle(document.getElementById('bloom')).backgroundImage);
+  ok(!/255,\s*0,\s*0|rgb\(255,\s*0/.test(bloomBg),
+    'the bloom never goes red', bloomBg.slice(0, 80));
+  await tiltPage.close();
+
+  /* reduced motion: no tilt, static glare, static bars */
+  const rmCtx2 = await browser.newContext({
+    viewport: { width: 1440, height: 1000 }, reducedMotion: 'reduce'
+  });
+  const rmTilt = await rmCtx2.newPage();
+  await rmTilt.goto(INDEX, { waitUntil: 'load' });
+  await rmTilt.waitForSelector('.view[data-screen="home"]');
+  await settle(rmTilt, 800);
+  await rmTilt.mouse.move(1320, 500);
+  await settle(rmTilt, 800);
+  const rmState = await rmTilt.evaluate(() => ({
+    spring: !!window.__tilt,
+    rx: document.getElementById('watch').style.getPropertyValue('--rx'),
+    ry: document.getElementById('watch').style.getPropertyValue('--ry'),
+    gx: document.getElementById('screen').style.getPropertyValue('--gx')
+  }));
+  ok(!rmState.spring && rmState.rx === '' && rmState.ry === '' && rmState.gx === '',
+    'reduced motion installs no tilt and the glare stays static',
+    JSON.stringify(rmState));
+  await rmCtx2.close();
+
+  /* heatmap ripple: delay is monotonic in distance from the 19:00 cell */
+  await unitPage.evaluate(() => window.__setTheme('dark'));
+  await unitPage.locator('#heat').scrollIntoViewIfNeeded();
+  await settle(unitPage, 900);
+  const ripple = await unitPage.evaluate(() =>
+    [...document.querySelectorAll('.uheat__cell')].map(el => ({
+      h: parseInt(el.title, 10),
+      delay: parseFloat(getComputedStyle(el).animationDelay) || 0
+    })));
+  ok(await unitPage.evaluate(() =>
+    document.querySelector('.uheat.is-in') !== null),
+    'the heatmap reveals once scrolled into view');
+  const byDist = ripple.slice().sort((a, b) =>
+    Math.abs(a.h - 19) - Math.abs(b.h - 19));
+  const mono = byDist.every((c, i, arr) =>
+    i === 0 || c.delay >= arr[i - 1].delay - 0.001);
+  ok(byDist.length === 24 && mono,
+    'heatmap delay is monotonic in distance from the shift-change cell',
+    byDist.map(c => c.h + ':' + c.delay.toFixed(3)).join(' '));
+  ok(ripple.find(c => c.h === 19).delay <= Math.min(...ripple.map(c => c.delay)) + 0.001,
+    'the 19:00 cell ripples first');
+
+  /* unit statement reveals word by word; notice docks after scroll */
+  ok(await unitPage.locator('.manifesto .blur-word').count() >= 5,
+    'the statement reveals word by word');
+  await unitPage.evaluate(() => window.scrollTo(0, 0));
+  await settle(unitPage, 400);
+  await unitPage.evaluate(() => window.scrollTo(0, 800));
+  await settle(unitPage, 700);
+  ok(await unitPage.evaluate(() =>
+    document.querySelector('.unotice').classList.contains('is-docked')),
+    'the no-names notice docks after the first scroll');
+
+  /* theme transition leaves nothing behind */
+  await page.evaluate(() => window.__setTheme('dark'));
+  await settle(page, 500);
+  await page.click('#themeToggle');
+  await settle(page, 900);
+  const themeClean = await page.evaluate(() => ({
+    theme: document.documentElement.dataset.theme,
+    switching: document.documentElement.classList.contains('is-switching'),
+    vtx: document.documentElement.style.getPropertyValue('--vtx')
+  }));
+  ok(themeClean.theme === 'light' && !themeClean.switching && themeClean.vtx === '',
+    'the theme transition flips and cleans up', JSON.stringify(themeClean));
+  await page.evaluate(() => window.__setTheme('dark'));
+  await settle(page, 500);
+
   /* =============================================================== screenshots */
-  head('screenshots');
+  head('screenshots · 6 key moments x 2 themes');
 
   const shots = [
     ['home', async () => {}],
@@ -950,28 +1089,54 @@ async function settle(page, ms) { await page.waitForTimeout(ms); }
       await p.waitForSelector('.view[data-screen="pausa"]'); }]
   ];
 
-  for (const [name, drive] of shots) {
-    const sp = await ctx.newPage();
-    const errs = watchErrors(sp);
-    await sp.goto(INDEX, { waitUntil: 'load' });
-    await sp.waitForSelector('.view[data-screen="home"]');
-    await sp.evaluate(() => { window.__timeScale = 1; });
-    await settle(sp, 1100);
-    await drive(sp);
-    await settle(sp, 700);
-    await sp.locator('#watch').screenshot({ path: shot('watch-' + name + '.png') });
-    ok(errs.length === 0, 'no console errors while shooting ' + name,
-      errs.join(' | '));
-    await sp.close();
-  }
+  for (const theme of ['dark', 'light']) {
+    const suffix = theme === 'light' ? '-light' : '';
+    for (const [name, drive] of shots) {
+      const sp = await ctx.newPage();
+      const errs = watchErrors(sp);
+      await sp.goto(INDEX, { waitUntil: 'load' });
+      await sp.waitForSelector('.view[data-screen="home"]');
+      await sp.evaluate((t) => window.__setTheme(t), theme);
+      await sp.evaluate(() => { window.__timeScale = 1; });
+      await settle(sp, 1100);
+      await drive(sp);
+      await settle(sp, 700);
+      await sp.locator('#watch').screenshot({ path: shot('watch-' + name + suffix + '.png') });
+      ok(errs.length === 0, 'no console errors while shooting ' + name + ' (' + theme + ')',
+        errs.join(' | '));
+      await sp.close();
+    }
 
-  /* the whole stage, with the story mid-flight */
-  const fullPage = await ctx.newPage();
-  await fullPage.goto(INDEX, { waitUntil: 'load' });
-  await fullPage.waitForSelector('.view[data-screen="home"]');
-  await settle(fullPage, 1400);
-  await fullPage.screenshot({ path: shot('index.png'), fullPage: true });
-  await fullPage.close();
+    /* the whole stage in this theme */
+    const fullPage = await ctx.newPage();
+    await fullPage.goto(INDEX, { waitUntil: 'load' });
+    await fullPage.waitForSelector('.view[data-screen="home"]');
+    await fullPage.evaluate((t) => window.__setTheme(t), theme);
+    await settle(fullPage, 1400);
+    await fullPage.screenshot({ path: shot('stage-' + theme + '.png'), fullPage: true });
+    await fullPage.close();
+
+    /* the unit page in this theme: stroll down first so every IO
+       section has revealed before the full-page still */
+    const uShot = await ctx.newPage();
+    await uShot.goto(UNIT, { waitUntil: 'load' });
+    await uShot.waitForSelector('#momentBars .ubar');
+    await uShot.evaluate((t) => window.__setTheme(t), theme);
+    for (const sel of ['#momentBars', '#heat', '#corrN']) {
+      await uShot.locator(sel).scrollIntoViewIfNeeded();
+      await settle(uShot, 600);
+    }
+    await uShot.evaluate(() => window.scrollTo(0, 0));
+    await settle(uShot, 600);
+    /* the fixed notice would stitch mid-page in a full-height capture;
+       it is asserted separately above, so park it for the still only */
+    await uShot.evaluate(() => {
+      const n = document.querySelector('.unotice');
+      if (n) n.style.display = 'none';
+    });
+    await uShot.screenshot({ path: shot('unit-' + theme + '.png'), fullPage: true });
+    await uShot.close();
+  }
 
   await browser.close();
 
