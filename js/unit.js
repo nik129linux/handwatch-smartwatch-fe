@@ -10,11 +10,11 @@ var unit = (function () {
   /* --- demo data --------------------------------------------------------- */
 
   var MOMENTS = [
-    { name: 'Antes del paciente',        done: 1284, total: 1362, pct: 94 },
-    { name: 'Antes de un procedimiento limpio', done: 402, total: 451, pct: 89 },
-    { name: 'Después de exposición a fluidos', done: 191, total: 269, pct: 71 },
-    { name: 'Después del paciente',      done: 1188, total: 1381, pct: 86 },
-    { name: 'Después del entorno',       done: 508, total: 819, pct: 62 }
+    { name: 'Before the patient',        done: 1284, total: 1362, pct: 94 },
+    { name: 'Before a clean procedure', done: 402, total: 451, pct: 89 },
+    { name: 'After fluid exposure', done: 191, total: 269, pct: 71 },
+    { name: 'After the patient',      done: 1188, total: 1381, pct: 86 },
+    { name: 'After the surroundings',       done: 508, total: 819, pct: 62 }
   ];
 
   /* Washes per hour of the day (00 → 23). The two spikes are the shift start
@@ -54,7 +54,7 @@ var unit = (function () {
         '<div class="ubar__top">' +
           '<span class="ubar__name">' + esc(m.name) + '</span>' +
           '<span class="ubar__val">' + m.pct + '%<small>' +
-            m.done + ' de ' + m.total + '</small></span>' +
+            m.done + ' of ' + m.total + '</small></span>' +
         '</div>' +
         '<div class="ubar__track">' +
           '<span class="ubar__fill" style="--i:' + i + ';--pct:' + m.pct + '%"></span>' +
@@ -69,15 +69,15 @@ var unit = (function () {
     var cells = HOURS.map(function (v, i) {
       return '<span class="uheat__cell" style="--i:' + i +
         ';background:var(--heat-' + heatStep(v) + ')" ' +
-        'title="' + pad2(i) + ':00 · ' + v + ' lavados"></span>';
+        'title="' + pad2(i) + ':00 · ' + v + ' washes"></span>';
     }).join('');
 
     host.innerHTML =
       '<div class="uheat__cells">' + cells + '</div>' +
       '<div class="uheat__axis"><span>00</span><span>06</span><span>12</span>' +
         '<span>18</span><span>23</span></div>' +
-      '<div class="uheat__marker">19:00 · Cambio de turno: el pico más alto ' +
-        'y el mayor riesgo de salto sin lavado.</div>';
+      '<div class="uheat__marker">19:00 · Shift change: the highest peak ' +
+        'and the highest risk of a skipped wash.</div>';
   }
 
   function corrections() {

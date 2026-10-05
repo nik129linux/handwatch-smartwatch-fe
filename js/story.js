@@ -24,11 +24,11 @@ var story = (function () {
     /* entering a patient zone: the watch speaks, in silence */
     zona: function (bed) {
       if (watch.isPaused()) {
-        pushLog(clockNow(), 'Recordatorio silenciado · ' + (bed || watch.state.bed), 'off');
+        pushLog(clockNow(), 'Reminder muted · ' + (bed || watch.state.bed), 'off');
         return 'swallowed';
       }
-      haptics.play('recordatorio');
-      watch.addEvent({ text: 'Recordatorio · ' + (bed || watch.state.bed), kind: 'you' });
+      haptics.play('reminder');
+      watch.addEvent({ text: 'Reminder · ' + (bed || watch.state.bed), kind: 'you' });
       watch.go('recordatorio', 'alert');
       return 'shown';
     },
@@ -36,9 +36,9 @@ var story = (function () {
     /* a wash the watch detected on its own */
     lavado: function (opts) {
       if (watch.isPaused()) {
-        pushLog(clockNow(), 'Lavado anotado en silencio', 'ok');
+        pushLog(clockNow(), 'Wash logged quietly', 'ok');
         watch.state.done += 1;
-        watch.addEvent({ text: 'Lavado · ' + watch.state.bed, kind: 'ok' });
+        watch.addEvent({ text: 'Wash · ' + watch.state.bed, kind: 'ok' });
         watch.bump();
         return 'quiet';
       }
@@ -49,13 +49,13 @@ var story = (function () {
     /* leaving without washing: the watch is not sure, so it asks */
     dudoso: function (when) {
       if (watch.isPaused()) {
-        pushLog(clockNow(), 'Duda silenciada', 'off');
+        pushLog(clockNow(), 'Doubt muted', 'off');
         return 'swallowed';
       }
-      watch.state.doubtWhen = when || 'Al salir';
-      haptics.play('dudoso');
+      watch.state.doubtWhen = when || 'On exit';
+      haptics.play('doubtful');
       watch.addEvent({
-        text: 'Duda: ' + watch.state.doubtWhen.toLowerCase() + ' · ' + watch.state.bed,
+        text: 'Doubt: ' + watch.state.doubtWhen.toLowerCase() + ' · ' + watch.state.bed,
         kind: 'you'
       });
       watch.go('dudoso', 'alert');
@@ -65,13 +65,13 @@ var story = (function () {
     /* a code azul: the watch must shut up */
     codigo: function () {
       watch.pause();
-      pushLog(clockNow(), 'Pausa 30 min abierta', 'you');
+      pushLog(clockNow(), '30-min pause open', 'you');
       return 'paused';
     },
 
     terminar: function () {
-      haptics.play('fin');
-      pushLog(clockNow(), 'Turno cerrado · ' + watch.state.done + ' de ' +
+      haptics.play('end');
+      pushLog(clockNow(), 'Shift closed · ' + watch.state.done + ' of ' +
         watch.state.opportunities, 'ok');
       watch.go('fin', 'fwd');
       return 'closed';
@@ -88,7 +88,7 @@ var story = (function () {
   /* the console indicator follows the watch, not the other way round */
   function mirrorPause(paused) {
     if (!el.freeState) return;
-    el.freeState.textContent = paused ? 'silenciado' : 'activo';
+    el.freeState.textContent = paused ? 'muted' : 'active';
     el.freeState.classList.toggle('is-off', paused);
   }
 
@@ -134,29 +134,29 @@ var story = (function () {
 
   var BEATS = [
     {
-      sub: 'Empieza el turno.',
+      sub: 'Shift starts.',
       hold: 2400,
       act: function () { watch.setClock(7, 2); watch.home(); }
     },
     {
-      sub: 'El reloj vibra. No suena. El paciente no se entera.',
+      sub: 'The watch buzzes. No sound. The patient never notices.',
       hold: 3000,
-      act: function () { watch.setClock(7, 4); BUS.zona('Cama 3'); },
+      act: function () { watch.setClock(7, 4); BUS.zona('Bed 3'); },
       until: function () { return watch.state.screen === 'recordatorio'; }
     },
     {
-      sub: 'La lavada se detecta sola. El formulario no existe.',
+      sub: 'The wash detects itself. No form exists.',
       hold: 2600,
       act: function () { watch.setClock(7, 5); BUS.lavado({ speed: 5 }); },
       until: function () { return watch.state.screen === 'home' && watch.state.done >= 13; },
       after: function () { watch.setClock(7, 6); }
     },
     {
-      sub: 'El reloj se equivocó. Se corrige con un toque, sin formulario.',
+      sub: 'The watch was wrong. Fixed with one tap, no form.',
       hold: 2600,
       act: function () {
         watch.setClock(7, 14);
-        BUS.dudoso('Al salir');
+        BUS.dudoso('On exit');
       },
       until: function () { return watch.state.screen === 'dudoso'; },
       then: function () {
@@ -167,31 +167,31 @@ var story = (function () {
       settle: function () { return watch.state.screen === 'home' && watch.state.corrections >= 2; }
     },
     {
-      sub: 'En una emergencia, el reloj se calla.',
+      sub: 'In an emergency, the watch stays quiet.',
       hold: 2400,
-      act: function () { watch.setClock(7, 21); watch.state.bed = 'Cama 5'; BUS.codigo(); },
+      act: function () { watch.setClock(7, 21); watch.state.bed = 'Bed 5'; BUS.codigo(); },
       until: function () { return watch.state.screen === 'pausa'; }
     },
     {
-      sub: 'El recordatorio llegó y se quedó guardado.',
+      sub: 'The reminder came and stayed logged.',
       hold: 2200,
-      act: function () { BUS.zona('Cama 5'); },
+      act: function () { BUS.zona('Bed 5'); },
       after: function () { watch.back(); },
       settle: function () { return watch.state.screen === 'home'; }
     },
     {
-      sub: 'Antes de entrar, la lavada de todos modos.',
+      sub: 'Before entering, the wash anyway.',
       hold: 2400,
       act: function () { watch.startWash({ speed: 5 }); },
       settle: function () { return watch.state.screen === 'home' && watch.state.done >= 15; }
     },
     {
-      sub: 'Lo detallado es tuyo. La unidad solo ve totales.',
+      sub: 'Details are yours. The unit sees totals only.',
       hold: 2800,
       act: function () {
         watch.resume();
         watch.setClock(19, 0);
-        watch.state.bed = 'Cama 5';
+        watch.state.bed = 'Bed 5';
         BUS.terminar();
       },
       until: function () { return watch.state.screen === 'fin'; }
@@ -210,8 +210,8 @@ var story = (function () {
     el.storyPlay.disabled = runningNow;
     el.storyPause.disabled = !runningNow;
     el.storySkip.disabled = !runningNow;
-    el.storyPause.textContent = paused ? 'Continuar' : 'Pausar';
-    el.storyPlay.textContent = runningNow ? '▶ En curso' : '▶ Turno guiado';
+    el.storyPause.textContent = paused ? 'Resume' : 'Pause';
+    el.storyPlay.textContent = runningNow ? '▶ Running' : '▶ Guided shift';
     var free = document.querySelectorAll('#freeMode .btn');
     for (var i = 0; i < free.length; i++) free[i].disabled = runningNow;
   }
@@ -250,7 +250,7 @@ var story = (function () {
 
   function setPaused(v) {
     paused = v;
-    el.storyPause.textContent = v ? 'Continuar' : 'Pausar';
+    el.storyPause.textContent = v ? 'Resume' : 'Pause';
   }
 
   function start() {
@@ -274,7 +274,7 @@ var story = (function () {
     stop();
     setControls(false);
     say('');
-    el.storyClock.textContent = 'fin';
+    el.storyClock.textContent = 'over';
     window.__storyDone = true;
   }
 
@@ -286,10 +286,10 @@ var story = (function () {
     watch.state.corrections = 2;
     watch.state.opportunities = 17;
     watch.setClock(19, 0);
-    haptics.play('fin');
+    haptics.play('end');
     watch.go('fin', 'zoom');
     say('');
-    el.storyClock.textContent = 'fin';
+    el.storyClock.textContent = 'over';
     window.__storyDone = true;
   }
 
@@ -306,8 +306,8 @@ var story = (function () {
     st.plan = 15;
     st.opportunities = 17;
     st.corrections = 1;
-    st.bed = 'Cama 3';
-    st.doubtWhen = 'Al salir';
+    st.bed = 'Bed 3';
+    st.doubtWhen = 'On exit';
     st.pausedUntil = 0;
     st.events = [];
     st.speed = 1;
@@ -317,7 +317,7 @@ var story = (function () {
     renderLog();
     stepIx = 0;
     window.__storyDone = false;
-    el.storyClock.textContent = 'listo';
+    el.storyClock.textContent = 'ready';
     mirrorPause(false);
     watch.home();
   }
@@ -347,8 +347,8 @@ var story = (function () {
       var a = btn.getAttribute('data-act');
       if (a === 'zona') BUS.zona();
       else if (a === 'lavado') BUS.lavado();
-      else if (a === 'salir') BUS.dudoso('Al salir');
-      else if (a === 'dudoso') BUS.dudoso('Lavado dudoso');
+      else if (a === 'salir') BUS.dudoso('On exit');
+      else if (a === 'dudoso') BUS.dudoso('Doubtful wash');
       else if (a === 'codigo') BUS.codigo();
       else if (a === 'terminar') BUS.terminar();
       else if (a === 'reiniciar') BUS.reiniciar();

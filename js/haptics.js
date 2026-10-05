@@ -17,37 +17,37 @@ var haptics = (function () {
      happen". `ok` is a single short tick. `fin` is one long close.
   */
   var VOCAB = {
-    recordatorio: {
-      label: 'Recordatorio',
-      meaning: 'Toca y no pasó',
+    reminder: {
+      label: 'Reminder',
+      meaning: 'Due and missed',
       watchos: 'WKHapticTypeNotification (.notification)',
       pattern: [60, 120, 60],
       heights: [0.5, 0.5]
     },
     ok: {
       label: 'Ok',
-      meaning: 'Lavado anotado',
+      meaning: 'Wash logged',
       watchos: 'WKHapticTypeSuccess (.success)',
       pattern: [35],
       heights: [0.34]
     },
-    dudoso: {
-      label: 'Dudoso',
-      meaning: 'El reloj no está seguro',
+    doubtful: {
+      label: 'Doubtful',
+      meaning: 'Watch is unsure',
       watchos: 'WKHapticTypeRetry (.retry)',
       pattern: [30, 70, 45, 70, 65],
       heights: [0.3, 0.5, 0.72]
     },
-    fin: {
-      label: 'Fin',
-      meaning: 'Turno cerrado',
+    end: {
+      label: 'End',
+      meaning: 'Shift over',
       watchos: 'WKHapticTypeStop (.stop)',
       pattern: [400],
       heights: [0.92]
     }
   };
 
-  var ORDER = ['recordatorio', 'ok', 'dudoso', 'fin'];
+  var ORDER = ['reminder', 'ok', 'doubtful', 'end'];
 
   var strip = null;      // .haptic-strip
   var barsEl = null;     // container the bars are drawn into
@@ -103,7 +103,7 @@ var haptics = (function () {
     strip.dataset.pattern = name;
     if (nameEl) {
       nameEl.innerHTML =
-        '<span class="haptic-strip__name-k">Vibración en vivo</span>' +
+        '<span class="haptic-strip__name-k">Live vibration</span>' +
         '<span class="haptic-strip__name-m">' + v.label + ' · ' + v.meaning + '</span>';
     }
     if (!barsEl) return;
@@ -132,7 +132,7 @@ var haptics = (function () {
     strip.classList.remove('is-playing');
     if (nameEl) {
       nameEl.innerHTML =
-        '<span class="haptic-strip__name-k">Vibración en vivo</span>' +
+        '<span class="haptic-strip__name-k">Live vibration</span>' +
         '<span class="haptic-strip__name-m"></span>';
     }
     if (barsEl) {
@@ -205,7 +205,7 @@ var haptics = (function () {
 
       row.innerHTML =
         '<button class="vocab__play" type="button" data-play="' + name + '" ' +
-          'aria-label="Reproducir ' + v.label + '">' +
+          'aria-label="Play ' + v.label + '">' +
           '<svg viewBox="0 0 10 12" aria-hidden="true" focusable="false">' +
             '<path class="vocab__tri" d="M1 1.5 L8.5 6 L1 10.5 Z" />' +
           '</svg>' +

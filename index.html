@@ -1,15 +1,17 @@
 <!doctype html>
-<html lang="es">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Higiene de manos · reloj</title>
+<title>Hand Hygiene Watch</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600&family=Inter:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/fonts.css">
 <link rel="stylesheet" href="css/tokens.css">
 <link rel="stylesheet" href="css/watch.css">
 <link rel="stylesheet" href="css/stage.css">
+<script src="js/theme.js"></script>
 </head>
 <body class="stage">
 
@@ -18,16 +20,27 @@
 </div>
 
 <header class="masthead">
-  <p class="panel__eyebrow masthead__kick" data-rise style="--i:0">Prototipo · Unidad 4B</p>
-  <h1 class="masthead__title" id="pageTitle" data-blur>Turno en la Unidad 4B</h1>
-  <p class="panel__lede masthead__lede" data-rise style="--i:1">El reloj avisa por vibración, nunca por sonido.
-    Corrige una marca con un toque.</p>
+  <div class="masthead__top">
+    <p class="panel__eyebrow masthead__kick" data-rise style="--i:0">Prototype · Unit 4B</p>
+    <button class="theme-toggle" id="themeToggle" type="button" aria-label="Switch theme">
+      <svg class="theme-toggle__sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true" focusable="false">
+        <circle cx="12" cy="12" r="4.2"/>
+        <path d="M12 2.5v2.4M12 19.1v2.4M2.5 12h2.4M19.1 12h2.4M5 5l1.7 1.7M17.3 17.3L19 19M19 5l-1.7 1.7M6.7 17.3L5 19"/>
+      </svg>
+      <svg class="theme-toggle__moon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false">
+        <path d="M20.6 14.2A8.6 8.6 0 0 1 9.8 3.4 8.6 8.6 0 1 0 20.6 14.2z"/>
+      </svg>
+    </button>
+  </div>
+  <h1 class="masthead__title" id="pageTitle" data-blur>Day shift on Unit 4B</h1>
+  <p class="panel__lede masthead__lede" data-rise style="--i:1">The watch taps, never sounds.
+    Fix a mark with one tap.</p>
 </header>
 
 <main class="stage__grid">
 
   <!-- ============================ watch ============================ -->
-  <section class="stage__watch" id="stageWatch" aria-label="Reloj" data-rise style="--i:1">
+  <section class="stage__watch" id="stageWatch" aria-label="Watch" data-rise style="--i:1">
     <div class="watch-frame" id="watchFrame">
       <div class="watch" id="watch">
       <div class="band band--top" aria-hidden="true"></div>
@@ -35,12 +48,12 @@
 
       <div class="case">
         <button class="crown" id="crown" type="button"
-                aria-label="Corona digital: rueda para desplazar, toca para el inicio">
+                aria-label="Digital crown: scroll with the wheel, press for Home">
           <span class="crown-stem" aria-hidden="true"></span>
           <span class="crown-cap" aria-hidden="true"><span class="crown-grip"></span></span>
         </button>
         <button class="side-button" id="sideButton" type="button"
-                aria-label="Botón lateral: quién ve esto"></button>
+                aria-label="Side button: who sees this"></button>
 
         <div class="screen" id="screen" data-screen="home">
           <div class="statusbar">
@@ -50,7 +63,7 @@
                   <path d="M20.6 14.2A8.6 8.6 0 0 1 9.8 3.4 8.6 8.6 0 1 0 20.6 14.2z"/>
                 </svg>
               </span>
-              <span id="statusTitle">Inicio</span>
+              <span id="statusTitle">Home</span>
             </div>
             <div class="statusbar__time" id="statusTime">07:02</div>
           </div>
@@ -68,78 +81,78 @@
     </div>
 
     <p class="stage__sub" id="subtitle" role="status" aria-live="polite"></p>
-    <p class="stage__hint">Gira la corona con la rueda del mouse · el botón lateral abre la privacidad</p>
+    <p class="stage__hint">Turn the crown with the mouse wheel · the side button opens privacy</p>
 
     <!-- ============================ haptic strip ============================ -->
     <div class="haptic-strip" id="hapticStrip" data-pattern="" aria-live="polite">
       <div class="haptic-strip__head">
         <span class="haptic-strip__name" id="hapticName"></span>
-        <span class="haptic-strip__note">Sin sonido. Nunca.</span>
+        <span class="haptic-strip__note">No sound. Ever.</span>
       </div>
       <div class="haptic-strip__bars"></div>
     </div>
 
     <div class="note" data-rise style="--i:2">
-      <p class="note__label">Por qué cuatro</p>
-      <p class="note__body">El aviso va al cuerpo, no a la pantalla. Ningún patrón
-        suena: la vibración llega a la muñeca y nunca delante del paciente.</p>
-      <p class="note__body">«Acuérdate» y «esto quedó mal registrado» no pueden
-        sentirse igual, así que tampoco se ven igual. Y una marca equivocada no es
-        un dato: es una decisión que le toca tomar a ella, con un toque.</p>
+      <p class="note__label">Why four</p>
+      <p class="note__body">The alert goes to the body, not the screen. No pattern ever
+        sounds: the buzz reaches the wrist, never in front of the patient.</p>
+      <p class="note__body">&ldquo;Reminder&rdquo; and &ldquo;this was logged wrong&rdquo; cannot
+        feel the same, so they do not look the same either. And a wrong mark is not
+        a data point: it is her call to make, with one tap.</p>
     </div>
   </section>
 
   <!-- ============================ panel ============================ -->
-  <aside class="panel" aria-label="Simulador">
+  <aside class="panel" aria-label="Simulator">
 
-    <section class="group" aria-label="Turno guiado" data-rise style="--i:2">
+    <section class="group" aria-label="Guided shift" data-rise style="--i:2">
       <div class="group__head">
-        <span class="group__title">Turno guiado</span>
-        <span class="panel__clock caption" id="storyClock">listo</span>
+        <span class="group__title">Guided shift</span>
+        <span class="panel__clock caption" id="storyClock">ready</span>
       </div>
-      <button class="btn btn--primary story-pill" id="storyPlay" type="button">▶ Turno guiado</button>
+      <button class="btn btn--primary story-pill" id="storyPlay" type="button">▶ Guided shift</button>
       <div class="ctl-row">
-        <button class="btn ctl-btn" id="storyPause" type="button" disabled>Pausar</button>
+        <button class="btn ctl-btn" id="storyPause" type="button" disabled>Pause</button>
         <span class="ctl-sep" aria-hidden="true">·</span>
-        <button class="btn ctl-btn" id="storySkip" type="button" disabled>Saltar</button>
+        <button class="btn ctl-btn" id="storySkip" type="button" disabled>Skip</button>
         <span class="ctl-sep" aria-hidden="true">·</span>
-        <button class="btn ctl-btn" id="storyRestart" type="button">Reiniciar</button>
+        <button class="btn ctl-btn" id="storyRestart" type="button">Reset</button>
       </div>
     </section>
 
-    <section class="group" aria-label="Modo libre" data-rise style="--i:3">
+    <section class="group" aria-label="Free mode" data-rise style="--i:3">
       <div class="group__head">
-        <span class="group__title">Modo libre</span>
-        <span class="panel__clock caption" id="freeState">activo</span>
+        <span class="group__title">Free mode</span>
+        <span class="panel__clock caption" id="freeState">active</span>
       </div>
       <div class="free-list" id="freeMode">
-        <button class="btn free-btn" type="button" data-act="zona">Entrar a zona de paciente</button>
-        <button class="btn free-btn" type="button" data-act="lavado">Lavado detectado</button>
-        <button class="btn free-btn" type="button" data-act="salir">Salir sin lavado</button>
-        <button class="btn free-btn" type="button" data-act="dudoso">Lavado dudoso</button>
-        <button class="btn free-btn" type="button" data-act="codigo">Código azul</button>
-        <button class="btn free-btn" type="button" data-act="terminar">Terminar turno</button>
+        <button class="btn free-btn" type="button" data-act="zona">Enter patient zone</button>
+        <button class="btn free-btn" type="button" data-act="lavado">Wash detected</button>
+        <button class="btn free-btn" type="button" data-act="salir">Leave without washing</button>
+        <button class="btn free-btn" type="button" data-act="dudoso">Doubtful wash</button>
+        <button class="btn free-btn" type="button" data-act="codigo">Code blue</button>
+        <button class="btn free-btn" type="button" data-act="terminar">End shift</button>
       </div>
     </section>
 
-    <section class="group" aria-label="Vocabulario de vibraciones" data-rise style="--i:4">
+    <section class="group" aria-label="Haptic vocabulary" data-rise style="--i:4">
       <div class="group__head">
-        <span class="group__title">Vocabulario</span>
-        <span class="panel__clock caption">cuatro patrones</span>
+        <span class="group__title">Vocabulary</span>
+        <span class="panel__clock caption">four patterns</span>
       </div>
       <ul class="vocab" id="vocab"></ul>
     </section>
 
-    <section class="group" aria-label="Registro de eventos" data-rise style="--i:5">
+    <section class="group" aria-label="Event log" data-rise style="--i:5">
       <div class="group__head">
-        <span class="group__title">Registro</span>
+        <span class="group__title">Log</span>
         <span class="panel__clock caption" id="logCount">0</span>
       </div>
       <ul class="log" id="log"></ul>
     </section>
 
     <a class="panel__link" href="unit.html" data-rise style="--i:6">
-      Ver lo que ve Control de infecciones
+      See what Infection Control sees
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
         <path d="M4 12h15M13 6l6 6-6 6"/>

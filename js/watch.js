@@ -18,8 +18,8 @@ var watch = (function () {
     plan: 15,            /* expected moments — the Home denominator */
     opportunities: 17,   /* moments that actually arose */
     corrections: 1,      /* wrong marks the nurse fixed herself */
-    bed: 'Cama 3',
-    doubtWhen: 'Al salir',
+    bed: 'Bed 3',
+    doubtWhen: 'On exit',
     pausedUntil: 0,
     events: [],
     now: Date.now(),
@@ -172,9 +172,9 @@ var watch = (function () {
 
   var VIEWS = {};
 
-  /* 1 — Inicio */
+  /* 1 — Home */
   VIEWS.home = {
-    title: 'Inicio',
+    title: 'Home',
     anim: 'zoom',
     build: function () {
       var s = segRing(HOME_RING);
@@ -187,11 +187,11 @@ var watch = (function () {
               '<span class="ev__text">' + esc(e.text) + '</span></li>';
           }).join('')
         : '<li class="ev" style="--i:0"><span class="ev__time">' + clock() + '</span>' +
-          '<span class="ev__dot"></span><span class="ev__text">Sin novedades</span></li>';
+          '<span class="ev__dot"></span><span class="ev__text">All quiet</span></li>';
 
       var foot = isPaused()
-        ? '<button class="pill pill--secondary" data-act="resume">Reanudar avisos</button>'
-        : '<button class="pill pill--ghost" data-act="pause">Pausa 30 min</button>';
+        ? '<button class="pill pill--secondary" data-act="resume">Resume alerts</button>'
+        : '<button class="pill pill--ghost" data-act="pause">Pause 30 min</button>';
 
       return '<div class="home__hero">' +
           '<div class="ring" style="--ring-size:' + HOME_RING.size + 'px">' + s.markup +
@@ -199,11 +199,11 @@ var watch = (function () {
               '<div class="hero-num" data-count="' + state.done + '">' + state.done + '</div>' +
               '<div class="home__of">/ ' + state.plan + '</div>' +
             '</div></div>' +
-          '<div class="home__headline">Momentos</div>' +
-          '<div class="caption home__shift">Turno · Unidad 4B</div>' +
+          '<div class="home__headline">Moments</div>' +
+          '<div class="caption home__shift">Shift · Unit 4B</div>' +
         '</div>' +
         '<div class="home__below">' +
-          '<div class="home__label"><span class="label">Últimos 3</span><span class="rule"></span></div>' +
+          '<div class="home__label"><span class="label">Last 3</span><span class="rule"></span></div>' +
           '<ul class="home__list">' + rows + '</ul>' +
         '</div>' +
         '<div class="screen__foot">' + foot + '</div>';
@@ -229,25 +229,25 @@ var watch = (function () {
     }
   };
 
-  /* 2 — Recordatorio */
+  /* 2 — Reminder */
   VIEWS.recordatorio = {
-    title: 'Recordatorio',
+    title: 'Reminder',
     anim: 'alert',
     build: function () {
       return '<div class="alert__glyph">' + GLYPH.hands + '</div>' +
         '<div class="alert__lines">' +
-          '<div class="title">Antes del paciente</div>' +
+          '<div class="title">Before the patient</div>' +
           '<div class="caption">' + esc(state.bed) + '</div>' +
         '</div>' +
         '<div class="screen__foot">' +
-          '<button class="pill pill--primary" data-act="done">Ya lo hice</button>' +
+          '<button class="pill pill--primary" data-act="done">Already did it</button>' +
         '</div>';
     }
   };
 
-  /* 3 — Lavando */
+  /* 3 — Washing */
   VIEWS.lavando = {
-    title: 'Lavando',
+    title: 'Washing',
     anim: 'fwd',
     build: function () {
       var w = washRing(240, 104, 9);
@@ -255,7 +255,7 @@ var watch = (function () {
           '<div class="ring wash-ring" style="--ring-size:240px">' + w.markup +
             '<div class="ring__center"><div class="wash__sec" data-secs>20</div></div>' +
           '</div>' +
-          '<div class="caption wash__cap">Lavado detectado</div>' +
+          '<div class="caption wash__cap">Wash detected</div>' +
           (state.speed > 1
             ? '<div class="caption caption--dim" data-speed>×' + state.speed + '</div>'
             : '') +
@@ -264,56 +264,54 @@ var watch = (function () {
     }
   };
 
-  /* 4 — ¿Te lavaste? */
+  /* 4 — Did you wash? */
   VIEWS.dudoso = {
-    title: 'Confirmar',
+    title: 'Confirm',
     anim: 'alert',
     build: function () {
       return '<div class="doubt__lines">' +
           '<div class="label">' + esc(state.doubtWhen) + '</div>' +
           '<div class="caption">' + esc(state.bed) + '</div>' +
-          '<div class="doubt__q">¿Te lavaste?</div>' +
-          '<div class="caption">No estoy seguro</div>' +
+          '<div class="doubt__q">Did you wash?</div>' +
+          '<div class="caption">Not sure</div>' +
         '</div>' +
         '<div class="screen__foot">' +
-          '<button class="pill pill--primary" data-act="doubt-yes">Sí, me lavé</button>' +
-          '<button class="pill pill--secondary" data-act="doubt-no">No alcancé</button>' +
+          '<button class="pill pill--primary" data-act="doubt-yes">Yes, I did</button>' +
+          '<button class="pill pill--secondary" data-act="doubt-no">Couldn\'t</button>' +
         '</div>';
     }
   };
 
-  /* 5 — Fin de turno */
+  /* 5 — Shift over */
   VIEWS.fin = {
-    title: 'Fin de turno',
+    title: 'Shift over',
     anim: 'fwd',
     build: function () {
-      var one = state.corrections === 1;
-      return '<div class="caption caption--center">Turno · Unidad 4B</div>' +
+      return '<div class="caption caption--center">Shift · Unit 4B</div>' +
         '<div class="shift__rows">' +
           '<div class="shift__row">' +
-            '<span class="num">' + state.done + ' de ' + state.opportunities + '</span>' +
-            '<span class="caption">momentos</span></div>' +
+            '<span class="num">' + state.done + ' of ' + state.opportunities + '</span>' +
+            '<span class="caption">moments</span></div>' +
           '<div class="shift__row">' +
             '<span class="num num--accent">' + state.corrections + '</span>' +
-            '<span class="caption">' + (one ? 'corregido' : 'corregidos') +
-            '<br>por ti</span></div>' +
+            '<span class="caption">fixed<br>by you</span></div>' +
         '</div>' +
-        '<div class="shift__note caption">Este detalle solo lo ves tú. Se borra en 24 h.</div>' +
+        '<div class="shift__note caption">Only you see this. Gone in 24 h.</div>' +
         '<div class="screen__foot">' +
-          '<button class="pill pill--ghost" data-act="home">Volver al inicio</button>' +
+          '<button class="pill pill--ghost" data-act="home">Back to start</button>' +
         '</div>';
     }
   };
 
-  /* 6 — Quién ve esto */
+  /* 6 — Who sees this */
   VIEWS.quien = {
-    title: 'Quién ve esto',
+    title: 'Who sees this',
     anim: 'fwd',
     build: function () {
       var rows = [
-        ['Tú', 'cada evento, 24 horas', 'you'],
-        ['Control de infecciones', 'totales de la unidad, sin nombres', ''],
-        ['Nadie', 'tu ubicación', '']
+        ['You', 'every event, 24 hours', 'you'],
+        ['Infection control', 'unit totals, no names', ''],
+        ['No one', 'your location', '']
       ];
       return '<div class="who__rows">' +
           rows.map(function (r, i) {
@@ -324,24 +322,24 @@ var watch = (function () {
           }).join('') +
         '</div>' +
         '<div class="screen__foot">' +
-          '<button class="pill pill--ghost" data-act="back">Cerrar</button>' +
+          '<button class="pill pill--ghost" data-act="back">Close</button>' +
         '</div>';
     }
   };
 
-  /* 7 — Pausa */
+  /* 7 — Pause */
   VIEWS.pausa = {
-    title: 'Pausa',
+    title: 'Pause',
     anim: 'fwd',
     build: function () {
       return '<div class="pause__glyph">' + GLYPH.bell + '</div>' +
         '<div class="doubt__lines">' +
-          '<div class="title">Silenciar 30 min</div>' +
-          '<div class="caption">Para un código o una emergencia</div>' +
+          '<div class="title">Silence 30 min</div>' +
+          '<div class="caption">For a code or emergency</div>' +
           '<div class="pause__count" data-pausecount>30:00</div>' +
         '</div>' +
         '<div class="screen__foot">' +
-          '<button class="pill pill--primary" data-act="back">Volver</button>' +
+          '<button class="pill pill--primary" data-act="back">Back</button>' +
         '</div>';
     },
     tick: function (node) {
@@ -508,7 +506,7 @@ var watch = (function () {
     }
     if (foot) {
       foot.innerHTML = '<div class="wash__done"><span class="wash__check">' +
-        GLYPH.check + '</span><span class="title">Listo</span></div>';
+        GLYPH.check + '</span><span class="title">Done</span></div>';
     }
     window.setTimeout(function () {
       var c = foot && foot.querySelector('.check');
@@ -517,7 +515,7 @@ var watch = (function () {
     window.setTimeout(function () {
       haptics.play('ok');
       state.done += 1;
-      addEvent({ text: 'Lavado · ' + state.bed, kind: 'ok' });
+      addEvent({ text: 'Wash · ' + state.bed, kind: 'ok' });
       bump();
     }, ms(820));
     window.setTimeout(function () { home(); }, ms(1560));
@@ -609,22 +607,22 @@ var watch = (function () {
     switch (name) {
       case 'done':
         state.done += 1;
-        addEvent({ text: 'Marcado por ti · ' + state.bed, kind: 'ok' });
-        toast('Anotado. Gracias.');
+        addEvent({ text: 'Marked by you · ' + state.bed, kind: 'ok' });
+        toast('Noted. Thanks.');
         haptics.play('ok');
         home();
         break;
       case 'doubt-yes':
         state.done += 1;
         state.corrections += 1;
-        addEvent({ text: 'Corregido por ti · ' + state.bed, kind: 'ok' });
+        addEvent({ text: 'Fixed by you · ' + state.bed, kind: 'ok' });
         haptics.play('ok');
-        toast('Anotado. Gracias.');
+        toast('Noted. Thanks.');
         window.setTimeout(function () { home(); }, ms(460));
         break;
       case 'doubt-no':
-        addEvent({ text: 'Solo para ti · ' + state.bed, kind: 'you' });
-        toast('Queda solo para ti.');
+        addEvent({ text: 'Just for you · ' + state.bed, kind: 'you' });
+        toast('Stays with you.');
         window.setTimeout(function () { home(); }, ms(460));
         break;
       case 'pause':
@@ -632,7 +630,7 @@ var watch = (function () {
         break;
       case 'resume':
         resume();
-        toast('Avisos de nuevo.');
+        toast('Alerts back on.');
         home();
         break;
       case 'home':

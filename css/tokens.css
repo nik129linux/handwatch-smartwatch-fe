@@ -179,6 +179,7 @@
   --dur-tap: 900ms;
   --dur-stagger: 60ms;
   --dur-word: 800ms;
+  --dur-theme: 300ms;
 
   /* --- Watch hardware --------------------------------------------------- */
   --watch-w: 416px;
@@ -199,4 +200,82 @@
 /* Slightly deeper canvas for the wide unit page */
 .on-unit {
   --bg-stage: var(--color-neutral-950);
+}
+
+/* ==========================================================================
+   Light theme — warm paper stage, ink text, same editorial serif.
+   Overrides SEMANTIC tokens only; the base palette above is untouched.
+   The watch screen is re-scoped to its dark tokens below so it stays pure
+   black (OLED convention) in both themes.
+   Lime on light has poor contrast: lime stays as fill, while lime
+   line/dot/text accents use primary mixed 55% toward black.
+   ========================================================================== */
+
+:root[data-theme="light"] {
+  /* --- Light base (raw values live only in this file) ------------------- */
+  --color-paper: #fdf1e1;         /* warm paper — light stage canvas        */
+  --color-paper-deep: #f3e2c6;    /* deeper warm — raised / inset surfaces   */
+  --color-card-light: #fffaf0;     /* warm card surface                      */
+  --color-ink: #20180f;           /* ink — primary text on paper            */
+  --color-ink-soft: #57503f;      /* softened ink — secondary text (7+:1)   */
+  --color-line: #e0cfb2;          /* warm hairline                          */
+  --color-line-strong: #c8b18c;   /* stronger warm hairline                 */
+
+  /* --- Semantic surfaces ------------------------------------------------ */
+  --bg-stage: var(--color-paper);
+  --bg-card: var(--color-card-light);
+  --bg-raised: var(--color-paper-deep);
+  --bg-inset: color-mix(in srgb, var(--color-paper-deep) 72%, white);
+  --bg-screen: var(--color-black);
+
+  /* --- Semantic text (ink on paper, all above 4.5:1) -------------------- */
+  --text-primary: var(--color-ink);
+  --text-secondary: var(--color-ink-soft);
+  --text-tertiary: color-mix(in srgb, var(--color-ink) 45%, var(--color-paper));
+  --text-inverse: var(--color-ink);
+  --text-accent: color-mix(in srgb, var(--color-primary-500) 55%, black);
+  --text-accent-strong: color-mix(in srgb, var(--color-primary-500) 38%, black);
+
+  /* --- Semantic borders ------------------------------------------------- */
+  --border-card: var(--color-line-strong);
+  --border-subtle: var(--color-line);
+  --border-strong: var(--color-line-strong);
+  --border-focus: var(--text-accent);
+
+  /* --- Ring track follows the light canvas ------------------------------- */
+  --ring-track: color-mix(in srgb, var(--color-primary-500) 22%, var(--color-paper-deep));
+
+  /* --- Bars and heat anchored on paper ---------------------------------- */
+  --bar-track: color-mix(in srgb, var(--color-line-strong) 62%, white);
+  --heat-1: color-mix(in srgb, var(--color-primary-500) 8%, var(--color-card-light));
+  --heat-2: color-mix(in srgb, var(--color-primary-500) 26%, var(--color-paper-deep));
+  --heat-3: color-mix(in srgb, var(--color-primary-500) 48%, var(--color-paper-deep));
+  --heat-4: color-mix(in srgb, var(--color-primary-500) 72%, var(--color-ink));
+  --heat-5: var(--color-primary-500);
+
+  /* --- Stage atmosphere retuned for light -------------------------------- */
+  --glow-primary: color-mix(in srgb, var(--color-spectrum-orange) 12%, transparent);
+  --glow-primary-soft: color-mix(in srgb, var(--color-spectrum-orange) 6%, transparent);
+  --veil-cool: color-mix(in srgb, var(--color-spectrum-blue) 7%, transparent);
+  --mist-line: color-mix(in srgb, var(--color-ink) 10%, transparent);
+}
+
+/* The watch screen stays pure black in both themes: re-scope the dark
+   surface/text tokens inside .screen so nothing on the watch inherits
+   the paper stage. Only the case/bezel (neutral hardware tokens) is shared. */
+:root[data-theme="light"] .screen {
+  --text-primary: var(--color-neutral-50);
+  --text-secondary: color-mix(in srgb, var(--color-neutral-400) 62%, var(--color-neutral-50));
+  --text-tertiary: var(--color-neutral-600);
+  --text-inverse: var(--color-neutral-950);
+  --text-accent: var(--color-primary-500);
+  --bg-screen: var(--color-black);
+  --bg-card: var(--color-neutral-900);
+  --bg-raised: var(--color-neutral-800);
+  --bg-inset: color-mix(in srgb, var(--color-neutral-950) 82%, var(--color-black));
+  --border-card: var(--color-neutral-700);
+  --border-subtle: var(--color-neutral-800);
+  --border-strong: var(--color-neutral-600);
+  --border-focus: var(--color-primary-500);
+  --ring-track: color-mix(in srgb, var(--color-primary-500) 18%, var(--color-neutral-900));
 }

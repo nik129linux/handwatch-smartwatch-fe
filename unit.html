@@ -1,28 +1,39 @@
 <!doctype html>
-<html lang="es">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Unidad 4B · Control de infecciones</title>
+<title>Unit 4B · Infection control</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600&family=Inter:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/fonts.css">
 <link rel="stylesheet" href="css/tokens.css">
 <link rel="stylesheet" href="css/watch.css">
 <link rel="stylesheet" href="css/stage.css">
+<script src="js/theme.js"></script>
 </head>
 <body class="unit">
 
 <header class="unit__head">
   <div class="unit__eyebrow">
-    <span>Control de infecciones</span>
-    <span class="unit__badge">Datos de demostración</span>
+    <span>Infection control</span>
+    <span class="unit__badge">Demo data</span>
+    <button class="theme-toggle" id="themeToggle" type="button" aria-label="Switch theme">
+      <svg class="theme-toggle__sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true" focusable="false">
+        <circle cx="12" cy="12" r="4.2"/>
+        <path d="M12 2.5v2.4M12 19.1v2.4M2.5 12h2.4M19.1 12h2.4M5 5l1.7 1.7M17.3 17.3L19 19M19 5l-1.7 1.7M6.7 17.3L5 19"/>
+      </svg>
+      <svg class="theme-toggle__moon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false">
+        <path d="M20.6 14.2A8.6 8.6 0 0 1 9.8 3.4 8.6 8.6 0 1 0 20.6 14.2z"/>
+      </svg>
+    </button>
   </div>
 
-  <h1 class="unit__name">Unidad 4B</h1>
+  <h1 class="unit__name">Unit 4B</h1>
 
   <p class="manifesto" data-rise style="--i:1">
-    <em>Mide </em><strong>el proceso</strong><em>, no a las personas.</em>
+    <em>Measure </em><strong>the process</strong><em>, not the people.</em>
   </p>
 
   <a class="unit__back" href="index.html">
@@ -30,7 +41,7 @@
          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
       <path d="M4 12h15M13 6l6 6-6 6"/>
     </svg>
-    Volver al reloj
+    Back to the watch
   </a>
 
 </header>
@@ -38,30 +49,30 @@
 <main class="unit__grid">
 
   <section class="ucard ucard--wide" aria-labelledby="t-moment">
-    <p class="ucard__label">Cumplimiento por momento</p>
-    <h2 class="ucard__title" id="t-moment">Los cinco momentos de la OMS</h2>
-    <p class="ucard__note">Promedio de los últimos 14 días. Es una medida del
-      proceso de la unidad, no de ninguna persona.</p>
+    <p class="ucard__label">Compliance by moment</p>
+    <h2 class="ucard__title" id="t-moment">The five WHO moments</h2>
+    <p class="ucard__note">Average of the last 14 days. A measure of
+      the unit process, not of any person.</p>
     <div class="ubars" id="momentBars"></div>
   </section>
 
   <section class="ucard ucard--wide" aria-labelledby="t-hour">
-    <p class="ucard__label">Comportamiento por hora</p>
-    <h2 class="ucard__title" id="t-hour">Cuándo se lava la unidad</h2>
-    <p class="ucard__note">Lavados por hora, promedio del turno. Los colores
-      más intensos son más lavados, no menos.</p>
+    <p class="ucard__label">Behavior by hour</p>
+    <h2 class="ucard__title" id="t-hour">When the unit washes</h2>
+    <p class="ucard__note">Washes per hour, shift average. Darker
+      colors mean more washes, not fewer.</p>
     <div class="uheat" id="heat"></div>
   </section>
 
   <section class="ucard ucard--wide" aria-labelledby="t-corr">
-    <p class="ucard__label">Correcciones del personal</p>
-    <h2 class="ucard__title" id="t-corr">El reloj se equivocó</h2>
+    <p class="ucard__label">Staff corrections</p>
+    <h2 class="ucard__title" id="t-corr">The watch was wrong</h2>
     <div class="ucorr">
       <div class="ucorr__n" id="corrN">0</div>
       <div class="ucorr__body">
-        <p class="ucorr__text"><strong id="corrWord">correcciones en 14 días.</strong>
-          Cuántas veces el reloj se equivocó y alguien lo corrigió.</p>
-        <p class="ucorr__line">Mide al reloj, no a la gente.</p>
+        <p class="ucorr__text"><strong id="corrWord">corrections in 14 days.</strong>
+          How often the watch was wrong and someone fixed it.</p>
+        <p class="ucorr__line">Measures the watch, not the people.</p>
       </div>
     </div>
   </section>
@@ -69,15 +80,15 @@
 </main>
 
 <footer class="unotice">
-  <span><strong>Esta vista no tiene nombres.</strong>
-    No existe un filtro por persona.</span>
+  <span><strong>This view has no names.</strong>
+    There is no per-person filter.</span>
   <span class="unotice__lock">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
       <rect x="4.5" y="10.5" width="15" height="10" rx="3"/>
       <path d="M8 10.5V7.8a4 4 0 0 1 8 0v2.7"/>
     </svg>
-    Datos de demostración
+    Demo data
   </span>
 </footer>
 

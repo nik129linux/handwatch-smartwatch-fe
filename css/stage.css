@@ -577,7 +577,7 @@ body.is-ready [data-rise] {
 .log__dot--off { background: transparent; border: 1px solid var(--color-neutral-500); }
 .log__text { color: var(--text-primary); line-height: 1.5; font-variant-numeric: tabular-nums; }
 .log:empty::after {
-  content: 'Todavía nada';
+  content: 'Nothing yet';
   color: var(--text-secondary);
   font-family: var(--font-mono);
   font-size: 12px;
@@ -931,8 +931,87 @@ body.is-ready [data-rise] {
 }
 
 /* --------------------------------------------------------------------------
-   7. Reduced motion
+   8. Theme switch (light / dark)
    -------------------------------------------------------------------------- */
+
+/* 300ms expo crossover while the tokens swap underneath */
+html.is-switching body,
+html.is-switching body *,
+html.is-switching body *::before,
+html.is-switching body *::after {
+  transition:
+    background-color var(--dur-theme) var(--ease-enter),
+    color var(--dur-theme) var(--ease-enter),
+    border-color var(--dur-theme) var(--ease-enter),
+    fill var(--dur-theme) var(--ease-enter),
+    stroke var(--dur-theme) var(--ease-enter) !important;
+}
+
+/* sun/moon toggle: quiet text button, top-right of stage and unit page */
+.masthead__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+}
+.masthead__top .masthead__kick { margin-bottom: 0; }
+
+.theme-toggle {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex: none;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid transparent;
+  background: none;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition:
+    transform var(--dur-press) var(--ease-enter),
+    color var(--dur-exit) var(--ease-enter),
+    border-color var(--dur-exit) var(--ease-enter);
+}
+.theme-toggle:hover { color: var(--text-primary); border-color: var(--border-strong); }
+.theme-toggle:active { transform: scale(0.97); }
+.theme-toggle svg { width: 20px; height: 20px; grid-area: 1 / 1; }
+.theme-toggle__sun { display: none; }
+:root[data-theme="light"] .theme-toggle__sun { display: block; }
+:root[data-theme="light"] .theme-toggle__moon { display: none; }
+.unit__eyebrow .theme-toggle { margin-left: auto; }
+
+/* --- light canvas: warm paper, softer bloom, visible grain -------------- */
+
+:root[data-theme="light"] .stage {
+  background:
+    radial-gradient(58% 44% at 28% 26%,
+      var(--glow-primary-soft) 0%, transparent 70%),
+    radial-gradient(46% 36% at 74% 8%,
+      var(--veil-cool) 0%, transparent 70%),
+    radial-gradient(130% 80% at 26% -12%,
+      var(--bg-raised) 0%, transparent 62%),
+    var(--bg-stage);
+}
+:root[data-theme="light"] body::after { opacity: 0.06; }
+
+/* lime accents on light surfaces: dots/lines take the 55% ink mix ... */
+:root[data-theme="light"] .log__dot--ok,
+:root[data-theme="light"] .vocab__row.is-active .vocab__wave-bar,
+:root[data-theme="light"] .uheat__marker::before,
+:root[data-theme="light"] .unit__badge::before {
+  background: var(--text-accent);
+}
+/* ... while lime TEXT takes the deeper mix so it keeps 4.5:1 on paper */
+:root[data-theme="light"] .vocab__row.is-active .vocab__name,
+:root[data-theme="light"] .vocab__row.is-active .vocab__pattern,
+:root[data-theme="light"] .panel__clock.is-off {
+  color: var(--text-accent-strong);
+}
+
+/* --------------------------------------------------------------------------
+    7. Reduced motion
+    -------------------------------------------------------------------------- */
 
 @media (prefers-reduced-motion: reduce) {
   *,

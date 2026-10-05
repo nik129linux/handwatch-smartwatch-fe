@@ -18,8 +18,9 @@ const UNIT = pathToFileURL(path.join(ROOT, 'unit.html')).href;
 const WATCH_FILES = ['index.html', 'js/watch.js', 'css/watch.css', 'js/story.js'];
 const SCANNED = [
   'index.html', 'unit.html',
-  'css/tokens.css', 'css/watch.css', 'css/stage.css',
-  'js/haptics.js', 'js/watch.js', 'js/story.js', 'js/unit.js', 'js/stage.js'
+  'css/tokens.css', 'css/fonts.css', 'css/watch.css', 'css/stage.css',
+  'js/haptics.js', 'js/watch.js', 'js/story.js', 'js/unit.js', 'js/stage.js',
+  'js/theme.js'
 ];
 
 /* ---------------------------------------------------------------- runner */
@@ -41,10 +42,10 @@ function head(s) { console.log('\n' + s); }
 
 const OLD_LIME = 'rgb(166, 255, 0)';
 const VIBE = {
-  recordatorio: [60, 120, 60],
+  reminder: [60, 120, 60],
   ok: [35],
-  dudoso: [30, 70, 45, 70, 65],
-  fin: [400]
+  doubtful: [30, 70, 45, 70, 65],
+  end: [400]
 };
 
 /* ---------------------------------------------------------------- helpers */
@@ -91,7 +92,7 @@ async function settle(page, ms) { await page.waitForTimeout(ms); }
   await page.waitForSelector('.view[data-screen="home"]');
   ok(indexErrs.length === 0, 'index.html has no console errors', indexErrs.join(' | '));
   ok(await page.locator('#screen').getAttribute('data-screen') === 'home',
-    'the watch boots on Inicio');
+    'the watch boots on Home');
 
   const unitPage = await ctx.newPage();
   const unitErrs = watchErrors(unitPage);
@@ -118,26 +119,26 @@ async function settle(page, ms) { await page.waitForTimeout(ms); }
 
   await freeMode(page, 'zona');
   await page.waitForSelector('.view[data-screen="recordatorio"]', { timeout: 4000 });
-  ok(true, 'Entrar a zona → Recordatorio visible');
+  ok(true, 'Enter patient zone → Reminder visible');
   await settle(page, 400);
   ok(await page.locator('.pill[data-act="done"]').count() === 1,
-    'Recordatorio offers one pill: "Ya lo hice"');
+    'Reminder offers one pill: "Already did it"');
 
   await freeMode(page, 'lavado');
   await page.waitForSelector('.view[data-screen="lavando"]', { timeout: 4000 });
-  ok(true, 'Lavado detectado → Lavando visible');
+  ok(true, 'Wash detected → Washing visible');
   await page.waitForSelector('.view[data-screen="home"]', { timeout: 6000 });
   await settle(page, 300);
   const after = parseInt(await page.locator('.hero-num').getAttribute('data-count'), 10);
   ok(after === before + 1,
-    'Inicio counter incremented by 1 after the wash',
+    'Home counter incremented by 1 after the wash',
     'before ' + before + ', after ' + after);
 
   await freeMode(page, 'dudoso');
   await page.waitForSelector('.view[data-screen="dudoso"]', { timeout: 4000 });
-  ok(true, 'Lavado dudoso → ¿Te lavaste? visible');
+  ok(true, 'Doubtful wash → Did you wash? visible');
   const q = await page.locator('.doubt__q').textContent();
-  ok(q.trim() === '¿Te lavaste?', 'the screen asks "¿Te lavaste?"', q);
+  ok(q.trim() === 'Did you wash?', 'the screen asks "Did you wash?"', q);
   const pills = await page.locator('.view[data-screen="dudoso"] .pill').count();
   ok(pills === 2, 'two pills, no form fields', 'found ' + pills);
   ok((await page.locator('.view[data-screen="dudoso"] input').count()) === 0,
@@ -146,7 +147,7 @@ async function settle(page, ms) { await page.waitForTimeout(ms); }
   await page.click('.pill[data-act="doubt-yes"]');
   await page.waitForSelector('.toast.is-on', { timeout: 4000 });
   const toast = (await page.locator('#toastText').textContent()).trim();
-  ok(toast === 'Anotado. Gracias.', 'toast says "Anotado. Gracias."', toast);
+  ok(toast === 'Noted. Thanks.', 'toast says "Noted. Thanks."', toast);
   await page.waitForSelector('.view[data-screen="home"]', { timeout: 4000 });
   await settle(page, 400);
   ok(await screenIs(page, 'dudoso') === false, 'the doubt screen closes after one tap');
@@ -156,7 +157,7 @@ async function settle(page, ms) { await page.waitForTimeout(ms); }
 
   await freeMode(page, 'codigo');
   await page.waitForSelector('.view[data-screen="pausa"]', { timeout: 4000 });
-  ok(true, 'Código azul → Pausa visible');
+  ok(true, 'Code blue → Pause visible');
   ok(await page.locator('#screen.is-paused').count() === 1,
     'a moon glyph shows in the status bar while paused');
 
@@ -165,9 +166,9 @@ async function settle(page, ms) { await page.waitForTimeout(ms); }
   await freeMode(page, 'zona');
   await settle(page, 700);
   ok(await screenIs(page, 'recordatorio') === false,
-    'Entrar a zona while paused does NOT show Recordatorio');
+    'Enter patient zone while paused does NOT show Reminder');
   const logText = await page.locator('#log').textContent();
-  ok(/silenciado/i.test(logText), 'the swallowed reminder is logged as "silenciado"',
+  ok(/muted/i.test(logText), 'the swallowed reminder is logged as "muted"',
     logText.slice(0, 120));
 
   /* =============================================================== 4. end of shift */
@@ -175,35 +176,35 @@ async function settle(page, ms) { await page.waitForTimeout(ms); }
 
   await freeMode(page, 'terminar');
   await page.waitForSelector('.view[data-screen="fin"]', { timeout: 4000 });
-  ok(true, 'Terminar turno → Fin de turno visible');
+  ok(true, 'End shift → Shift over visible');
   const finText = await page.locator('.view[data-screen="fin"]').textContent();
-  ok(/momentos/i.test(finText), 'Fin de turno shows the moment count');
-  ok(/corregidos\s*por\s*ti/i.test(finText.replace(/\s+/g, ' ')),
-    'Fin de turno shows how many she corrected herself');
-  ok(/24 h/.test(finText), 'Fin de turno states the 24 h window');
+  ok(/moments/i.test(finText), 'Shift over shows the moment count');
+  ok(/fixed\s*by\s*you/i.test(finText.replace(/\s+/g, ' ')),
+    'Shift over shows how many she fixed herself');
+  ok(/24 h/.test(finText), 'Shift over states the 24 h window');
 
   await page.click('#sideButton');
   await page.waitForSelector('.view[data-screen="quien"]', { timeout: 4000 });
-  ok(true, 'the side button opens Quién ve esto');
+  ok(true, 'the side button opens Who sees this');
   const who = (await page.locator('.view[data-screen="quien"]').textContent()).replace(/\s+/g, ' ');
-  ok(/Tú/.test(who) && /Control de infecciones/.test(who) && /Nadie/.test(who),
-    'three rows: Tú · Control de infecciones · Nadie', who.slice(0, 160));
-  ok(/sin nombres/.test(who), 'the unit sees totals without names');
+  ok(/You/.test(who) && /Infection control/.test(who) && /No one/.test(who),
+    'three rows: You · Infection control · No one', who.slice(0, 160));
+  ok(/no names/.test(who), 'the unit sees totals without names');
 
   /* =============================================================== 6. haptics */
   head('6 · the vibration vocabulary reaches navigator.vibrate');
 
   const vibe = await page.evaluate(() => {
     window.__vibe = [];
-    ['recordatorio', 'ok', 'dudoso', 'fin'].forEach(n => haptics.play(n));
+    ['reminder', 'ok', 'doubtful', 'end'].forEach(n => haptics.play(n));
     return window.__vibe;
   });
-  eq(vibe, [VIBE.recordatorio, VIBE.ok, VIBE.dudoso, VIBE.fin],
+  eq(vibe, [VIBE.reminder, VIBE.ok, VIBE.doubtful, VIBE.end],
     'each pattern plays its exact ms array');
   const rows = await page.locator('.vocab__row').count();
   ok(rows === 4, 'the panel documents 4 patterns', 'found ' + rows);
   const strip = await page.locator('.haptic-strip').textContent();
-  ok(/Sin sonido\. Nunca\./.test(strip), 'the strip states: Sin sonido. Nunca.');
+  ok(/No sound\. Ever\./.test(strip), 'the strip states: No sound. Ever.');
 
   /* =============================================================== 7. tokens */
   head('7 · changing the primary propagates everywhere');
@@ -250,6 +251,109 @@ async function settle(page, ms) { await page.waitForTimeout(ms); }
   await tokenTest(page, 'index.html');
   await tokenTest(unitPage, 'unit.html');
 
+  /* the token promise holds in the light theme too: flip both pages over
+     (the inline primary swap above survives the switch) and walk again */
+  await page.evaluate(() => window.__setTheme('light'));
+  await unitPage.evaluate(() => window.__setTheme('light'));
+  await settle(page, 700);
+  await tokenTest(page, 'index.html (light)');
+  await tokenTest(unitPage, 'unit.html (light)');
+  await page.evaluate(() => window.__setTheme('dark'));
+  await unitPage.evaluate(() => window.__setTheme('dark'));
+  await settle(page, 500);
+
+  /* =============================================================== 7b. theme */
+  head('7b · light / dark switch');
+
+  for (const t of ['index.html', 'unit.html']) {
+    const p = t === 'index.html' ? page : unitPage;
+    ok(await p.locator('#themeToggle[aria-label="Switch theme"]').count() === 1,
+      t + ' has a theme toggle labelled "Switch theme"');
+    ok(await p.locator('#themeToggle svg').count() === 2,
+      t + ' toggle carries sun + moon icons');
+  }
+  /* the button flips data-theme and the choice survives a reload */
+  await page.evaluate(() => window.__setTheme('dark'));
+  await settle(page, 500);
+  await page.click('#themeToggle');
+  await settle(page, 500);
+  ok(await page.evaluate(() => document.documentElement.dataset.theme) === 'light',
+    'the toggle flips data-theme to light');
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForSelector('.view[data-screen="home"]');
+  ok(await page.evaluate(() => document.documentElement.dataset.theme) === 'light',
+    'the light choice persists across reload (localStorage)');
+  await page.click('#themeToggle');
+  await settle(page, 500);
+  ok(await page.evaluate(() => document.documentElement.dataset.theme) === 'dark',
+    'the toggle flips back to dark');
+
+  /* the watch screen stays pure black in both themes (OLED convention) */
+  for (const theme of ['dark', 'light']) {
+    await page.evaluate((t) => window.__setTheme(t), theme);
+    await settle(page, 600);
+    const scr = await page.evaluate(() =>
+      getComputedStyle(document.querySelector('.screen')).backgroundColor);
+    ok(scr === 'rgb(0, 0, 0)', 'the watch screen stays pure black in ' + theme,
+      'computed ' + scr);
+  }
+  await page.evaluate(() => window.__setTheme('dark'));
+  await settle(page, 400);
+
+  /* contrast ≥ 4.5:1 for representative text in both themes */
+  async function contrast(p, sel) {
+    return await p.evaluate((s) => {
+      const el = document.querySelector(s);
+      if (!el) return { missing: s };
+      const parse = (c) => {
+        let m = (c || '').match(/rgba?\(([^)]+)\)/);
+        if (m) {
+          const v = m[1].split(',').map(x => parseFloat(x));
+          return [v[0], v[1], v[2], v.length > 3 ? v[3] : 1];
+        }
+        m = (c || '').match(/color\(srgb\s+([0-9.]+)\s+([0-9.]+)\s+([0-9.]+)/);
+        if (m) return [parseFloat(m[1]) * 255, parseFloat(m[2]) * 255,
+          parseFloat(m[3]) * 255, 1];
+        return null;
+      };
+      const lin = (v) => {
+        v /= 255;
+        return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+      };
+      const lum = (c) => 0.2126 * lin(c[0]) + 0.7152 * lin(c[1]) + 0.0722 * lin(c[2]);
+      const fg = parse(getComputedStyle(el).color);
+      if (!fg) return { missing: s + ' (unparsable color)' };
+      let bg = null, n = el;
+      while (n) {
+        const c = parse(getComputedStyle(n).backgroundColor);
+        if (c && c[3] > 0.99) { bg = c; break; }
+        n = n.parentElement;
+      }
+      const L1 = lum(fg), L2 = lum(bg || [0, 0, 0, 1]);
+      const hi = Math.max(L1, L2), lo = Math.min(L1, L2);
+      return { ratio: (hi + 0.05) / (lo + 0.05) };
+    }, sel);
+  }
+  const themePairs = [
+    [page, '.masthead__title'], [page, '.panel__lede'], [page, '.group__title'],
+    [page, '.free-btn'], [page, '#storyClock'], [page, '.note__body'],
+    [page, '.haptic-strip__note'], [page, '.vocab__meaning'],
+    [unitPage, '.ucard__note'], [unitPage, '.unit__eyebrow']
+  ];
+  for (const theme of ['dark', 'light']) {
+    await page.evaluate((t) => window.__setTheme(t), theme);
+    await unitPage.evaluate((t) => window.__setTheme(t), theme);
+    await settle(page, 600);
+    for (const [p, sel] of themePairs) {
+      const r = await contrast(p, sel);
+      ok(!r.missing && r.ratio >= 4.5, 'contrast ≥ 4.5:1 in ' + theme + ' — ' + sel,
+        r.missing ? 'missing' : 'ratio ' + r.ratio.toFixed(2) + ':1');
+    }
+  }
+  await page.evaluate(() => window.__setTheme('dark'));
+  await unitPage.evaluate(() => window.__setTheme('dark'));
+  await settle(page, 400);
+
   /* =============================================================== 8. source */
   head('8 · source rules');
 
@@ -295,7 +399,7 @@ async function settle(page, ms) { await page.waitForTimeout(ms); }
       }
     }
   });
-  ['js/haptics.js', 'js/watch.js', 'js/story.js', 'js/unit.js'].forEach(f => {
+  ['js/haptics.js', 'js/watch.js', 'js/story.js', 'js/unit.js', 'js/theme.js'].forEach(f => {
     stripComments(read(f)).split('\n').forEach((line, i) => {
       if (linRe.test(line)) linOffenders.push(f + ':' + (i + 1) + ' → ' + line.trim());
     });
@@ -303,15 +407,49 @@ async function settle(page, ms) { await page.waitForTimeout(ms); }
   ok(linOffenders.length === 0, '"linear" appears only in the wash ring rule',
     linOffenders.slice(0, 4).join(' | '));
 
-  /* 8c — no voseo anywhere */
-  const voseo = /\b(tocá|mirá|podés|tenés|querés|acordate|entrás|decís|vos)\b/i;
-  const vOffenders = [];
-  SCANNED.forEach(f => {
-    stripComments(read(f)).split('\n').forEach((line, i) => {
-      if (voseo.test(line)) vOffenders.push(f + ':' + (i + 1) + ' → ' + line.trim());
+  /* 8c — no Spanish stopwords left in UI strings.
+     Static HTML is checked as text nodes + spoken attributes (aria-label,
+     title); JS-driven copy is checked as rendered text in the browser, which
+     is immune to identifier false positives (data-act keys, screen names). */
+  const spanish = /\b(el|la|los|las|del|una|para|con|por|turno|reloj|lavado|momentos?|cama|paciente|inicio|nadie|quien|tú|usted|gracias)\b/i;
+  const htmlOffenders = [];
+  for (const f of ['index.html', 'unit.html']) {
+    const src = stripComments(read(f));
+    const texts = [];
+    src.replace(/>([^<>]+)</g, (m, t) => { texts.push(t); return m; });
+    src.replace(/\b(?:aria-label|title|alt|placeholder)="([^"]*)"/g,
+      (m, v) => { texts.push(v); return m; });
+    texts.forEach((t) => {
+      const clean = t.replace(/\s+/g, ' ').trim();
+      if (clean && spanish.test(clean)) htmlOffenders.push(f + ' → ' + clean.slice(0, 80));
     });
+  }
+  ok(htmlOffenders.length === 0, 'no Spanish stopwords remain in static UI strings',
+    htmlOffenders.slice(0, 4).join(' | '));
+  const renderedCopy = await page.evaluate(async () => {
+    const names = ['home', 'recordatorio', 'lavando', 'dudoso', 'fin', 'quien', 'pausa'];
+    const out = [];
+    for (const n of names) {
+      watch.go(n, 'zoom');
+      await new Promise(r => setTimeout(r, 90));
+      out.push(document.getElementById('screen').innerText);
+    }
+    out.push(document.body.innerText);
+    document.querySelectorAll('[aria-label]').forEach(el =>
+      out.push(el.getAttribute('aria-label')));
+    watch.go('home', 'zoom');
+    return out.join('\n');
   });
-  ok(vOffenders.length === 0, 'no voseo in the source', vOffenders.slice(0, 4).join(' | '));
+  const renderedUnit = await unitPage.evaluate(() => {
+    const out = [document.body.innerText];
+    document.querySelectorAll('[aria-label]').forEach(el =>
+      out.push(el.getAttribute('aria-label')));
+    return out.join('\n');
+  });
+  const esHit = (renderedCopy + '\n' + renderedUnit).split('\n')
+    .filter(l => spanish.test(l));
+  ok(esHit.length === 0, 'no Spanish stopwords remain in rendered UI strings',
+    esHit.slice(0, 4).join(' | '));
 
   /* every watch screen, walked one by one */
   const watchCopy = await page.evaluate(async () => {
@@ -325,13 +463,15 @@ async function settle(page, ms) { await page.waitForTimeout(ms); }
     return out.join('\n');
   });
   const bad = [];
-  [/\bincumplimiento\b/i, /\bfalta\b/i, /\berror\b/i, /\bviolaci/i, /\bsancion/i]
+  [/\bfailure\b/i, /\bviolation\b/i, /\bnon-compliance\b/i, /\bfault\b/i,
+   /\berror\b/i, /\bnegligence\b/i]
     .forEach(re => { if (re.test(watchCopy)) bad.push(re.source); });
   ok(bad.length === 0,
-    'no watch screen says incumplimiento / falta / error / sanción', bad.join(', '));
+    'no watch screen accuses: failure / violation / non-compliance / fault / error / negligence',
+    bad.join(', '));
   const allCopy = watchCopy + '\n' + (await page.evaluate(() => document.body.innerText));
-  ok(!/\b(tocá|mirá|podés|tenés|querés|acordate)\b/i.test(allCopy),
-    'all UI copy is neutral Colombian ("tú")');
+  ok(!/\b(el|la|los|las|del|una|para|con|turno|reloj|lavado|momentos?|cama|paciente|gracias)\b/i.test(allCopy),
+    'all rendered UI copy is English (no Spanish stopwords)');
 
   /* =============================================================== 9. motion */
   head('9 · reduced motion');
@@ -367,7 +507,7 @@ async function settle(page, ms) { await page.waitForTimeout(ms); }
   const rmErrs = watchErrors(rmPage);
   await rmPage.goto(INDEX, { waitUntil: 'load' });
   await rmPage.waitForSelector('.view[data-screen="home"]');
-  await rmPage.evaluate(() => haptics.play('dudoso'));
+  await rmPage.evaluate(() => haptics.play('doubtful'));
   await settle(rmPage, 300);
   const rmBars = await rmPage.locator('.haptic-strip__bars .haptic-bar').count();
   ok(rmBars === 3, 'reduced motion still draws the static bars', 'bars: ' + rmBars);
@@ -384,39 +524,6 @@ async function settle(page, ms) { await page.waitForTimeout(ms); }
      default foot before the foot-level checks. */
   await page.evaluate(() => { watch.resume(); watch.go('home', 'zoom'); });
   await settle(page, 500);
-  async function contrast(p, sel) {
-    return await p.evaluate((s) => {
-      const el = document.querySelector(s);
-      if (!el) return { missing: s };
-      const parse = (c) => {
-        let m = (c || '').match(/rgba?\(([^)]+)\)/);
-        if (m) {
-          const v = m[1].split(',').map(x => parseFloat(x));
-          return [v[0], v[1], v[2], v.length > 3 ? v[3] : 1];
-        }
-        m = (c || '').match(/color\(srgb\s+([0-9.]+)\s+([0-9.]+)\s+([0-9.]+)/);
-        if (m) return [parseFloat(m[1]) * 255, parseFloat(m[2]) * 255,
-          parseFloat(m[3]) * 255, 1];
-        return null;
-      };
-      const lin = (v) => {
-        v /= 255;
-        return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
-      };
-      const lum = (c) => 0.2126 * lin(c[0]) + 0.7152 * lin(c[1]) + 0.0722 * lin(c[2]);
-      const fg = parse(getComputedStyle(el).color);
-      if (!fg) return { missing: s + ' (unparsable color)' };
-      let bg = null, n = el;
-      while (n) {
-        const c = parse(getComputedStyle(n).backgroundColor);
-        if (c && c[3] > 0.99) { bg = c; break; }
-        n = n.parentElement;
-      }
-      const L1 = lum(fg), L2 = lum(bg || [0, 0, 0, 1]);
-      const hi = Math.max(L1, L2), lo = Math.min(L1, L2);
-      return { ratio: (hi + 0.05) / (lo + 0.05) };
-    }, sel);
-  }
   const contrastPairs = [
     [page, '.home__shift'], [page, '.ev__time'], [page, '.pill--ghost'],
     [page, '.panel__lede'], [page, '.vocab__meaning'], [page, '.note__body'],
@@ -450,7 +557,7 @@ async function settle(page, ms) { await page.waitForTimeout(ms); }
   ok(durOffenders.length === 0, 'every CSS duration cites a motion token',
     durOffenders.slice(0, 4).join(' | '));
   const jsMotionOff = [];
-  ['js/haptics.js', 'js/watch.js', 'js/story.js', 'js/unit.js'].forEach(f => {
+  ['js/haptics.js', 'js/watch.js', 'js/story.js', 'js/unit.js', 'js/theme.js'].forEach(f => {
     stripComments(read(f)).split('\n').forEach((line, i) => {
       if (!/['"]/.test(line) || !/\d+ms/.test(line)) return;
       if (/var\(--/.test(line)) return;
@@ -483,7 +590,7 @@ async function settle(page, ms) { await page.waitForTimeout(ms); }
   });
   ok(kicker && kicker.t === 'uppercase' && kicker.size === '12px' &&
     (kicker.w === '500' || kicker.w === '600' || parseInt(kicker.w, 10) >= 500),
-    'Últimos 3 speaks in the kicker tier', JSON.stringify(kicker));
+    'Last 3 speaks in the kicker tier', JSON.stringify(kicker));
   const ucard = await unitPage.evaluate(() => {
     const el = document.querySelector('.ucard__label');
     const cs = getComputedStyle(el);
@@ -519,7 +626,7 @@ async function settle(page, ms) { await page.waitForTimeout(ms); }
       kick: getComputedStyle(first).textTransform
     };
   });
-  ok(doubtHead.q >= 30, '¿Te lavaste? sets large enough to read at a glance',
+  ok(doubtHead.q >= 30, 'Did you wash? sets large enough to read at a glance',
     'font-size ' + doubtHead.q + 'px');
   ok(doubtHead.kick === 'uppercase', 'doubt context is a kicker, not a rival title',
     'text-transform ' + doubtHead.kick);
@@ -668,7 +775,7 @@ async function settle(page, ms) { await page.waitForTimeout(ms); }
   /* the strip names live vibration, not the vocabulary list */
   const stripName = await wPage.evaluate(() =>
     document.querySelector('#hapticName').textContent);
-  ok(/Vibración en vivo/.test(stripName), 'the strip is "Vibración en vivo"',
+  ok(/Live vibration/.test(stripName), 'the strip is "Live vibration"',
     stripName);
   const idleBars = await wPage.locator('.haptic-strip__bars .haptic-bar').count();
   ok(idleBars === 1, 'idle is one flat line, no static block row',
@@ -677,8 +784,8 @@ async function settle(page, ms) { await page.waitForTimeout(ms); }
   /* one global Reiniciar in the panel */
   const resets = await wPage.evaluate(() =>
     [...document.querySelectorAll('.panel .btn')]
-      .filter(b => /reiniciar/i.test(b.textContent)).length);
-  ok(resets === 1, 'a single Reiniciar in the panel', 'found ' + resets);
+      .filter(b => /reset/i.test(b.textContent)).length);
+  ok(resets === 1, 'a single Reset in the panel', 'found ' + resets);
 
   await wPage.screenshot({ path: shot('stage-1440.png') });
   ok(wErrs.length === 0, 'no console errors on the wide stage', wErrs.join(' | '));
@@ -728,7 +835,7 @@ async function settle(page, ms) { await page.waitForTimeout(ms); }
     };
   });
   const fold0 = await measure();
-  ok(fold0.overflow > 20, 'Inicio has content below the fold',
+  ok(fold0.overflow > 20, 'Home has content below the fold',
     'overflow ' + fold0.overflow + 'px');
   await kPage.hover('#crown');
   await kPage.mouse.wheel(0, 240);
@@ -745,13 +852,13 @@ async function settle(page, ms) { await page.waitForTimeout(ms); }
 
   /* the last 3 events are the thing below the fold */
   await kPage.evaluate(() => {
-    ['Lavado · Cama 3', 'Corregido por ti · Cama 3', 'Marcado por ti · Cama 5',
-      'Lavado · Cama 5', 'Corregido por ti · Cama 5']
+    ['Wash · Bed 3', 'Fixed by you · Bed 3', 'Marked by you · Bed 5',
+      'Wash · Bed 5', 'Fixed by you · Bed 5']
       .forEach(t => { watch.addEvent({ text: t, kind: 'ok' }); watch.bump(); });
   });
   await settle(kPage, 500);
   const fold1 = await measure();
-  ok(fold1.rows === 3, 'Inicio shows the last 3 events', 'rows ' + fold1.rows);
+  ok(fold1.rows === 3, 'Home shows the last 3 events', 'rows ' + fold1.rows);
   ok(fold1.overflow > fold0.overflow,
     'the event list grows the scrollable area below the fold',
     fold0.overflow + 'px → ' + fold1.overflow + 'px');
@@ -775,7 +882,7 @@ async function settle(page, ms) { await page.waitForTimeout(ms); }
   await kPage.waitForSelector('.view[data-screen="dudoso"]');
   await kPage.keyboard.press('Escape');
   await settle(kPage, 600);
-  ok(await screenIs(kPage, 'home'), 'Esc goes back to Inicio');
+  ok(await screenIs(kPage, 'home'), 'Esc goes back to Home');
   ok((await kPage.locator('#freeMode button:not([disabled])').count()) === 6,
     'every free-mode button is reachable by keyboard');
 
@@ -788,9 +895,9 @@ async function settle(page, ms) { await page.waitForTimeout(ms); }
   await subPage.waitForFunction(
     () => (document.getElementById('subtitle').textContent || '').length > 0,
     { timeout: 8000 });
-  ok(true, 'the story shows a one-line Spanish subtitle');
+  ok(true, 'the story shows a one-line English subtitle');
   const sub = await subPage.locator('#subtitle').textContent();
-  ok(!/\b(tocá|mirá|podés|tenés|querés)\b/i.test(sub), 'the subtitle is neutral Colombian', sub);
+  ok(!/\b(el|la|los|las|del|una|para|con|turno|reloj|lavad|cama|paciente)\b/i.test(sub), 'the subtitle has no Spanish leftovers', sub);
   await subPage.waitForSelector('[data-speed]', { timeout: 20000 });
   const speed = await subPage.locator('[data-speed]').textContent();
   ok(speed.trim() === '×5', 'the wash runs at ×5 in the story and says so', speed);
@@ -808,7 +915,7 @@ async function settle(page, ms) { await page.waitForTimeout(ms); }
   await storyPage.waitForFunction(() => window.__storyDone === true, { timeout: 90000 });
   ok(true, 'the guided shift reached its last beat');
   await settle(storyPage, 400);
-  ok(await screenIs(storyPage, 'quien'), 'it ends on Quién ve esto');
+  ok(await screenIs(storyPage, 'quien'), 'it ends on Who sees this');
   const state = await storyPage.evaluate(() => ({
     done: watch.state.done, corrections: watch.state.corrections, clock: watch.clock()
   }));
