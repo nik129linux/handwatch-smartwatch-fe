@@ -256,9 +256,22 @@ var AI = (function () {
     return true;
   }
 
+  /* Models (gemma included) often wrap JSON in ```json fences even with
+   * format:json. Strip the fence, or take the outermost {...}, then parse. */
+  function parseModelJson(text) {
+    var t = String(text == null ? '' : text).trim();
+    var f = /^```(?:json)?\s*([\s\S]*?)\s*```$/i.exec(t);
+    if (f) t = f[1].trim();
+    try { return JSON.parse(t); } catch (e) {
+      var a = t.indexOf('{'), b = t.lastIndexOf('}');
+      if (a >= 0 && b > a) return JSON.parse(t.slice(a, b + 1));
+      throw e;
+    }
+  }
+
   function parseFindings(text, ctx) {
     var data;
-    try { data = JSON.parse(text); } catch (e) { return null; }
+    try { data = parseModelJson(text); } catch (e) { return null; }
     if (!data || !Array.isArray(data.findings)) return null;
     if (!data.findings.length || data.findings.length > 2) return null;
     var allowed = promptNumbers(ctx && ctx.prompt);
@@ -275,7 +288,7 @@ var AI = (function () {
 
   function parseExplanation(text, ctx) {
     var data;
-    try { data = JSON.parse(text); } catch (e) { return null; }
+    try { data = parseModelJson(text); } catch (e) { return null; }
     if (!data || typeof data.explanation !== 'string') return null;
     var line = data.explanation.trim();
     if (!line) return null;
@@ -407,6 +420,7 @@ var AI = (function () {
     findingsPrompt: findingsPrompt,
     explainPrompt: explainPrompt,
     parseFindings: parseFindings,
+    parseModelJson: parseModelJson,
     parseExplanation: parseExplanation,
     requestFindings: requestFindings,
     requestExplain: requestExplain,

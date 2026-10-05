@@ -147,6 +147,16 @@ const EXPLAIN_OK = JSON.stringify({
     ok(r.findings.length === 1, 'the model findings are used');
   }
 
+  /* 4b · gemma wraps JSON in code fences: still accepted ------------------ */
+  head('4b · fenced JSON');
+  {
+    const payload = AI.buildUnitPayload(demoAgg());
+    const body = JSON.stringify({ findings: [{ text: AI.rulesFindings(payload)[0].text }] });
+    const t = transportFor(mockFetch([{ name: 'gemma4:31b-cloud' }], '```json\n' + body + '\n```'));
+    const r = await AI.requestFindings(demoAgg(), { transport: t, consent: 'yes' });
+    ok(r.source === 'Ollama · gemma4:31b-cloud', 'fenced JSON still reads as the model', r.source);
+  }
+
   /* 5 · Ollama down: back to rules --------------------------------------- */
   head('5 · Ollama down');
   {
