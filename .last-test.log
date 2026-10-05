@@ -206,6 +206,16 @@
   ✓ the no-names notice docks after the first scroll
   ✓ the theme transition flips and cleans up
 
+14 · hostile-user regressions (W3)
+  ✓ double tap counts one correction
+  ✓ an Esc chain always lands on Home
+  ✓ an escaped wash earns no credit
+  ✓ the interrupted wash still counts
+  ✓ but the watch stays silent while paused
+  ✓ and the pause is still open
+  ✓ act("done") off-screen is ignored
+  ✓ no console errors across the hostile pass
+
 screenshots · 6 key moments x 2 themes
   ✓ no console errors while shooting home (dark)
   ✓ no console errors while shooting recordatorio (dark)
@@ -223,7 +233,7 @@ screenshots · 6 key moments x 2 themes
   ✓ no console errors while shooting pausa (light)
 
 summary
-  193 passed, 0 failed
+  201 passed, 0 failed
   screenshots → shots/
 
 
