@@ -1067,6 +1067,91 @@ async function settle(page, ms) { await page.waitForTimeout(ms); }
   await page.evaluate(() => window.__setTheme('dark'));
   await settle(page, 500);
 
+  /* =============================================================== 14. hostile QA */
+  head('14 · hostile-user regressions (W3)');
+
+  /* a fresh page: sections 2-4 left this one paused with swapped tokens */
+  const qPage = await ctx.newPage();
+  const qErrs = watchErrors(qPage);
+  await qPage.goto(INDEX, { waitUntil: 'load' });
+  await qPage.waitForSelector('.view[data-screen="home"]');
+  await qPage.evaluate(() => { window.__timeScale = 0.02; window.__vibe = []; });
+  await settle(qPage, 200);
+
+  /* 14a — a double tap on "Yes, I did" counts ONE correction.
+     Two back-to-back taps through the same handler a click reaches. */
+  {
+    const c0 = await qPage.evaluate(() => watch.state.corrections);
+    await qPage.click('#freeMode [data-act="dudoso"]');
+    await qPage.waitForSelector('.view[data-screen="dudoso"]');
+    await qPage.evaluate(() => { watch.act('doubt-yes'); watch.act('doubt-yes'); });
+    await qPage.waitForSelector('.view[data-screen="home"]', { timeout: 5000 });
+    await settle(qPage, 400);
+    const c1 = await qPage.evaluate(() => watch.state.corrections);
+    ok(c1 === c0 + 1, 'double tap counts one correction', c0 + ' → ' + c1);
+  }
+
+  /* 14b — Esc never ping-pongs: a tour of screens then Esc always lands Home */
+  {
+    await qPage.evaluate(async () => {
+      for (const n of ['recordatorio', 'dudoso', 'fin', 'quien', 'pausa', 'quien']) {
+        watch.go(n, 'fwd');
+        await new Promise(r => setTimeout(r, 60));
+      }
+    });
+    for (let i = 0; i < 8; i++) await qPage.keyboard.press('Escape');
+    await settle(qPage, 600);
+    ok(await qPage.evaluate(() => watch.state.screen) === 'home',
+      'an Esc chain always lands on Home');
+  }
+
+  /* 14c — Esc during the wash dismisses it: no phantom credit */
+  {
+    await qPage.evaluate(() => { watch.resume(); });
+    const d0 = await qPage.evaluate(() => watch.state.done);
+    await qPage.click('#freeMode [data-act="lavado"]');
+    await qPage.waitForSelector('.view[data-screen="lavando"]', { timeout: 4000 });
+    await qPage.keyboard.press('Escape');
+    await settle(qPage, 2500);
+    const st = await qPage.evaluate(() => ({ s: watch.state.screen, d: watch.state.done }));
+    ok(st.s === 'home' && st.d === d0, 'an escaped wash earns no credit',
+      JSON.stringify(st) + ' was ' + d0);
+  }
+
+  /* 14d — a code blue mid-wash keeps the count but never buzzes */
+  {
+    const d0 = await qPage.evaluate(() => watch.state.done);
+    await qPage.evaluate(() => { window.__vibe = []; });
+    await qPage.click('#freeMode [data-act="lavado"]');
+    await qPage.waitForSelector('.view[data-screen="lavando"]', { timeout: 4000 });
+    await qPage.click('#freeMode [data-act="codigo"]');
+    await qPage.waitForSelector('.view[data-screen="home"]', { timeout: 8000 });
+    await settle(qPage, 400);
+    const st = await qPage.evaluate(() => ({
+      d: watch.state.done,
+      paused: watch.isPaused(),
+      vibe: window.__vibe
+    }));
+    ok(st.d === d0 + 1, 'the interrupted wash still counts', JSON.stringify(st.d));
+    ok(st.vibe.length === 0, 'but the watch stays silent while paused',
+      JSON.stringify(st.vibe));
+    ok(st.paused === true, 'and the pause is still open');
+    await qPage.evaluate(() => { watch.resume(); watch.go('home', 'zoom'); });
+    await settle(qPage, 400);
+  }
+
+  /* 14e — a stale tap on a closed screen counts nothing */
+  {
+    const d0 = await qPage.evaluate(() => watch.state.done);
+    await qPage.evaluate(() => { watch.act('done'); });
+    const d1 = await qPage.evaluate(() => watch.state.done);
+    ok(d1 === d0, 'act("done") off-screen is ignored', d0 + ' → ' + d1);
+  }
+
+  ok(qErrs.length === 0, 'no console errors across the hostile pass',
+    qErrs.join(' | '));
+  await qPage.close();
+
   /* =============================================================== screenshots */
   head('screenshots · 6 key moments x 2 themes');
 

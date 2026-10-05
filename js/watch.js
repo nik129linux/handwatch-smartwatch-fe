@@ -34,6 +34,8 @@ var watch = (function () {
   var current = null;
   var ticker = null;
   var washInt = null;
+  var doubtLock = false;   /* one tap closes the doubt screen; a second tap
+                              (double click, shaky hand) must not count twice */
   var scaleVal = 1;
   var extraSpin = 0;     /* decaying extra crown rotation from wheel input */
   var spinV = 0;         /* crown angular velocity: the wheel kicks it, the
@@ -392,10 +394,14 @@ var watch = (function () {
     var from = current;
     var prevScreen = state.screen;
 
-    if (prevScreen !== name && name !== 'home') {
-      pushTrail(prevScreen);
-    } else if (name === 'home') {
-      trail.length = 0;
+    if (name === 'dudoso') doubtLock = false;
+
+    if (!opts.noPush) {
+      if (prevScreen !== name && name !== 'home') {
+        pushTrail(prevScreen);
+      } else if (name === 'home') {
+        trail.length = 0;
+      }
     }
 
     state.screen = name;
@@ -442,12 +448,21 @@ var watch = (function () {
 
   function back() {
     if (state.screen === 'home') return;
+    /* QA: Esc dismisses the wash countdown — a dismissed wash earns no
+       credit. Other exits (side button peek, code-blue pause) leave the
+       timer running so detected data is never lost. */
+    if (state.screen === 'lavando' && washInt) {
+      window.clearInterval(washInt);
+      washInt = null;
+    }
     var prev = null;
     while (trail.length) {
       var cand = trail.pop();
       if (cand !== state.screen && VIEWS[cand]) { prev = cand; break; }
     }
-    go(prev || 'home', 'back');
+    /* QA: noPush — going back must not re-record the screen it leaves,
+       or Esc ping-pongs between two screens and never reaches Home. */
+    go(prev || 'home', 'back', { noPush: true });
   }
 
   function home() { trail.length = 0; go('home', 'zoom'); }
@@ -532,7 +547,9 @@ var watch = (function () {
       if (c) c.classList.add('is-drawn');
     }, ms(60));
     window.setTimeout(function () {
-      haptics.play('ok');
+      /* QA: a wash that finishes mid-pause still counts, but the watch
+         stays silent — pause means no buzz, even a happy one. */
+      if (!isPaused()) haptics.play('ok');
       state.done += 1;
       addEvent({ text: 'Wash · ' + state.bed, kind: 'ok' });
       bump();
@@ -639,6 +656,8 @@ var watch = (function () {
   function act(name) {
     switch (name) {
       case 'done':
+        /* QA: stale taps on a detached Reminder pill count nothing. */
+        if (state.screen !== 'recordatorio') return;
         state.done += 1;
         state.pending = false;
         addEvent({ text: 'Marked by you · ' + state.bed, kind: 'ok' });
@@ -648,6 +667,10 @@ var watch = (function () {
         home();
         break;
       case 'doubt-yes':
+        /* QA: one tap, one correction — the second half of a double tap
+           (or a call after the screen already closed) is ignored. */
+        if (state.screen !== 'dudoso' || doubtLock) return;
+        doubtLock = true;
         state.done += 1;
         state.corrections += 1;
         state.pending = false;
@@ -658,6 +681,8 @@ var watch = (function () {
         window.setTimeout(function () { home(); }, ms(460));
         break;
       case 'doubt-no':
+        if (state.screen !== 'dudoso' || doubtLock) return;
+        doubtLock = true;
         addEvent({ text: 'Just for you · ' + state.bed, kind: 'you' });
         logOutcome('declined', false);
         toast('Stays with you.');
