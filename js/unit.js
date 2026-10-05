@@ -202,6 +202,14 @@ var unit = (function () {
     });
   }
 
+  /* Data-science layer (dataset + stats + charts) paints its own
+     sections; the demo bars above never wait for it. */
+  function datascience() {
+    try {
+      if (typeof Insights !== 'undefined' && Insights.mount) Insights.mount();
+    } catch (e) { /* demo bars already on screen — keep them */ }
+  }
+
   function pad2(n) { return (n < 10 ? '0' : '') + n; }
 
   function mount() {
@@ -209,6 +217,7 @@ var unit = (function () {
     heatmap();
     corrections();
     fixes();
+    datascience();
     /* the Electron file copy can land after first paint — re-count then */
     if (typeof document !== 'undefined') {
       document.addEventListener('watch:log-sync', corrections);
