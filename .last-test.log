@@ -261,12 +261,14 @@ summary
 electron · Hand Hygiene Watch boots as a desktop app
   ✓ window title is "Hand Hygiene Watch"
   ✓ the app window has a theme toggle
-  ✓ the toggle flips data-theme (dark → light)
+  ✓ the toggle flips data-theme (light → dark)
   ✓ dark + light stage screenshots saved
   ✓ Doubtful wash shows the confirm screen
   ✓ the unit page opens inside the same window
+  ✓ unit page links back to the watch
+  ✓ no console errors inside the app window
 
-  harness error: page.waitForSelector: Timeout 5000ms exceeded.
-Call log:
-[2m  - waiting for locator('.view[data-screen="home"]') to be visible[22m
+summary
+  8 passed, 0 failed
+  screenshots → shots/app-*.png
 
