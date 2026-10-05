@@ -42,8 +42,17 @@ function demoAgg() {
 /* mock transport: tags list + canned generate body */
 function mockFetch(models, response, opts) {
   opts = opts || {};
-  return async (url) => {
-    if (opts.hang) return new Promise(() => {});
+  return async (url, init) => {
+    /* A hanging server: never answers, but honors the abort signal,
+       exactly like a real fetch would under the 8 s timeout. */
+    if (opts.hang) {
+      return new Promise((_, reject) => {
+        const sig = init && init.signal;
+        if (!sig) return;
+        if (sig.aborted) reject(new Error('aborted'));
+        else sig.addEventListener('abort', () => reject(new Error('aborted')));
+      });
+    }
     if (String(url).endsWith('/api/tags')) {
       if (opts.tagsThrow) throw new Error('no route');
       if (opts.tagsBroken) {
