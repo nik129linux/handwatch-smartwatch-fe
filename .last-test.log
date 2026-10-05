@@ -41,11 +41,11 @@
 7 · changing the primary propagates everywhere
   ✓ index.html: nothing keeps rgb(166, 255, 0) (223 elements walked)
   ✓ index.html: the new primary is in use
-  ✓ unit.html: nothing keeps rgb(166, 255, 0) (129 elements walked)
+  ✓ unit.html: nothing keeps rgb(166, 255, 0) (137 elements walked)
   ✓ unit.html: the new primary is in use
   ✓ index.html (light): nothing keeps rgb(166, 255, 0) (223 elements walked)
   ✓ index.html (light): the new primary is in use
-  ✓ unit.html (light): nothing keeps rgb(166, 255, 0) (129 elements walked)
+  ✓ unit.html (light): nothing keeps rgb(166, 255, 0) (137 elements walked)
   ✓ unit.html (light): the new primary is in use
 
 7b · light / dark switch
@@ -187,18 +187,43 @@
   ✓ the shift closed with 15 of 17 moments
   ✓ two marks were corrected by the nurse
   ✓ the guided shift logs no console errors
+  ✓ no long task over 100ms during the guided story
 
-screenshots
-  ✓ no console errors while shooting home
-  ✓ no console errors while shooting recordatorio
-  ✓ no console errors while shooting lavando
-  ✓ no console errors while shooting dudoso
-  ✓ no console errors while shooting fin
-  ✓ no console errors while shooting quien
-  ✓ no console errors while shooting pausa
+13 · the visual signature holds
+  ✓ the tilt spring is installed (fine pointer, full motion)
+  ✓ the case yaws toward the pointer (> 5deg)
+  ✓ tilt never exceeds +-8deg
+  ✓ the glass glare follows the pointer
+  ✓ the case settles flat under the pointer
+  ✓ an ok wash pulses the bloom once
+  ✓ a doubtful mark starts the neutral breathe
+  ✓ the bloom never goes red
+  ✓ reduced motion installs no tilt and the glare stays static
+  ✓ the heatmap reveals once scrolled into view
+  ✓ heatmap delay is monotonic in distance from the shift-change cell
+  ✓ the 19:00 cell ripples first
+  ✓ the statement reveals word by word
+  ✓ the no-names notice docks after the first scroll
+  ✓ the theme transition flips and cleans up
+
+screenshots · 6 key moments x 2 themes
+  ✓ no console errors while shooting home (dark)
+  ✓ no console errors while shooting recordatorio (dark)
+  ✓ no console errors while shooting lavando (dark)
+  ✓ no console errors while shooting dudoso (dark)
+  ✓ no console errors while shooting fin (dark)
+  ✓ no console errors while shooting quien (dark)
+  ✓ no console errors while shooting pausa (dark)
+  ✓ no console errors while shooting home (light)
+  ✓ no console errors while shooting recordatorio (light)
+  ✓ no console errors while shooting lavando (light)
+  ✓ no console errors while shooting dudoso (light)
+  ✓ no console errors while shooting fin (light)
+  ✓ no console errors while shooting quien (light)
+  ✓ no console errors while shooting pausa (light)
 
 summary
-  170 passed, 0 failed
+  193 passed, 0 failed
   screenshots → shots/
 
 
