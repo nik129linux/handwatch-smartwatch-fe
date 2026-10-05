@@ -11,6 +11,8 @@
 <link rel="stylesheet" href="css/tokens.css">
 <link rel="stylesheet" href="css/watch.css">
 <link rel="stylesheet" href="css/stage.css">
+<link rel="stylesheet" href="css/ai.css">
+<link rel="stylesheet" href="css/data.css">
 <script src="js/theme.js"></script>
 </head>
 <body class="unit">
@@ -64,6 +66,63 @@
     <div class="uheat" id="heat"></div>
   </section>
 
+  <section class="ucard ucard--wide" aria-labelledby="t-trend">
+    <p class="ucard__label">Trends</p>
+    <h2 class="ucard__title" id="t-trend">Six weeks, one line</h2>
+    <p class="ucard__note">Weekly compliance with 95% intervals. The marker
+      shows where the trend shifted; the hollow dot is next week forecast.</p>
+    <canvas class="dchart" id="trendCanvas" height="220"
+      aria-label="Weekly compliance trend with shift marker and forecast"></canvas>
+    <p class="ucard__note" id="forecastNote"></p>
+  </section>
+
+  <section class="ucard ucard--wide" aria-labelledby="t-insight">
+    <p class="ucard__label">Insights</p>
+    <h2 class="ucard__title" id="t-insight">What the numbers support</h2>
+    <p class="ucard__note">Ranked by significance and effect size. Small
+      samples are reported as not enough data, never as findings.</p>
+    <canvas class="dchart" id="bucketCanvas" height="220"
+      aria-label="Compliance rate by three-hour window with intervals"></canvas>
+    <ol class="insight__list" id="insightList"></ol>
+    <div class="fix__head">
+      <span class="ai-badge" id="insightBadge">Rules</span>
+      <button class="ai-ghost" id="insightModel" type="button" hidden>Rewrite with Ollama</button>
+    </div>
+  </section>
+
+  <section class="ucard ucard--wide" aria-labelledby="t-model">
+    <p class="ucard__label">Model quality</p>
+    <h2 class="ucard__title" id="t-model">How the watch reads motion</h2>
+    <p class="ucard__note" id="evalNote"></p>
+    <div class="model__grid">
+      <div>
+        <canvas class="dchart" id="matrixCanvas" height="190"
+          aria-label="Confusion matrix of predicted against true motion"></canvas>
+        <p class="model__cap">Rows are truth, columns are predictions.</p>
+      </div>
+      <div>
+        <canvas class="dchart" id="relCanvas" height="190"
+          aria-label="Reliability curve of stated against observed accuracy"></canvas>
+        <p class="model__cap">Stated certainty against observed hit rate; dot size is sample count.</p>
+      </div>
+    </div>
+    <table class="model__table" id="modelTable"
+      aria-label="Precision recall and F1 by moment type"></table>
+    <p class="ucard__note" id="calibNote"></p>
+  </section>
+
+  <section class="ucard ucard--wide" aria-labelledby="t-fix">
+    <p class="ucard__label">System fixes</p>
+    <h2 class="ucard__title" id="t-fix">Where the process slips</h2>
+    <p class="ucard__note">From anonymous totals only: the weakest moment
+      and the quietest hours, with the numbers behind each fix.</p>
+    <ol class="fix__list" id="fixList"></ol>
+    <div class="fix__head">
+      <span class="ai-badge" id="fixBadge">Rules</span>
+      <button class="ai-ghost" id="fixModel" type="button" hidden>Improve with Ollama</button>
+    </div>
+  </section>
+
   <section class="ucard ucard--wide" data-io aria-labelledby="t-corr">
     <p class="ucard__label">Staff corrections</p>
     <h2 class="ucard__title" id="t-corr">The watch was wrong</h2>
@@ -93,6 +152,15 @@
 </footer>
 
 <script src="js/log.js"></script>
+<script src="js/ai.js"></script>
+<script src="js/dataset.js"></script>
+<script src="js/stats.js"></script>
+<script src="js/timeseries.js"></script>
+<script src="js/signal.js"></script>
+<script src="js/classifier.js"></script>
+<script src="js/calibrate.js"></script>
+<script src="js/eval.js"></script>
+<script src="js/insights.js"></script>
 <script src="js/unit.js"></script>
 <script src="js/stage.js"></script>
 </body>

@@ -208,6 +208,9 @@ var watch = (function () {
             '</div></div>' +
           '<div class="home__headline">Moments</div>' +
           '<div class="caption home__shift">Shift · Unit 4B</div>' +
+          (learningOn()
+            ? '<div class="caption caption--dim home__learn">Learning · fewer marks</div>'
+            : '') +
         '</div>' +
         '<div class="home__below">' +
           '<div class="home__label"><span class="label">Last 3</span><span class="rule"></span></div>' +
@@ -339,6 +342,9 @@ var watch = (function () {
           }).join('') +
         '</div>' +
         '<div class="screen__foot">' +
+          (learningOn()
+            ? '<button class="pill pill--ghost" data-act="reset-learn">Reset learning</button>'
+            : '') +
           '<button class="pill pill--ghost" data-act="back">Close</button>' +
         '</div>';
     }
@@ -653,6 +659,28 @@ var watch = (function () {
     } catch (e) { /* the screen is the truth; the log follows */ }
   }
 
+  /* One-tap correction teaches the watch: the (moment, noise) threshold
+     lifts a bounded step, so the same borderline signal stays quiet next
+     time. Strong signals still surface — the lift is capped. */
+  function learnFromCorrection() {
+    try {
+      if (typeof Calibrate === 'undefined' || !Calibrate.correct) return;
+      var noise = 0;
+      try {
+        if (typeof Sense !== 'undefined' && Sense.last() && Sense.last().noise >= 0) {
+          noise = Sense.last().noise;
+        }
+      } catch (e) { /* calm default — the moment still teaches */ }
+      Calibrate.correct({ moment: state.lastMoment, noise: noise });
+    } catch (e) { /* learning never blocks the tap */ }
+  }
+
+  function learningOn() {
+    try {
+      return typeof Calibrate !== 'undefined' && !!Calibrate.active();
+    } catch (e) { return false; }
+  }
+
   function act(name) {
     switch (name) {
       case 'done':
@@ -674,6 +702,7 @@ var watch = (function () {
         state.done += 1;
         state.corrections += 1;
         state.pending = false;
+        learnFromCorrection();
         addEvent({ text: 'Fixed · ' + state.bed, kind: 'ok' });
         logOutcome('confirmed', true);
         haptics.play('ok');
@@ -704,6 +733,11 @@ var watch = (function () {
         break;
       case 'privacy':
         go('quien', 'fwd');
+        break;
+      case 'reset-learn':
+        try { if (typeof Calibrate !== 'undefined') Calibrate.reset(); } catch (e) {}
+        toast('Learning reset.');
+        go('quien', 'zoom', { noPush: true });
         break;
       default:
         break;

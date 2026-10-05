@@ -1,0 +1,94 @@
+/* ==========================================================================
+   data.css — the data-science layer on the unit page: insight cards,
+   canvas charts, model quality table. All colors come from tokens.css.
+   Numbers render tabular so columns hold still.
+   ========================================================================== */
+
+.dchart {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-top: var(--sp-4);
+}
+
+.insight__list {
+  display: grid;
+  gap: var(--sp-4);
+  margin-top: var(--sp-4);
+}
+
+.insight__item {
+  border-top: 1px solid var(--border-subtle);
+  padding-top: var(--sp-3);
+}
+
+.insight__title {
+  font-size: var(--text-subheading);
+  line-height: var(--leading-subheading);
+  font-weight: var(--w-title);
+  letter-spacing: var(--tracking-body);
+}
+
+.insight__body {
+  margin-top: var(--sp-2);
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+  color: var(--text-secondary);
+}
+
+.insight__stats {
+  margin-top: var(--sp-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  line-height: var(--leading-caption);
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+.model__table {
+  width: 100%;
+  margin-top: var(--sp-4);
+  border-collapse: collapse;
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+  font-variant-numeric: tabular-nums;
+}
+
+.model__table th,
+.model__table td {
+  padding: var(--sp-2) var(--sp-3);
+  text-align: right;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.model__table th:first-child,
+.model__table td:first-child {
+  text-align: left;
+}
+
+.model__table thead th {
+  font-size: var(--text-label);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  border-top: 0;
+}
+
+.model__grid {
+  display: grid;
+  gap: var(--sp-4);
+  margin-top: var(--sp-4);
+}
+
+@media (min-width: 720px) {
+  .model__grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.model__cap {
+  margin-top: var(--sp-2);
+  font-size: var(--text-caption);
+  line-height: var(--leading-caption);
+  color: var(--text-tertiary);
+}
