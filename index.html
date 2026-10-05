@@ -135,6 +135,24 @@
       </div>
     </section>
 
+    <section class="group" aria-label="Motion signal" data-rise style="--i:4">
+      <div class="group__head">
+        <span class="group__title">Motion signal</span>
+        <span class="panel__clock caption" id="scopeLabel">idle</span>
+      </div>
+      <canvas class="scope__canvas" id="scopeCanvas" width="560" height="160"
+        aria-label="Accelerometer waveform"></canvas>
+      <div class="scope__meter">
+        <span class="scope__track"><span class="scope__fill" id="scopeFill"></span></span>
+        <span class="caption scope__conf" id="scopeConf">0.00</span>
+      </div>
+      <p class="scope__why" id="scopeWhy">Run a motion to see why</p>
+      <label class="scope__noise" for="noiseSlider">
+        <span class="caption">Sensor noise</span>
+        <input type="range" id="noiseSlider" min="0" max="1" step="0.05" value="0">
+      </label>
+    </section>
+
     <section class="group" aria-label="Haptic vocabulary" data-rise style="--i:4">
       <div class="group__head">
         <span class="group__title">Vocabulary</span>
@@ -161,9 +179,14 @@
   </aside>
 </main>
 
+<script src="js/signal.js"></script>
+<script src="js/classifier.js"></script>
+<script src="js/log.js"></script>
 <script src="js/haptics.js"></script>
 <script src="js/watch.js"></script>
+<script src="js/sense.js"></script>
 <script src="js/story.js"></script>
+<script src="js/scope.js"></script>
 <script src="js/stage.js"></script>
 </body>
 </html>

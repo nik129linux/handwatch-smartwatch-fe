@@ -82,15 +82,37 @@ var unit = (function () {
 
   function corrections() {
     var n = document.getElementById('corrN');
+    var total = aggregateCorrections(CORRECTIONS, realCorrected());
     if (n) {
       var t0 = performance.now();
       (function step(t) {
         var p = Math.min(1, (t - t0) / 700);
-        n.textContent = String(Math.round(CORRECTIONS * (1 - Math.pow(1 - p, 3))));
+        n.textContent = String(Math.round(total * (1 - Math.pow(1 - p, 3))));
         if (p < 1) requestAnimationFrame(step);
       })(t0);
-      n.setAttribute('data-count', String(CORRECTIONS));
+      n.setAttribute('data-count', String(total));
     }
+    var word = document.getElementById('corrWord');
+    if (word) {
+      word.textContent = 'corrections in 14 days.';
+    }
+  }
+
+  /* corrected:true events from the real on-watch log. Same storage key as
+     the watch page, so a correction made on the watch shows up here. */
+  function realCorrected() {
+    try {
+      if (typeof Log !== 'undefined' && Log.correctedCount) {
+        return Log.correctedCount();
+      }
+    } catch (e) { /* plain file without the log — demo data stands alone */ }
+    return 0;
+  }
+
+  /* demo history plus the real log: never empty, corrections always from
+     corrected:true events. Pure — the node test drives it directly. */
+  function aggregateCorrections(demo, real) {
+    return (demo || 0) + (real || 0);
   }
 
   function pad2(n) { return (n < 10 ? '0' : '') + n; }
@@ -99,13 +121,29 @@ var unit = (function () {
     momentBars();
     heatmap();
     corrections();
+    /* the Electron file copy can land after first paint — re-count then */
+    if (typeof document !== 'undefined') {
+      document.addEventListener('watch:log-sync', corrections);
+    }
   }
 
-  return { mount: mount, MOMENTS: MOMENTS, HOURS: HOURS, CORRECTIONS: CORRECTIONS };
+  return {
+    mount: mount,
+    MOMENTS: MOMENTS,
+    HOURS: HOURS,
+    CORRECTIONS: CORRECTIONS,
+    aggregateCorrections: aggregateCorrections
+  };
 })();
 
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', unit.mount);
-} else {
-  unit.mount();
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = unit;
+}
+
+if (typeof document !== 'undefined') {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', unit.mount);
+  } else {
+    unit.mount();
+  }
 }

@@ -25,41 +25,43 @@ var story = (function () {
     zona: function (bed) {
       if (watch.isPaused()) {
         pushLog(clockNow(), 'Reminder muted · ' + (bed || watch.state.bed), 'off');
+        Log.record(momentFor(''), 'silenced', false);
         return 'swallowed';
       }
       haptics.play('reminder');
+      watch.state.pending = true;
+      watch.state.lastMoment = 'before-patient';
       watch.addEvent({ text: 'Reminder · ' + (bed || watch.state.bed), kind: 'you' });
       watch.go('recordatorio', 'alert');
       return 'shown';
     },
 
-    /* a wash the watch detected on its own */
+    /* a wash the watch detected on its own: a seeded stream through the
+       on-device classifier, never a canned event */
     lavado: function (opts) {
       if (watch.isPaused()) {
         pushLog(clockNow(), 'Wash logged quietly', 'ok');
         watch.state.done += 1;
         watch.addEvent({ text: 'Wash · ' + watch.state.bed, kind: 'ok' });
+        Log.record('before-patient', 'done', false);
         watch.bump();
         return 'quiet';
       }
-      watch.startWash(opts || {});
-      return 'washing';
+      var run = Sense.run('wash', { seed: opts && opts.seed, noise: Sense.noise }, true);
+      return routeDetection(run, opts || {}, 'before-patient', null);
     },
 
-    /* leaving without washing: the watch is not sure, so it asks */
+    /* leaving without washing: a quick gel rub under noise. The classifier
+       reads it as unsure, so the watch asks instead of claiming. */
     dudoso: function (when) {
       if (watch.isPaused()) {
         pushLog(clockNow(), 'Doubt muted', 'off');
+        Log.record(momentFor(when), 'silenced', false);
         return 'swallowed';
       }
-      watch.state.doubtWhen = when || 'On exit';
-      haptics.play('doubtful');
-      watch.addEvent({
-        text: 'Doubt: ' + watch.state.doubtWhen.toLowerCase() + ' · ' + watch.state.bed,
-        kind: 'you'
-      });
-      watch.go('dudoso', 'alert');
-      return 'shown';
+      var run = Sense.run(Sense.DOUBT_SCENARIO,
+        { seed: Sense.DOUBT_SEED, noise: Sense.DOUBT_NOISE }, true);
+      return routeDetection(run, {}, momentFor(when), when || 'On exit');
     },
 
     /* a code azul: the watch must shut up */
@@ -84,6 +86,42 @@ var story = (function () {
   };
 
   function clockNow() { return watch.clock(); }
+
+  /* 'On exit' is the after-patient moment; everything else the watch tracks
+     is before the patient. */
+  function momentFor(when) {
+    return /exit/i.test(when || '') ? 'after-patient' : 'before-patient';
+  }
+
+  /* One routing for every detection: the verdict moves the watch. */
+  function routeDetection(run, opts, moment, when) {
+    if (run.verdict === 'sure') {
+      watch.state.pending = false;
+      watch.state.lastMoment = moment;
+      Log.record(moment, 'done', false);
+      watch.startWash(opts || {});
+      return 'washing';
+    }
+    if (run.verdict === 'unsure') {
+      watch.state.doubtWhen = when || 'On exit';
+      watch.state.lastMoment = moment;
+      watch.state.lastWhy = Sense.whyLine();
+      haptics.play('doubtful');
+      Log.record(moment, 'unsure', false);
+      watch.addEvent({
+        text: 'Doubt: ' + watch.state.doubtWhen.toLowerCase() + ' · ' + watch.state.bed,
+        kind: 'you'
+      });
+      watch.go('dudoso', 'alert');
+      return 'shown';
+    }
+    /* nothing readable: stay quiet, unless a moment is still pending */
+    if (watch.state.pending) {
+      watch.go('recordatorio', 'alert');
+      return 'reminded';
+    }
+    return 'none';
+  }
 
   /* the console indicator follows the watch, not the other way round */
   function mirrorPause(paused) {
@@ -311,7 +349,14 @@ var story = (function () {
     st.pausedUntil = 0;
     st.events = [];
     st.speed = 1;
+    st.pending = false;
+    st.lastMoment = 'before-patient';
+    st.lastWhy = '';
     window.__timeScale = 1;
+    try {
+      if (window.Sense) Sense.reset();
+      if (window.Scope) Scope.reset();
+    } catch (e) { /* first paint before the modules mount */ }
     watch.el.screen.classList.remove('is-paused');
     logLines.length = 0;
     renderLog();
@@ -378,9 +423,11 @@ var story = (function () {
 /* --- bootstrap ---------------------------------------------------------- */
 
 function boot() {
+  Log.mount();
   haptics.attach();
   watch.mount();
   story.mount();
+  Scope.mount();
   window.__story = story;
   window.__bus = story.BUS;
 }

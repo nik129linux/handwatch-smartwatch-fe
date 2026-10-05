@@ -692,6 +692,16 @@
   color: var(--text-primary);
   font-variant-numeric: tabular-nums;
 }
+/* the classifier's one-line reason, in the quiet mono voice */
+.doubt__why {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: var(--leading-micro);
+  letter-spacing: var(--tracking-micro);
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  margin-top: var(--sp-3);
+}
 
 /* --- Fin de turno --------------------------------------------------------- */
 

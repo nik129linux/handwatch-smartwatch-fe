@@ -1043,3 +1043,69 @@ html.is-switching body *::after {
   .haptic-strip.is-playing .haptic-bar { background: var(--color-primary-500); }
   .ubar__fill { transform: scaleX(1) !important; }
 }
+
+/* --- Motion signal: the classifier you can watch --------------------------
+   Quiet strip, no boxes: a canvas, a meter, one mono line, a slider. */
+
+.scope__canvas {
+  display: block;
+  width: 100%;
+  height: 120px;
+  background: var(--bg-inset);
+  border-radius: var(--radius-sm);
+}
+.scope__meter {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-top: var(--sp-3);
+}
+.scope__track {
+  flex: 1;
+  height: 6px;
+  background: var(--bar-track);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+.scope__fill {
+  display: block;
+  height: 100%;
+  width: 100%;
+  background: var(--bar-fill);
+  border-radius: var(--radius-pill);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform var(--dur-exit) var(--ease-exit);
+}
+.scope__conf {
+  font-variant-numeric: tabular-nums;
+  min-width: 36px;
+  text-align: right;
+}
+.scope__why {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: var(--leading-micro);
+  letter-spacing: var(--tracking-micro);
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  margin-top: var(--sp-2);
+}
+.scope__noise {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-top: var(--sp-3);
+  cursor: pointer;
+}
+.scope__noise input {
+  flex: 1;
+  min-height: 40px;
+  border: 0;
+  background: none;
+  accent-color: var(--color-primary-500);
+}
+.scope__noise input:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}

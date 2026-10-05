@@ -24,7 +24,10 @@ var watch = (function () {
     events: [],
     now: Date.now(),
     washMs: 20000,
-    speed: 1
+    speed: 1,
+    pending: false,              /* a patient-zone moment still open */
+    lastMoment: 'before-patient',
+    lastWhy: ''                  /* classifier "why" line for the doubt screen */
   };
 
   var el = {};
@@ -274,11 +277,16 @@ var watch = (function () {
           '<div class="caption">' + esc(state.bed) + '</div>' +
           '<div class="doubt__q">Did you wash?</div>' +
           '<div class="caption">Not sure</div>' +
+          '<div class="caption doubt__why" data-features></div>' +
         '</div>' +
         '<div class="screen__foot">' +
           '<button class="pill pill--primary" data-act="doubt-yes">Yes, I did</button>' +
           '<button class="pill pill--secondary" data-act="doubt-no">Couldn\'t</button>' +
         '</div>';
+    },
+    after: function (node) {
+      var w = node.querySelector('[data-features]');
+      if (w) w.textContent = state.lastWhy || '';
     }
   };
 
@@ -308,8 +316,17 @@ var watch = (function () {
     title: 'Who sees this',
     anim: 'fwd',
     build: function () {
+      /* the 'You' row reads the real on-watch log: how many events are
+         kept on this watch right now, gone in 24 h */
+      var kept = 0;
+      try {
+        if (window.Log) kept = window.Log.count();
+      } catch (e) { kept = 0; }
+      var youWhat = kept === 0
+        ? 'no events kept · 24 hours'
+        : kept + (kept === 1 ? ' event' : ' events') + ' on this watch · 24 hours';
       var rows = [
-        ['You', 'every event, 24 hours', 'you'],
+        ['You', youWhat, 'you'],
         ['Infection control', 'unit totals, no names', ''],
         ['No one', 'your location', '']
       ];
@@ -603,11 +620,19 @@ var watch = (function () {
 
   /* ---------------------------------------------------------------- actions */
 
+  function logOutcome(outcome, corrected) {
+    try {
+      if (window.Log) window.Log.record(state.lastMoment, outcome, corrected);
+    } catch (e) { /* the screen is the truth; the log follows */ }
+  }
+
   function act(name) {
     switch (name) {
       case 'done':
         state.done += 1;
+        state.pending = false;
         addEvent({ text: 'Marked by you · ' + state.bed, kind: 'ok' });
+        logOutcome('done', false);
         toast('Noted. Thanks.');
         haptics.play('ok');
         home();
@@ -615,13 +640,16 @@ var watch = (function () {
       case 'doubt-yes':
         state.done += 1;
         state.corrections += 1;
+        state.pending = false;
         addEvent({ text: 'Fixed by you · ' + state.bed, kind: 'ok' });
+        logOutcome('confirmed', true);
         haptics.play('ok');
         toast('Noted. Thanks.');
         window.setTimeout(function () { home(); }, ms(460));
         break;
       case 'doubt-no':
         addEvent({ text: 'Just for you · ' + state.bed, kind: 'you' });
+        logOutcome('declined', false);
         toast('Stays with you.');
         window.setTimeout(function () { home(); }, ms(460));
         break;
