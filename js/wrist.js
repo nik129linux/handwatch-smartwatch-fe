@@ -30,7 +30,14 @@
 
   /* Pure: haptic name + watch state → the push. null = nothing to send.
      Priorities follow ntfy: 4 buzzes the phone, 2 arrives quietly. */
+  /* The alert follows the page language (I18N), English when absent. */
   function message(name, s) {
+    var m = messageEn(name, s);
+    if (!m || typeof I18N === 'undefined' || I18N.lang !== 'es') return m;
+    return { title: I18N.t(m.title), body: I18N.t(m.body), priority: m.priority };
+  }
+
+  function messageEn(name, s) {
     s = s || {};
     var bed = typeof s.bed === 'string' ? s.bed : '';
     switch (name) {

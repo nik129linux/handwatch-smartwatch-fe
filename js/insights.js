@@ -38,6 +38,9 @@ var Insights = (function () {
     throw new Error('insights: dataset, stats, timeseries and eval are required');
   }
 
+  /* canvas text does not pass through the DOM translator */
+  function L(s) { return (typeof I18N !== 'undefined') ? I18N.t(s) : s; }
+
   function pct(v) {
     return Math.round(v * 100) + '%';
   }
@@ -313,7 +316,7 @@ var Insights = (function () {
       ctx.fill();
       ctx.fillStyle = faint;
       ctx.font = '11px monospace';
-      ctx.fillText('W' + (wk.week + 1), x(i) - 8, H - 8);
+      ctx.fillText(L('W') + (wk.week + 1), x(i) - 8, H - 8);
     });
     /* change-point marker */
     if (change && change.significant && change.index >= 0 && change.index < n) {
@@ -327,7 +330,7 @@ var Insights = (function () {
       ctx.setLineDash([]);
       ctx.fillStyle = lime;
       ctx.font = '11px monospace';
-      ctx.fillText('shift', x(change.index) + 5, pad.t + 12);
+      ctx.fillText(L('shift'), x(change.index) + 5, pad.t + 12);
     }
     /* forecast: hollow dot + interval */
     if (fc) {
@@ -343,7 +346,7 @@ var Insights = (function () {
       ctx.stroke();
       ctx.fillStyle = faint;
       ctx.font = '11px monospace';
-      ctx.fillText('next', fx - 10, H - 8);
+      ctx.fillText(L('next'), fx - 10, H - 8);
     }
   }
 
@@ -408,8 +411,8 @@ var Insights = (function () {
     ctx.font = '11px monospace';
     for (var c = 0; c < 3; c++) {
       ctx.fillStyle = faint;
-      ctx.fillText(short[c], head + c * cell + cell / 2 - 14, 14);
-      ctx.fillText(short[c], 2, head + c * cell + cell / 2 + 4);
+      ctx.fillText(L(short[c]), head + c * cell + cell / 2 - 14, 14);
+      ctx.fillText(L(short[c]), 2, head + c * cell + cell / 2 + 4);
     }
     for (var r = 0; r < 3; r++) {
       for (var q = 0; q < 3; q++) {
@@ -462,8 +465,8 @@ var Insights = (function () {
     ctx.font = '11px monospace';
     ctx.fillText('0', pad.l - 12, y(0) + 4);
     ctx.fillText('1', pad.l - 12, y(1) + 4);
-    ctx.fillText('stated', W - 52, y(0.06));
-    ctx.fillText('hit rate', 4, pad.t + 4);
+    ctx.fillText(L('stated'), W - 52, y(0.06));
+    ctx.fillText(L('hit rate'), 4, pad.t + 4);
     evaluation.reliability.forEach(function (bin) {
       if (!bin.n) return;
       var radius = 3 + 9 * Math.sqrt(bin.n / evaluation.streams);
