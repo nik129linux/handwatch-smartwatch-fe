@@ -152,5 +152,5 @@
     else init();
   }
 
-  return { applyAnswer: applyAnswer, message: message, TOPIC_RE: TOPIC_RE, HOST: HOST, randomTopic: randomTopic };
+  return { isOn: function () { return !!(cfg && cfg.on); }, applyAnswer: applyAnswer, message: message, TOPIC_RE: TOPIC_RE, HOST: HOST, randomTopic: randomTopic };
 });

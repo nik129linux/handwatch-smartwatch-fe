@@ -73,6 +73,19 @@ ok(Wrist.TOPIC_RE.test(Wrist.randomTopic()), 'random topic is valid');
   ok(await page.getAttribute('#wristToggle', 'aria-checked') === 'true', 'setting persists');
   ok(await page.textContent('#wristTopic') === topic, 'topic persists');
 
+  console.log('\nguided shift waits for the wrist');
+  await page.evaluate(() => { window.__storySpeed = 6; });
+  await page.click('#storyPlay');
+  await page.waitForFunction(() => watch.state.screen === 'dudoso', null, { timeout: 30000 });
+  ok(/Answer on your wrist/.test(await page.textContent('#subtitle')), 'subtitle asks for the wrist',
+    await page.textContent('#subtitle'));
+  await page.waitForTimeout(14000);
+  ok(await page.evaluate(() => watch.state.screen) === 'dudoso', 'still waiting after the old 12 s deadline');
+  await page.evaluate(() => wrist.applyAnswer('no', 'wear'));
+  await page.waitForFunction(() => watch.state.screen === 'pausa', null, { timeout: 20000 })
+    .then(() => ok(true, 'answer from the wrist moves the story on'))
+    .catch(() => ok(false, 'answer from the wrist moves the story on'));
+
   await browser.close();
   console.log('\n' + pass + ' passed' + (process.exitCode ? ', some failed' : ''));
 })();
