@@ -31,10 +31,12 @@ four-pattern vocabulary lives on the simulator; answers are tapped there.
 
 ## Wear OS emulator (a real watch OS on the PC)
 
-`npm run watch` boots a Wear OS 5 emulator (AVD `hhw_watch`), installs
-`wear/` and opens a clean scrcpy mirror titled *Hand Hygiene Watch* (the
-emulator's own window crops the watch under Wayland; minimize it). In the
-mirror the mouse wheel is the crown, a click is a tap, Enter confirms.
+`npm run watch` boots a Wear OS 5 emulator (AVD `hhw_watch`) as a floating
+454×454 window and installs `wear/`. On Hyprland the emulator auto-zooms
+and crops the watch; the script pins `window.scale = 1` (the emulator resets
+it on exit) and floats the window. Use the side toolbar's ⋯ for the crown
+and buttons; `scrcpy -s emulator-5554` is a fallback mirror where the mouse
+wheel is the crown and Enter confirms.
 With **Send to my wrist** on, every haptic opens the alert on the emulated
 watch with its real vibration pattern. Answer by turning the crown to pick
 *Yes, I did* / *Couldn't* and pressing the second button (or tap; arrow keys
