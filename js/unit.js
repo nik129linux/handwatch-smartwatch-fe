@@ -206,8 +206,79 @@ var unit = (function () {
      sections; the demo bars above never wait for it. */
   function datascience() {
     try {
-      if (typeof Insights !== 'undefined' && Insights.mount) Insights.mount();
+      if (typeof Insights !== 'undefined' && Insights.mount) return Insights.mount();
     } catch (e) { /* demo bars already on screen — keep them */ }
+    return null;
+  }
+
+  /* --- ask the unit: rules answer offline; with the Electron bridge and
+     consent, the model answers from the same facts, grounded or dropped -- */
+  function ask(analysis) {
+    if (typeof Ask === 'undefined') return;
+    var form = document.getElementById('askForm');
+    var input = document.getElementById('askInput');
+    var box = document.getElementById('askAnswer');
+    if (!form || !input || !box) return;
+    var facts;
+    try {
+      var extra = {};
+      if (analysis) {
+        extra.weeks = analysis.weeks;
+        extra.trend = analysis.trend && analysis.trend.verdict;
+        extra.forecast = analysis.forecast && analysis.forecast.point;
+        if (analysis.evaluation) {
+          extra.model = { accuracy: analysis.evaluation.accuracy,
+            baseline: analysis.evaluation.baseline, streams: analysis.evaluation.streams };
+        }
+      }
+      facts = Ask.buildFacts(aggregates(), extra);
+    } catch (e) { return; }
+    var transport = null;
+    try { transport = AI.browserTransport(); } catch (e) { transport = null; }
+    var lang = (typeof I18N !== 'undefined') ? I18N.lang : 'en';
+    var send = form.querySelector('.ask__send');
+    var busy = false;
+
+    function show(q, text, source, loading) {
+      box.hidden = false;
+      box.classList.toggle('is-loading', !!loading);
+      document.getElementById('askQ').textContent = q;
+      document.getElementById('askA').textContent = text;
+      document.getElementById('askBadge').textContent = source;
+    }
+
+    function run(q) {
+      q = String(q || '').trim();
+      if (!q || busy) return;
+      busy = true;
+      if (send) send.disabled = true;
+      show(q, lang === 'es' ? 'Leyendo los totales…' : 'Reading the totals…', '…', true);
+      Ask.request(q, facts, {
+        transport: transport,
+        consent: null,
+        onConsent: AI.requestConsent
+      }, lang).then(function (r) {
+        show(q, r.answer, r.source, false);
+      }).catch(function () {
+        show(q, Ask.rulesAnswer(facts, Ask.intent(q), lang, q), 'Rules', false);
+      }).then(function () {
+        busy = false;
+        if (send) send.disabled = false;
+      });
+    }
+
+    form.addEventListener('submit', function (ev) {
+      ev.preventDefault();
+      run(input.value);
+    });
+    var chips = document.querySelectorAll('#askChips .ask__chip');
+    for (var i = 0; i < chips.length; i++) {
+      chips[i].addEventListener('click', function (ev) {
+        var q = ev.currentTarget.textContent;
+        input.value = q;
+        run(q);
+      });
+    }
   }
 
   function pad2(n) { return (n < 10 ? '0' : '') + n; }
@@ -217,7 +288,7 @@ var unit = (function () {
     heatmap();
     corrections();
     fixes();
-    datascience();
+    ask(datascience());
     /* the Electron file copy can land after first paint — re-count then */
     if (typeof document !== 'undefined') {
       document.addEventListener('watch:log-sync', corrections);

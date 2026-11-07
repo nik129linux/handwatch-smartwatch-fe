@@ -503,6 +503,82 @@ body.is-ready [data-rise] {
 .free-btn:active { transform: scale(0.97); }
 .free-btn:disabled { opacity: 0.38; cursor: not-allowed; transform: none; }
 
+/* --- Real watch: one switch, one line of help --------------------------- */
+
+.wrist-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 56px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
+  text-align: left;
+}
+.wrist-toggle__track {
+  position: relative;
+  flex: none;
+  width: 48px;
+  height: 28px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-strong);
+  background: var(--bg-inset);
+  transition:
+    background-color var(--dur-exit) var(--ease-enter),
+    border-color var(--dur-exit) var(--ease-enter);
+}
+.wrist-toggle__knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--text-secondary);
+  transition:
+    transform var(--dur-enter) var(--ease-enter),
+    background-color var(--dur-exit) var(--ease-enter);
+}
+.wrist-toggle[aria-checked="true"] .wrist-toggle__track {
+  background: var(--color-primary-500);
+  border-color: transparent;
+}
+.wrist-toggle[aria-checked="true"] .wrist-toggle__knob {
+  transform: translateX(20px);
+  background: var(--text-inverse);
+}
+.wrist-toggle:focus-visible { outline: 2px solid var(--border-focus); outline-offset: 4px; border-radius: var(--radius-sm); }
+.wrist-help {
+  margin-top: var(--sp-2);
+  color: var(--text-secondary);
+}
+.wrist-help code {
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+  user-select: all;
+}
+
+/* --- Details: the engine, folded until asked for ------------------------ */
+
+.details > .details__summary {
+  cursor: pointer;
+  list-style: none;
+  margin-bottom: 0;
+}
+.details > .details__summary::-webkit-details-marker { display: none; }
+.details > .details__summary .group__title::after {
+  content: " +";
+}
+.details[open] > .details__summary .group__title::after { content: " −"; }
+.details[open] > .details__summary { margin-bottom: var(--sp-4); }
+.details > .group { padding: var(--sp-6) 0 0; border-top: 0; }
+
 /* --- Vocabulario: rows without chrome ------------------------------------ */
 
 .vocab { display: flex; flex-direction: column; }
@@ -1213,3 +1289,33 @@ html.is-switching body *::after {
   outline: 2px solid var(--border-focus);
   outline-offset: 2px;
 }
+
+/* --- language switch (EN | ES), sits before the theme toggle ------------ */
+.lang-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 44px;
+  margin-left: auto;
+  padding: 0 var(--sp-2);
+  border-radius: 100px;
+  border: 1px solid transparent;
+  background: none;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: var(--text-secondary);
+  transition:
+    transform var(--dur-press) var(--ease-enter),
+    color var(--dur-exit) var(--ease-enter),
+    border-color var(--dur-exit) var(--ease-enter);
+}
+.lang-toggle span { padding: 4px 6px; border-radius: 100px; }
+.lang-toggle span[aria-current="true"] { color: var(--text-primary); background: var(--border-subtle); }
+.lang-toggle:hover { color: var(--text-primary); border-color: var(--border-strong); }
+.lang-toggle:active { transform: scale(0.97); }
+.lang-toggle + .theme-toggle { margin-left: 0; }
+@media (prefers-reduced-motion: reduce) { .lang-toggle { transition: none; } }

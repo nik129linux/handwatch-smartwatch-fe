@@ -50,6 +50,31 @@
 
 <main class="unit__grid">
 
+  <section class="ucard ucard--wide ask" aria-labelledby="t-ask">
+    <p class="ucard__label">Ask the unit</p>
+    <h2 class="ucard__title" id="t-ask">Ask in plain words</h2>
+    <p class="ucard__note">Answers use only the anonymous totals on this page.
+      A question about a person is refused here, before anything leaves.</p>
+    <form class="ask__form" id="askForm" autocomplete="off">
+      <label class="ask__label" for="askInput">Your question</label>
+      <input class="ask__input" id="askInput" name="q" type="text" maxlength="200"
+        enterkeyhint="send" placeholder="Where does the process slip?">
+      <button class="ask__send" type="submit">Ask</button>
+    </form>
+    <div class="ask__chips" id="askChips">
+      <button class="ask__chip" type="button">Where does the process slip?</button>
+      <button class="ask__chip" type="button">When do we wash least?</button>
+      <button class="ask__chip" type="button">Are we improving?</button>
+      <button class="ask__chip" type="button">How reliable is the watch?</button>
+      <button class="ask__chip" type="button">What should we fix first?</button>
+    </div>
+    <div class="ask__answer" id="askAnswer" aria-live="polite" hidden>
+      <p class="ask__q" id="askQ"></p>
+      <p class="ask__a" id="askA" data-no-i18n></p>
+      <span class="ai-badge" id="askBadge">Rules</span>
+    </div>
+  </section>
+
   <section class="ucard ucard--wide" data-io aria-labelledby="t-moment">
     <p class="ucard__label">Compliance by moment</p>
     <h2 class="ucard__title" id="t-moment">The five WHO moments</h2>
@@ -61,8 +86,7 @@
   <section class="ucard ucard--wide" data-io aria-labelledby="t-hour">
     <p class="ucard__label">Behavior by hour</p>
     <h2 class="ucard__title" id="t-hour">When the unit washes</h2>
-    <p class="ucard__note">Washes per hour, shift average. Darker
-      colors mean more washes, not fewer.</p>
+    <p class="ucard__note">Washes per hour, shift average. Stronger color means more washes.</p>
     <div class="uheat" id="heat"></div>
   </section>
 
@@ -151,12 +175,17 @@
   </span>
 </footer>
 
+<script src="js/strings-es.js"></script>
+<script src="js/i18n.js"></script>
 <script src="js/log.js"></script>
 <script src="js/ai.js"></script>
+<script src="js/ask.js"></script>
 <script src="js/dataset.js"></script>
 <script src="js/stats.js"></script>
 <script src="js/timeseries.js"></script>
 <script src="js/signal.js"></script>
+<script src="js/model.js"></script>
+<script src="js/model-weights.js"></script>
 <script src="js/classifier.js"></script>
 <script src="js/calibrate.js"></script>
 <script src="js/eval.js"></script>

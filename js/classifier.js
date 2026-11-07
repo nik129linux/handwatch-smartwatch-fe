@@ -130,18 +130,14 @@ var Classifier = (function () {
 
   /* --- public ------------------------------------------------------------ */
 
-  /* Classify one stream. Accepts {samples, rate} or a raw samples array.
-     Returns {label, confidence, seconds, features}. */
-  function classify(stream, opts) {
-    opts = opts || {};
+  /* Feature extraction only: no decision. Accepts {samples, rate} or a raw
+     samples array. Both the trained model and the rules read these. */
+  function extract(stream) {
     var T = THRESHOLDS;
     var samples = stream && stream.samples ? stream.samples : stream;
     var rate = (stream && stream.rate) || T.SAMPLE_RATE;
     if (!samples || !samples.length) {
-      return {
-        label: 'other', confidence: 0, seconds: 0,
-        features: { rms: 0, domFreq: 0, rhythm: 0, activeSeconds: 0, totalSeconds: 0 }
-      };
+      return { rms: 0, domFreq: 0, rhythm: 0, activeSeconds: 0, totalSeconds: 0 };
     }
 
     var axis = bestAxis(samples);
@@ -162,29 +158,35 @@ var Classifier = (function () {
       rhythmList.push(rhythmicity(win, rate));
     }
 
-    var totalSeconds = samples.length / rate;
     var activeSeconds = rmsList.length * T.WINDOW_SEC;
-    var rms = rmsList.length ? median(rmsList) : 0;
-    var domFreq = freqList.length ? median(freqList) : 0;
-    var rhythm = rhythmList.length ? lowerQuartile(rhythmList) : 0;
-
-    var features = {
-      rms: rms,
-      domFreq: domFreq,
-      rhythm: rhythm,
+    return {
+      rms: rmsList.length ? median(rmsList) : 0,
+      domFreq: freqList.length ? median(freqList) : 0,
+      rhythm: rhythmList.length ? lowerQuartile(rhythmList) : 0,
       activeSeconds: activeSeconds,
-      totalSeconds: totalSeconds
+      totalSeconds: samples.length / rate
     };
+  }
+
+  /* The hand-written rules: the baseline the trained model is measured
+     against. Returns {label, confidence, seconds, features, engine}. */
+  function decideRules(features) {
+    var T = THRESHOLDS;
+    var rms = features.rms;
+    var domFreq = features.domFreq;
+    var rhythm = features.rhythm;
+    var activeSeconds = features.activeSeconds;
+    var base = { seconds: activeSeconds, features: features, engine: 'rules' };
+    function out(label, confidence) {
+      return { label: label, confidence: confidence, seconds: base.seconds,
+        features: base.features, engine: base.engine };
+    }
+    if (!features.totalSeconds) return out('other', 0);
 
     /* too short, arrhythmic, or pinned to the band edge: nothing to read */
     if (activeSeconds < 3 || rhythm < T.RHYTHM_FLOOR ||
         domFreq < T.FREQ_LO + 0.25 || domFreq > T.FREQ_HI - 0.25) {
-      return {
-        label: 'other',
-        confidence: clamp01(0.25 * clamp01(rms) + 0.15 * clamp01(activeSeconds / 8)),
-        seconds: activeSeconds,
-        features: features
-      };
+      return out('other', clamp01(0.25 * clamp01(rms) + 0.15 * clamp01(activeSeconds / 8)));
     }
 
     var washDur = clamp01((activeSeconds - T.WASH_MIN_SEC) / (T.WASH_FULL_SEC - T.WASH_MIN_SEC));
@@ -198,11 +200,46 @@ var Classifier = (function () {
 
     var label = washScore >= gelScore ? 'wash' : 'gel';
     var confidence = Math.max(washScore, gelScore);
+    if (confidence < T.UNCERTAIN) return out('other', confidence);
+    return out(label, confidence);
+  }
 
-    if (confidence < T.UNCERTAIN) {
-      return { label: 'other', confidence: confidence, seconds: activeSeconds, features: features };
+  /* The trained model (model.js + model-weights.js). Confidence is the
+     model's probability for its top class. A wash/gel below the unsure
+     floor reads as nothing, same contract as the rules. */
+  function decideModel(features, M, W) {
+    var x = M.vectorize(features);
+    var p = M.predict(x, W);
+    var label = 'other';
+    if (p.wash >= p.gel && p.wash >= p.other) label = 'wash';
+    else if (p.gel >= p.other) label = 'gel';
+    var confidence = p[label];
+    if (label !== 'other' && confidence < THRESHOLDS.UNCERTAIN) label = 'other';
+    return { label: label, confidence: confidence, seconds: features.activeSeconds,
+      features: features, engine: 'model', probs: p };
+  }
+
+  function loadModel() {
+    var M = (typeof Model !== 'undefined') ? Model : null;
+    var W = (typeof ModelWeights !== 'undefined') ? ModelWeights : null;
+    if ((!M || !W) && typeof require === 'function') {
+      try { M = M || require('./model.js'); } catch (e) { M = null; }
+      try { W = W || require('./model-weights.js'); } catch (e) { W = null; }
     }
-    return { label: label, confidence: confidence, seconds: activeSeconds, features: features };
+    return (M && W && W.W) ? { M: M, W: W } : null;
+  }
+
+  /* Classify one stream with the trained model; the rules answer only if
+     the model files are missing. */
+  function classify(stream) {
+    var features = extract(stream);
+    var m = loadModel();
+    if (m && features.totalSeconds) return decideModel(features, m.M, m.W);
+    return decideRules(features);
+  }
+
+  function classifyRules(stream) {
+    return decideRules(extract(stream));
   }
 
   /* verdict word for the scope "why" line */
@@ -226,6 +263,8 @@ var Classifier = (function () {
   return {
     THRESHOLDS: THRESHOLDS,
     classify: classify,
+    classifyRules: classifyRules,
+    extract: extract,
     verdict: verdict,
     whyLine: whyLine
   };

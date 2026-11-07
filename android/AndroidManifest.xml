@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="co.ucc.handhygiene">
+
+    <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="35" />
+
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+
+    <application
+        android:label="Hand Hygiene">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <receiver
+            android:name=".NotifyReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="co.ucc.handhygiene.NOTIFY" />
+            </intent-filter>
+        </receiver>
+        <service
+            android:name=".RelayService"
+            android:exported="true"
+            android:foregroundServiceType="mediaPlayback" />
+    </application>
+</manifest>

@@ -235,18 +235,33 @@ var story = (function () {
     },
     {
       sub: 'The watch was wrong. Fixed with one tap, no form.',
+      /* With a real watch attached the story stops here and waits for the
+         person wearing it: no fingertip, no deadline, either answer counts. */
+      wristSub: 'The watch was wrong. Answer on your wrist: one tap, no form.',
+      waitsForWrist: true,
       hold: 2600,
       act: function () {
+        this.seen = false;
         watch.setClock(7, 14);
         BUS.dudoso('On exit');
       },
-      until: function () { return watch.state.screen === 'dudoso'; },
+      /* Latched: the doubt has to have appeared, and `settle` then waits
+         for Home. Checking both at once never held, so this beat used to
+         advance only on the 12 s deadline. */
+      until: function () {
+        if (watch.state.screen === 'dudoso') this.seen = true;
+        return !!this.seen;
+      },
       then: function () {
+        if (wristLive()) return;
         fingertipOn('[data-act="doubt-yes"]', function () {
           watch.act('doubt-yes');
         });
       },
-      settle: function () { return watch.state.screen === 'home' && watch.state.corrections >= 2; }
+      settle: function () {
+        if (wristLive()) return watch.state.screen === 'home';
+        return watch.state.screen === 'home' && watch.state.corrections >= 2;
+      }
     },
     {
       sub: 'In an emergency, the watch stays quiet.',
@@ -288,6 +303,9 @@ var story = (function () {
 
   function say(text) { el.subtitle.textContent = text || ''; }
 
+  /* True when "Send to my wrist" is on: a real person answers the doubt. */
+  function wristLive() { return !!(window.wrist && window.wrist.isOn && window.wrist.isOn()); }
+
   function setControls(runningNow) {
     el.storyPlay.disabled = runningNow;
     el.storyPause.disabled = !runningNow;
@@ -304,14 +322,15 @@ var story = (function () {
     if (stepIx >= BEATS.length) { finish(); return; }
     var beat = BEATS[stepIx++];
     var token = runToken;
-    say(beat.sub);
+    var waits = beat.waitsForWrist && wristLive();
+    say(waits ? beat.wristSub : beat.sub);
 
     if (beat.act) beat.act();
     if (beat.then) beat.then();
     el.storyClock.textContent = watch.clock();
 
     var hold = scaled(beat.hold);
-    var deadline = Date.now() + hold + 12000;
+    var deadline = waits ? Infinity : Date.now() + hold + 12000;
     var t0 = Date.now();
 
     var poll = function () {

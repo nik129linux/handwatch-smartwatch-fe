@@ -136,6 +136,26 @@
       </div>
     </section>
 
+    <section class="group" aria-label="Real watch" data-rise style="--i:3">
+      <div class="group__head">
+        <span class="group__title">Real watch</span>
+        <span class="panel__clock caption" id="wristStatus">off</span>
+      </div>
+      <button class="wrist-toggle" id="wristToggle" type="button" role="switch" aria-checked="false">
+        <span class="wrist-toggle__label">Send to my wrist</span>
+        <span class="wrist-toggle__track" aria-hidden="true"><span class="wrist-toggle__knob"></span></span>
+      </button>
+      <p class="wrist-help caption" id="wristHelp" hidden>
+        Phone on USB with the Hand Hygiene app: straight to the watch.
+        No phone: the ntfy topic <code id="wristTopic"></code>.
+      </p>
+    </section>
+
+    <details class="group details" data-rise style="--i:4">
+      <summary class="group__head details__summary">
+        <span class="group__title">How it reads motion</span>
+        <span class="panel__clock caption">signal · vibrations</span>
+      </summary>
     <section class="group" aria-label="Motion signal" data-rise style="--i:4">
       <div class="group__head">
         <span class="group__title">Motion signal</span>
@@ -161,6 +181,7 @@
       </div>
       <ul class="vocab" id="vocab"></ul>
     </section>
+    </details>
 
     <section class="group" aria-label="Event log" data-rise style="--i:5">
       <div class="group__head">
@@ -180,12 +201,17 @@
   </aside>
 </main>
 
+<script src="js/strings-es.js"></script>
+<script src="js/i18n.js"></script>
 <script src="js/signal.js"></script>
+<script src="js/model.js"></script>
+<script src="js/model-weights.js"></script>
 <script src="js/classifier.js"></script>
 <script src="js/calibrate.js"></script>
 <script src="js/log.js"></script>
 <script src="js/ai.js"></script>
 <script src="js/haptics.js"></script>
+<script src="js/wrist.js"></script>
 <script src="js/watch.js"></script>
 <script src="js/sense.js"></script>
 <script src="js/story.js"></script>

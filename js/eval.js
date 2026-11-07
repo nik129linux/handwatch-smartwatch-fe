@@ -13,6 +13,8 @@
                              the sensor rarely lands in) is quieted by
                              corrections while solid signals are held.
 
+   The streams use seeds 11.. — the trained model (model.js) learned from
+   seeds 100000.., so this is held-out data for it.
    Truth mapping: wash -> wash, gel -> gel, every other scenario
    (door, typing, wave, idle) -> other. For wash/gel predictions the
    classifier confidence reads as P(correct). For other predictions it
@@ -71,6 +73,8 @@ var Eval = (function () {
   /* correctness-probability: confidence for wash/gel reads,
      1 - confidence for other (there confidence is activity evidence) */
   function pCorrect(it) {
+    /* the trained model's confidence is always P(its own label) */
+    if (it.engine === 'model') return it.conf;
     if (it.pred === 'other') return 1 - it.conf;
     return it.conf;
   }
@@ -90,12 +94,15 @@ var Eval = (function () {
         var streamSeed = (seed + s) >>> 0;
         var stream = D.Signal.generate(sc, { seed: streamSeed, noise: noise });
         var result = D.Classifier.classify(stream);
+        var rules = D.Classifier.classifyRules ? D.Classifier.classifyRules(stream) : result;
         items.push({
+          rulesPred: rules.label,
           truth: truthOf(sc),
           scenario: sc,
           seed: streamSeed,
           pred: result.label,
-          conf: result.confidence
+          conf: result.confidence,
+          engine: result.engine
         });
       }
     });
@@ -155,6 +162,10 @@ var Eval = (function () {
       matrix: matrix,
       perClass: perClass,
       accuracy: accuracy,
+      engine: items.length ? items[0].engine : 'rules',
+      baseline: items.length ? items.filter(function (it) {
+        return it.rulesPred === it.truth;
+      }).length / items.length : 0,
       brier: brier,
       reliability: reliability
     };

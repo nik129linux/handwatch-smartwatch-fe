@@ -236,8 +236,26 @@ var watch = (function () {
         paths[i].style.strokeDasharray =
           (s.drawn * f).toFixed(2) + ' ' + s.drawn.toFixed(2);
       }
+      settleFold(node);
     }
   };
+
+  /* Fold rule for Home: the foot pill is either fully on screen or fully
+     below the fold (the crown scrolls to it). Never cut by the edge. */
+  function settleFold(view) {
+    if (!view) return;
+    var foot = view.querySelector('.screen__foot');
+    var screen = document.getElementById('screen');
+    if (!foot || !screen) return;
+    foot.style.marginTop = '';
+    var fold = screen.clientHeight;
+    var top = foot.offsetTop;
+    var bottom = top + foot.offsetHeight;
+    var GAP = 0;
+    if (top < fold && bottom > fold - GAP) {
+      foot.style.marginTop = (fold - top + GAP) + 'px';
+    }
+  }
 
   /* 2 — Reminder */
   VIEWS.recordatorio = {
@@ -506,6 +524,7 @@ var watch = (function () {
         list.removeChild(list.querySelector('.ev:last-child'));
       }
     }
+    settleFold(current);
   }
 
   /* ---------------------------------------------------------------- wash */

@@ -38,6 +38,9 @@ var Insights = (function () {
     throw new Error('insights: dataset, stats, timeseries and eval are required');
   }
 
+  /* canvas text does not pass through the DOM translator */
+  function L(s) { return (typeof I18N !== 'undefined') ? I18N.t(s) : s; }
+
   function pct(v) {
     return Math.round(v * 100) + '%';
   }
@@ -277,7 +280,7 @@ var Insights = (function () {
       ctx.lineTo(W - pad.r, y(v));
       ctx.stroke();
       ctx.fillStyle = faint;
-      ctx.font = '11px monospace';
+      ctx.font = '12px "JetBrains Mono", ui-monospace, monospace';
       ctx.fillText(Math.round(v * 100) + '%', 4, y(v) + 4);
     });
     /* CI band */
@@ -312,8 +315,8 @@ var Insights = (function () {
       ctx.fillStyle = ink;
       ctx.fill();
       ctx.fillStyle = faint;
-      ctx.font = '11px monospace';
-      ctx.fillText('W' + (wk.week + 1), x(i) - 8, H - 8);
+      ctx.font = '12px "JetBrains Mono", ui-monospace, monospace';
+      ctx.fillText(L('W') + (wk.week + 1), x(i) - 8, H - 8);
     });
     /* change-point marker */
     if (change && change.significant && change.index >= 0 && change.index < n) {
@@ -326,8 +329,8 @@ var Insights = (function () {
       ctx.stroke();
       ctx.setLineDash([]);
       ctx.fillStyle = lime;
-      ctx.font = '11px monospace';
-      ctx.fillText('shift', x(change.index) + 5, pad.t + 12);
+      ctx.font = '12px "JetBrains Mono", ui-monospace, monospace';
+      ctx.fillText(L('shift'), x(change.index) + 5, pad.t + 12);
     }
     /* forecast: hollow dot + interval */
     if (fc) {
@@ -342,8 +345,8 @@ var Insights = (function () {
       ctx.arc(fx, y(fc.point), 4.5, 0, Math.PI * 2);
       ctx.stroke();
       ctx.fillStyle = faint;
-      ctx.font = '11px monospace';
-      ctx.fillText('next', fx - 10, H - 8);
+      ctx.font = '12px "JetBrains Mono", ui-monospace, monospace';
+      ctx.fillText(L('next'), fx - 10, H - 8);
     }
   }
 
@@ -363,7 +366,7 @@ var Insights = (function () {
     buckets.forEach(function (b, i) {
       var top = 14 + i * 26;
       ctx.fillStyle = faint;
-      ctx.font = '11px monospace';
+      ctx.font = '12px "JetBrains Mono", ui-monospace, monospace';
       ctx.fillText(b.label, 0, top + 10);
       var bx = labelW;
       var bw = W - labelW - valW;
@@ -405,11 +408,11 @@ var Insights = (function () {
     var head = 22;
     var cell = Math.min((W - head) / 3, (H - head) / 3);
     var short = ['wash', 'gel', 'other'];
-    ctx.font = '11px monospace';
+    ctx.font = '12px "JetBrains Mono", ui-monospace, monospace';
     for (var c = 0; c < 3; c++) {
       ctx.fillStyle = faint;
-      ctx.fillText(short[c], head + c * cell + cell / 2 - 14, 14);
-      ctx.fillText(short[c], 2, head + c * cell + cell / 2 + 4);
+      ctx.fillText(L(short[c]), head + c * cell + cell / 2 - 14, 14);
+      ctx.fillText(L(short[c]), 2, head + c * cell + cell / 2 + 4);
     }
     for (var r = 0; r < 3; r++) {
       for (var q = 0; q < 3; q++) {
@@ -425,10 +428,10 @@ var Insights = (function () {
         }
         if (m[r][q] > 0) {
           ctx.fillStyle = ink;
-          ctx.font = '600 13px monospace';
+          ctx.font = '600 13px "JetBrains Mono", ui-monospace, monospace';
           var s = String(m[r][q]);
           ctx.fillText(s, x0 + cell / 2 - s.length * 4, y0 + cell / 2 + 5);
-          ctx.font = '11px monospace';
+          ctx.font = '12px "JetBrains Mono", ui-monospace, monospace';
         }
       }
     }
@@ -459,11 +462,11 @@ var Insights = (function () {
     ctx.stroke();
     ctx.setLineDash([]);
     ctx.fillStyle = faint;
-    ctx.font = '11px monospace';
+    ctx.font = '12px "JetBrains Mono", ui-monospace, monospace';
     ctx.fillText('0', pad.l - 12, y(0) + 4);
     ctx.fillText('1', pad.l - 12, y(1) + 4);
-    ctx.fillText('stated', W - 52, y(0.06));
-    ctx.fillText('hit rate', 4, pad.t + 4);
+    ctx.fillText(L('stated'), W - 52, y(0.06));
+    ctx.fillText(L('hit rate'), 4, pad.t + 4);
     evaluation.reliability.forEach(function (bin) {
       if (!bin.n) return;
       var radius = 3 + 9 * Math.sqrt(bin.n / evaluation.streams);
@@ -510,9 +513,16 @@ var Insights = (function () {
     var ev = analysis.evaluation;
     var note = document.getElementById('evalNote');
     if (note) {
-      note.textContent = ev.streams + ' seeded streams at noise ' +
-        ev.noise + ': accuracy ' + pct(ev.accuracy) + ', Brier ' +
-        ev.brier.toFixed(3) + '. Rows are truth, columns are predictions.';
+      var W = (typeof ModelWeights !== 'undefined') ? ModelWeights : null;
+      note.textContent = (ev.engine === 'model' && W
+        ? 'Trained model (softmax regression, ' + W.meta.trainSize +
+          ' synthetic training streams) on ' + ev.streams +
+          ' streams it never saw, noise ' + ev.noise + ': accuracy ' +
+          pct(ev.accuracy) + ' vs ' + pct(ev.baseline) +
+          ' for the hand-written rules. Brier ' + ev.brier.toFixed(3) + '. '
+        : ev.streams + ' seeded streams at noise ' + ev.noise +
+          ': accuracy ' + pct(ev.accuracy) + ', Brier ' + ev.brier.toFixed(3) + '. ') +
+        'Synthetic data: it measures the model against the simulator, not a ward.';
     }
     var table = document.getElementById('modelTable');
     if (table) {

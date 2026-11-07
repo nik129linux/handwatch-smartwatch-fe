@@ -372,9 +372,9 @@ var AI = (function () {
       host.innerHTML =
         '<div class="ai-consent__card" role="dialog" aria-label="Share anonymous totals">' +
         '<p class="ai-consent__title">Share anonymous totals?</p>' +
-        '<p class="ai-consent__body">Only this leaves the page ' +
-        '(no names, no people, no free text). The model may only cite ' +
-        'these numbers back.</p>' +
+        '<p class="ai-consent__body">Only this leaves this computer, for the ' +
+        'Ollama model (local, or ollama.com for -cloud models). No names, ' +
+        'no people. The model may only cite these numbers back.</p>' +
         '<pre class="ai-consent__payload"></pre>' +
         '<div class="ai-consent__row">' +
         '<button class="ai-ghost" type="button" data-ai-no>Not now</button>' +
