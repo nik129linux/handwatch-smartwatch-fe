@@ -9,7 +9,8 @@ accusation. See `DEMO.md` for the 2-minute script.
 
 - Desktop app: `npm start` (or the **Hand Hygiene Watch** launcher).
 - Browser fallback: open `index.html`; unit view is `unit.html`.
-- Works offline; English UI; sun/moon toggle (dark default, persisted).
+- Works offline; **EN | ES** switch on both pages (Spanish is neutral Colombian,
+  every string in `js/strings-es.js`); sun/moon toggle. Both choices persist.
 
 ## Real watch (the "8 Ultra" clone)
 
@@ -58,22 +59,33 @@ buttons, sensor-noise slider, haptic vocabulary, event log.
 `js/sense.js` wiring · `js/scope.js` waveform · `js/log.js` 24 h store ·
 `js/haptics.js` vibration vocabulary · `main.js` Electron shell.
 
-## Learning + AI (system fixes, never accusations)
+## AI (system fixes, never accusations)
 
-- On-device calibration (`js/calibrate.js`, pure, tested): each "Yes, I did"
-  lifts the decision threshold a bounded step (+0.02, cap +0.12, halves every
-  2 days) for that moment + noise bucket, so repeat false marks fade while
-  real misses still flag. Home shows "Learning · fewer marks"; Who-sees
-  resets it. The classifier itself never changes.
-- Unit pattern finder (`unit.html` → `js/ai.js` rules): weakest moment and
-  quietest hours from anonymous totals only, with evidence numbers, as 1–2
-  system fixes. Each log row has a **Why** button: one neutral line
-  (≤ 140 chars) on why the watch may have been wrong.
-- Optional model: rules always answer first; with consent (the exact payload
-  shown first) Electron main asks Ollama on localhost (`ai/ollama.js`, 8 s
-  timeout) and the answer is schema-checked AND grounded (only numbers from
-  the payload count), else rules. Badge shows "Rules" or "Ollama · model".
-  Browser build is rules-only. No names/titles/free text ever leave the page.
+- **Trained gesture model** (`js/model.js`, weights in `js/model-weights.js`,
+  `node scripts/train-model.js` reproduces them byte for byte): softmax
+  regression over 7 motion features (rhythm, tone, active seconds…), trained
+  on 1,800 streams (seeds 100000+), tested on seeds it never saw.
+  Held-out at noise 0.35: **99%** vs **98%** for the old hand-written rules,
+  which stay in `classifier.js` as the baseline. Honest limit: the streams
+  come from the simulator (`js/signal.js`), not a ward; real wrist
+  recordings are the next step.
+- **Ask the unit** (`unit.html` → `js/ask.js`): infection control asks in
+  plain words (EN or ES) or taps one of 5 suggestions. Answers come only
+  from the anonymous totals. A question about a person ("which nurse…",
+  a proper name) is refused on the page and nothing leaves. Offline/browser:
+  rules answer. In the desktop app, after consent (the exact question +
+  totals are shown first), gemma answers through Ollama; an answer with a
+  number not in the facts, blame wording or a leaked data key is dropped
+  and the rules answer instead. Measured: 10/10 gemma answers kept,
+  ~0.5 s each. The badge says which one answered.
+- Note: `gemma4:31b-cloud` runs on ollama.com, so the payload leaves the PC
+  (aggregates only, after consent). `OLLAMA_MODEL=<local model>` keeps it local.
+- On-device calibration (`js/calibrate.js`): each "Yes, I did" lifts the
+  decision threshold a bounded step for that moment + noise bucket, so
+  repeat false marks fade while real misses still flag. Home shows
+  "Learning · fewer marks".
+- Unit pattern finder + **Why** button on each log row: same rules-first,
+  grounded chain.
 
 ## Rules (graded)
 
@@ -83,7 +95,11 @@ unit view has no per-person view · haptics `[60,120,60]` `[35]`
 
 ## Tests
 
-`node tests/acceptance.js` (browser gate incl. hostile regressions §14) ·
-`node tests/classifier.test.js` (no browser) ·
-`node tests/wrist.test.js` (real-watch bridge) ·
+`node tests/acceptance.js` (browser gate, 240 checks) ·
+`node tests/i18n.test.js` (Spanish build: no English left, watch lines <= 4 words) ·
+`node tests/ask.test.js` (Ask the unit: routing, person guard, grounding) ·
+`node tests/model.test.js` (trained model, honest split, reproducible) ·
+`node tests/fold.test.js` (no pill cut by the screen edge) ·
+`node tests/w1.test.js` · `classifier` · `calibrate` · `eval` · `stats` ·
+`timeseries` · `ai` · `wrist` (`node tests/<name>.test.js`) ·
 `node tests/electron-smoke.js` (desktop app; prefix `xvfb-run -a` on Wayland).
