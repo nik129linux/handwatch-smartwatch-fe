@@ -6,3 +6,5 @@ shots/
 .last-test.log
 FIX-AUTO.md
 node_modules/
+*.keystore
+.run.log
