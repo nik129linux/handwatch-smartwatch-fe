@@ -5,6 +5,12 @@
 Double-click **Hand Hygiene Watch** in the dock/launcher, or run `npm start`
 from this folder. Everything runs offline in one desktop window.
 
+## Before class (real watch)
+
+Watch paired in its companion app, phone on Wi-Fi with **ntfy** subscribed
+to the topic in **Real watch**. Flip **Send to my wrist** on and press
+**Doubtful wash** once: the wrist should buzz with *Did you wash?* in ~5 s.
+
 ## Presenter script
 
 **0:00 — The thesis (Home).** "This watch WILL be wrong — a wrong mark is an
@@ -35,6 +41,11 @@ End on **See what Infection Control sees**: bars by WHO moment, no names,
 reads *Learning · fewer marks* — the threshold moved, not the nurse.
 On the unit page, *Where the process slips* names the weakest moment with
 numbers and a dispenser fix. Every line carries its source: Rules, or Ollama.
+
+**Show it on a wrist (optional).** With **Send to my wrist** on, every
+haptic also reaches the real watch as a notification. "A cheap watch can't
+run our app, so the phone relays it. Same words, same silence; the tap
+back happens here."
 
 ## Real vs simulated
 

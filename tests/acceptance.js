@@ -8,7 +8,7 @@ const path = require('path');
 const fs = require('fs');
 const { pathToFileURL } = require('url');
 const { chromium } =
-  require('/home/nico/.nvm/versions/node/v22.23.2/lib/node_modules/playwright');
+  require('playwright');
 
 const ROOT = path.resolve(__dirname, '..');
 const SHOTS = path.join(ROOT, 'shots');
@@ -321,6 +321,13 @@ async function opaqueScreens(page) {
 
   /* contrast ≥ 4.5:1 for representative text in both themes */
   async function contrast(p, sel) {
+    /* folded panel text is measured as the viewer sees it: open */
+    const opened = await p.evaluate((s) => {
+      const d = document.querySelector(s) && document.querySelector(s).closest('details');
+      if (d && !d.open) { d.open = true; return true; }
+      return false;
+    }, sel);
+    if (opened) await p.waitForTimeout(450);
     return await p.evaluate((s) => {
       const el = document.querySelector(s);
       if (!el) return { missing: s };

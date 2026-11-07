@@ -16,3 +16,9 @@ contextBridge.exposeInMainWorld('__logAPI', {
 contextBridge.exposeInMainWorld('__aiAPI', {
   query: (prompt) => ipcRenderer.invoke('ai:query', prompt)
 });
+
+/* Real-watch bridge: a short push (title, one line, priority) to ntfy.sh,
+   which the phone mirrors to the wrist. Absent in a plain browser. */
+contextBridge.exposeInMainWorld('__wristAPI', {
+  send: (topic, msg) => ipcRenderer.invoke('wrist:send', topic, msg)
+});

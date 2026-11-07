@@ -6,7 +6,7 @@
 const path = require('path');
 const { pathToFileURL } = require('url');
 const { chromium } =
-  require('/home/nico/.nvm/versions/node/v22.23.2/lib/node_modules/playwright');
+  require('playwright');
 
 const ROOT = path.resolve(__dirname, '..');
 const INDEX = pathToFileURL(path.join(ROOT, 'index.html')).href;

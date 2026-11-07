@@ -35,6 +35,30 @@ function setupAIIPC() {
   });
 }
 
+/* --- real watch: the page hands over an already-built push (title, one
+   line, priority) and main posts it to ntfy.sh. Shape is re-checked here so
+   nothing else can ride along. 4 s timeout; failure is a value. */
+function setupWristIPC() {
+  const TOPIC_RE = /^[a-z0-9_-]{8,64}$/;
+  ipcMain.handle('wrist:send', async (_ev, topic, msg) => {
+    try {
+      if (!TOPIC_RE.test(String(topic)) || !msg) return { ok: false };
+      const title = String(msg.title || '').slice(0, 40);
+      const body = String(msg.body || '').slice(0, 80);
+      const priority = [1, 2, 3, 4, 5].includes(msg.priority) ? msg.priority : 3;
+      const r = await fetch('https://ntfy.sh/' + topic, {
+        method: 'POST',
+        body,
+        headers: { Title: title, Priority: String(priority) },
+        signal: AbortSignal.timeout(4000)
+      });
+      return { ok: r.ok };
+    } catch (e) {
+      return { ok: false };
+    }
+  });
+}
+
 function setupLogIPC() {
   ipcMain.handle('log:load', async () => {
     try {
@@ -80,6 +104,7 @@ function createWindow() {
 app.whenReady().then(() => {
   setupLogIPC();
   setupAIIPC();
+  setupWristIPC();
   createWindow();
 
   /* Ctrl+Shift+L flips the same theme hook the toggle button uses */

@@ -136,6 +136,25 @@
       </div>
     </section>
 
+    <section class="group" aria-label="Real watch" data-rise style="--i:3">
+      <div class="group__head">
+        <span class="group__title">Real watch</span>
+        <span class="panel__clock caption" id="wristStatus">off</span>
+      </div>
+      <button class="wrist-toggle" id="wristToggle" type="button" role="switch" aria-checked="false">
+        <span class="wrist-toggle__label">Send to my wrist</span>
+        <span class="wrist-toggle__track" aria-hidden="true"><span class="wrist-toggle__knob"></span></span>
+      </button>
+      <p class="wrist-help caption" id="wristHelp" hidden>
+        In the ntfy app, subscribe to <code id="wristTopic"></code>. The watch mirrors it.
+      </p>
+    </section>
+
+    <details class="group details" data-rise style="--i:4">
+      <summary class="group__head details__summary">
+        <span class="group__title">How it reads motion</span>
+        <span class="panel__clock caption">signal · vibrations</span>
+      </summary>
     <section class="group" aria-label="Motion signal" data-rise style="--i:4">
       <div class="group__head">
         <span class="group__title">Motion signal</span>
@@ -161,6 +180,7 @@
       </div>
       <ul class="vocab" id="vocab"></ul>
     </section>
+    </details>
 
     <section class="group" aria-label="Event log" data-rise style="--i:5">
       <div class="group__head">
@@ -186,6 +206,7 @@
 <script src="js/log.js"></script>
 <script src="js/ai.js"></script>
 <script src="js/haptics.js"></script>
+<script src="js/wrist.js"></script>
 <script src="js/watch.js"></script>
 <script src="js/sense.js"></script>
 <script src="js/story.js"></script>

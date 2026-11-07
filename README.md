@@ -11,6 +11,17 @@ accusation. See `DEMO.md` for the 2-minute script.
 - Browser fallback: open `index.html`; unit view is `unit.html`.
 - Works offline; English UI; sun/moon toggle (dark default, persisted).
 
+## Real watch (the "8 Ultra" clone)
+
+The test watch runs closed firmware: no custom apps, but it mirrors phone
+notifications and buzzes. Panel → **Real watch → Send to my wrist** posts
+each haptic as a short ntfy.sh push (title ≤ 4 words, bed/moment/totals
+only, no names). Phone: install **ntfy**, subscribe to the topic shown,
+and allow ntfy notifications in the watch's companion app (Wearfit Pro /
+FitPro / HiWatch Pro). The clone has one vibration of its own, so the
+four-pattern vocabulary lives on the simulator; answers are tapped there.
+`js/wrist.js` · `tests/wrist.test.js`.
+
 ## Controls
 
 Crown wheel scrolls, crown click = Home, side button = privacy,
@@ -53,4 +64,5 @@ unit view has no per-person view · haptics `[60,120,60]` `[35]`
 
 `node tests/acceptance.js` (browser gate incl. hostile regressions §14) ·
 `node tests/classifier.test.js` (no browser) ·
+`node tests/wrist.test.js` (real-watch bridge) ·
 `node tests/electron-smoke.js` (desktop app; prefix `xvfb-run -a` on Wayland).
