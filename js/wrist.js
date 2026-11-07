@@ -100,21 +100,20 @@
     sent.push({ name: name, title: msg.title, body: msg.body, priority: msg.priority });
     window.__wristSent = sent;
     post(cfg.topic, msg).then(function (r) {
-      var via = r && r.route === 'phone' ? 'phone' : 'ntfy';
-      paintStatus(r && r.ok ? 'sent via ' + via : 'not sent');
+      paintStatus(r && r.ok ? 'sent via ' + (r.route || 'ntfy') : 'not sent');
     });
   }
 
   /* An answer from the wrist side closes the open question on the watch,
      exactly like tapping its pill. Anything else on screen: ignored. */
-  function applyAnswer(value) {
+  function applyAnswer(value, from) {
     var w = window.watch;
     if (!w || !w.state) return false;
     var screen = w.state.screen;
     if (screen === 'dudoso') w.act(value === 'yes' ? 'doubt-yes' : 'doubt-no');
     else if (screen === 'recordatorio' && value === 'yes') w.act('done');
     else return false;
-    paintStatus('answered from phone · ' + (value === 'yes' ? 'yes' : 'no'));
+    paintStatus('answered on the ' + (from === 'wear' ? 'watch' : 'phone') + ' · ' + (value === 'yes' ? 'yes' : 'no'));
     return true;
   }
 
@@ -137,7 +136,7 @@
     el.status = document.getElementById('wristStatus');
     document.addEventListener('haptic:play', onHaptic);
     if (window.__wristAPI && window.__wristAPI.onAnswer) {
-      window.__wristAPI.onAnswer(function (value) { applyAnswer(value); });
+      window.__wristAPI.onAnswer(function (value, from) { applyAnswer(value, from); });
     }
     if (!el.toggle) return;
     el.toggle.addEventListener('click', function () {

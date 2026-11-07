@@ -21,5 +21,5 @@ contextBridge.exposeInMainWorld('__aiAPI', {
    which the phone mirrors to the wrist. Absent in a plain browser. */
 contextBridge.exposeInMainWorld('__wristAPI', {
   send: (topic, msg) => ipcRenderer.invoke('wrist:send', topic, msg),
-  onAnswer: (fn) => ipcRenderer.on('wrist:answer', (_ev, value) => fn(value))
+  onAnswer: (fn) => ipcRenderer.on('wrist:answer', (_ev, value, from) => fn(value, from))
 });

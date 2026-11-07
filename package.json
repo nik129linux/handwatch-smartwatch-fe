@@ -4,7 +4,9 @@
   "description": "Hand-hygiene smartwatch prototype with a unit view for infection control",
   "main": "main.js",
   "scripts": {
-    "start": "electron . --no-sandbox"
+    "start": "electron . --no-sandbox",
+    "watch": "$HOME/Android/sdk/emulator/emulator -avd hhw_watch -no-snapshot-save -no-boot-anim",
+    "watch:install": "adb -s emulator-5554 install -r wear/out/hand-hygiene-wear.apk"
   },
   "devDependencies": {
     "electron": "^44.5.1",

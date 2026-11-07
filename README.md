@@ -29,6 +29,16 @@ question on the simulated watch exactly like a tap. The clone has one vibration 
 four-pattern vocabulary lives on the simulator; answers are tapped there.
 `js/wrist.js` · `tests/wrist.test.js`.
 
+## Wear OS emulator (a real watch OS on the PC)
+
+`npm run watch` opens a round Wear OS 5 emulator (AVD `hhw_watch`);
+`npm run watch:install` installs `wear/` (build it with `wear/build.sh`).
+With **Send to my wrist** on, every haptic opens the alert on the emulated
+watch with its real vibration pattern. Answer by turning the crown to pick
+*Yes, I did* / *Couldn't* and pressing the second button (or tap; arrow keys
++ Enter also work). The crown press itself is Home on Wear OS and never
+reaches apps. Phone relay and emulator can run at the same time.
+
 ## Controls
 
 Crown wheel scrolls, crown click = Home, side button = privacy,
