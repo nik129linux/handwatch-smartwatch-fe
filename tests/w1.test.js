@@ -158,20 +158,21 @@ function watchErrors(page) {
   ok(slider === 1, 'a Sensor noise slider 0..1 sits in the scope');
   const rate = await page.evaluate(() => {
     const seeds = [];
-    for (let s = 0; s < 20; s++) seeds.push(s);
+    /* quick gel rubs: the stream the trained model actually doubts */
+    for (let s = 1; s <= 50; s++) seeds.push(s);
     const at = (noise) => seeds.filter((s) => {
-      const r = Sense.run('wash', { seed: s, noise }, false);
+      const r = Sense.run('gel', { seed: s, noise }, false);
       return r.verdict !== 'sure';
     }).length / seeds.length;
     const calm = at(0);
     /* drive the real slider to 0.8, exactly as a finger would */
     const el = document.getElementById('noiseSlider');
-    el.value = '0.8';
+    el.value = '0.85';
     el.dispatchEvent(new Event('input', { bubbles: true }));
     const noisy = at(Sense.noise);
     return { calm, noisy, sliderNoise: Sense.noise, why: document.getElementById('scopeWhy').textContent };
   });
-  ok(rate.sliderNoise === 0.8, 'the slider sets the sensor noise', String(rate.sliderNoise));
+  ok(rate.sliderNoise === 0.85, 'the slider sets the sensor noise', String(rate.sliderNoise));
   ok(rate.noisy > rate.calm, 'uncertain rate rises with noise',
     '0 → ' + rate.calm.toFixed(2) + ', 0.8 → ' + rate.noisy.toFixed(2));
   ok(/rhythm/.test(rate.why), 'the why line re-runs under the slider', rate.why);

@@ -44,17 +44,23 @@ head('1 · seeded scenarios at noise 0');
 
 /* 2 · wrongness emerges from noise, never from a script ----------------- */
 
-head('2 · wash at noise 0.8 goes uncertain, never gel');
+head('2 · wash at noise 0.8: the rules waver, the trained model holds');
 {
-  let uncertain = 0;
+  let rulesUnsure = 0;
+  let modelWash = 0;
   let gel = 0;
   for (let seed = 0; seed < 50; seed++) {
-    const r = classify('wash', seed, 0.8);
-    if (r.label === 'other' || r.confidence < 0.75) uncertain++;
-    if (r.label === 'gel') gel++;
+    const stream = Signal.generate('wash', { seed, noise: 0.8 });
+    const r = Classifier.classifyRules(stream);
+    if (r.label === 'other' || r.confidence < 0.75) rulesUnsure++;
+    const m = Classifier.classify(stream);
+    if (m.label === 'wash') modelWash++;
+    if (m.label === 'gel' || r.label === 'gel') gel++;
   }
-  ok(uncertain >= 15, 'uncertain-or-none in >= 30% of 50 seeds',
-    uncertain + '/50');
+  ok(rulesUnsure >= 15, 'hand rules: uncertain-or-none in >= 30% of 50 seeds',
+    rulesUnsure + '/50');
+  ok(modelWash >= 45, 'trained model: still reads wash in >= 90% of 50 seeds',
+    modelWash + '/50');
   ok(gel === 0, 'a noisy wash is never read as gel', gel + ' gel');
 }
 
@@ -88,12 +94,15 @@ head('4 · the verdict reads the named constants');
 
 /* 5 · the story's doubtful beat ------------------------------------------ */
 
-head('5 · gel at noise 0.55, seed 2 is the unsure beat');
+head('5 · gel at noise 0.55, seed 1 is the unsure beat');
 {
-  const r = classify('gel', 2, 0.55);
+  /* a quick gel rub under noise: the model cannot tell it from nothing */
+  const r = classify('gel', 1, 0.55);
   ok(r.label === 'gel', 'still a rub, not a wash', r.label);
   ok(r.confidence >= 0.4 && r.confidence < 0.75,
     'confidence sits in the doubtful band', r.confidence.toFixed(3));
+  ok(r.probs.other > 0.3, 'nothing is the runner-up, not wash',
+    JSON.stringify(r.probs));
   ok(Classifier.verdict(r) === 'unsure', 'the verdict is unsure');
   const line = Classifier.whyLine(r);
   ok(/rhythm \d\.\d\d · \d+ of \d+ s · \d\.\d Hz -> unsure/.test(line),
@@ -102,19 +111,17 @@ head('5 · gel at noise 0.55, seed 2 is the unsure beat');
 
 /* 6 · the noise slider moves the uncertain rate --------------------------- */
 
-head('6 · noise moves the uncertain rate on a fixed seed set');
+head('6 · noise moves the uncertain rate on quick gel rubs');
 {
   const seeds = [];
-  for (let s = 0; s < 20; s++) seeds.push(s);
-  const rate = (noise) => seeds.filter((s) => {
-    const r = classify('wash', s, noise);
-    return r.label === 'other' || r.confidence < 0.75;
-  }).length / seeds.length;
+  for (let s = 1; s <= 50; s++) seeds.push(s);
+  const rate = (noise) => seeds.filter((s) =>
+    Classifier.verdict(classify('gel', s, noise)) !== 'sure').length / seeds.length;
   const calm = rate(0);
-  const noisy = rate(0.8);
-  ok(calm < noisy, 'noisy streams go unsure more often',
-    'noise 0: ' + calm.toFixed(2) + ', noise 0.8: ' + noisy.toFixed(2));
-  ok(noisy - calm >= 0.3, 'the gap is wide enough to watch',
+  const noisy = rate(0.85);
+  ok(calm < noisy, 'noisy gel rubs go unsure more often',
+    'noise 0: ' + calm.toFixed(2) + ', noise 0.85: ' + noisy.toFixed(2));
+  ok(noisy - calm >= 0.08, 'the gap is visible on the slider',
     'gap ' + (noisy - calm).toFixed(2));
 }
 

@@ -510,9 +510,16 @@ var Insights = (function () {
     var ev = analysis.evaluation;
     var note = document.getElementById('evalNote');
     if (note) {
-      note.textContent = ev.streams + ' seeded streams at noise ' +
-        ev.noise + ': accuracy ' + pct(ev.accuracy) + ', Brier ' +
-        ev.brier.toFixed(3) + '. Rows are truth, columns are predictions.';
+      var W = (typeof ModelWeights !== 'undefined') ? ModelWeights : null;
+      note.textContent = (ev.engine === 'model' && W
+        ? 'Trained model (softmax regression, ' + W.meta.trainSize +
+          ' synthetic training streams) on ' + ev.streams +
+          ' streams it never saw, noise ' + ev.noise + ': accuracy ' +
+          pct(ev.accuracy) + ' vs ' + pct(ev.baseline) +
+          ' for the hand-written rules. Brier ' + ev.brier.toFixed(3) + '. '
+        : ev.streams + ' seeded streams at noise ' + ev.noise +
+          ': accuracy ' + pct(ev.accuracy) + ', Brier ' + ev.brier.toFixed(3) + '. ') +
+        'Synthetic data: it measures the model against the simulator, not a ward.';
     }
     var table = document.getElementById('modelTable');
     if (table) {

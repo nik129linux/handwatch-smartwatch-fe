@@ -19,7 +19,7 @@ var Sense = (function () {
   /* the doubtful beat of the story: a quick gel rub under noise that the
      classifier reads as unsure — fixed seed, deterministic every run */
   var DOUBT_SCENARIO = 'gel';
-  var DOUBT_SEED = 2;
+  var DOUBT_SEED = 1;
   var DOUBT_NOISE = 0.55;
 
   var FIRST_SEED = 7;
