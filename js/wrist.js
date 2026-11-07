@@ -105,6 +105,19 @@
     });
   }
 
+  /* An answer from the wrist side closes the open question on the watch,
+     exactly like tapping its pill. Anything else on screen: ignored. */
+  function applyAnswer(value) {
+    var w = window.watch;
+    if (!w || !w.state) return false;
+    var screen = w.state.screen;
+    if (screen === 'dudoso') w.act(value === 'yes' ? 'doubt-yes' : 'doubt-no');
+    else if (screen === 'recordatorio' && value === 'yes') w.act('done');
+    else return false;
+    paintStatus('answered from phone · ' + (value === 'yes' ? 'yes' : 'no'));
+    return true;
+  }
+
   /* --- panel row --------------------------------------------------------- */
   var el = {};
   function paintStatus(text) { if (el.status) el.status.textContent = text; }
@@ -123,6 +136,9 @@
     el.help = document.getElementById('wristHelp');
     el.status = document.getElementById('wristStatus');
     document.addEventListener('haptic:play', onHaptic);
+    if (window.__wristAPI && window.__wristAPI.onAnswer) {
+      window.__wristAPI.onAnswer(function (value) { applyAnswer(value); });
+    }
     if (!el.toggle) return;
     el.toggle.addEventListener('click', function () {
       cfg.on = !cfg.on;
@@ -137,5 +153,5 @@
     else init();
   }
 
-  return { message: message, TOPIC_RE: TOPIC_RE, HOST: HOST, randomTopic: randomTopic };
+  return { applyAnswer: applyAnswer, message: message, TOPIC_RE: TOPIC_RE, HOST: HOST, randomTopic: randomTopic };
 });

@@ -65,6 +65,35 @@ function setupWristIPC() {
     return !!out && /result=0|Broadcast completed/.test(out);
   }
 
+  /* --- the way back: the relay app logs "answer=yes|no" under the tag HHW
+     (phone notification buttons, or the watch's music keys). Main tails that
+     log over adb and hands each answer to the page. Started on first send. */
+  let tail = null;
+  /* logcat -T takes 'MM-DD hh:mm:ss.mmm': only answers from now on */
+  function stamp() {
+    const d = new Date(), p = (n, w = 2) => String(n).padStart(w, '0');
+    return p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' +
+      p(d.getMinutes()) + ':' + p(d.getSeconds()) + '.' + p(d.getMilliseconds(), 3);
+  }
+  function listen() {
+    if (tail) return;
+    const { spawn } = require('child_process');
+    adb(['shell', 'am start-foreground-service -n co.ucc.handhygiene/.RelayService']);
+    tail = spawn('adb', ['logcat', '-T', stamp(), '-s', 'HHW:I'], { stdio: ['ignore', 'pipe', 'ignore'] });
+    let buf = '';
+    tail.stdout.on('data', (chunk) => {
+      buf += chunk;
+      const lines = buf.split('\n');
+      buf = lines.pop();
+      for (const line of lines) {
+        const m = line.match(/answer=(yes|no)\b/);
+        if (m && win && !win.isDestroyed()) win.webContents.send('wrist:answer', m[1]);
+      }
+    });
+    tail.on('exit', () => { tail = null; });
+  }
+  app.on('will-quit', () => { if (tail) tail.kill(); });
+
   ipcMain.handle('wrist:send', async (_ev, topic, msg) => {
     try {
       if (!msg) return { ok: false };
@@ -72,7 +101,7 @@ function setupWristIPC() {
       const body = clean(msg.body, 80);
       const kind = KINDS.includes(msg.kind) ? msg.kind : 'reminder';
       if (!title) return { ok: false };
-      if (await viaPhone(title, body, kind)) return { ok: true, route: 'phone' };
+      if (await viaPhone(title, body, kind)) { listen(); return { ok: true, route: 'phone' }; }
       if (!TOPIC_RE.test(String(topic))) return { ok: false };
       const priority = [1, 2, 3, 4, 5].includes(msg.priority) ? msg.priority : 3;
       const r = await fetch('https://ntfy.sh/' + topic, {

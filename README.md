@@ -20,7 +20,12 @@ names). With the phone on adb (USB or Wi-Fi debugging) the desktop app
 broadcasts to the **Hand Hygiene** relay app (`android/`, offline), which
 WearPro mirrors to the watch; without a phone it falls back to an ntfy.sh
 topic. One-time setup: install the relay, allow it in WearPro's message
-notifications, and on Honor set it to "Manage manually" in App launch. The clone has one vibration of its own, so the
+notifications, and on Honor set it to "Manage manually" in App launch.
+Answering: the clone drops notification buttons, so the doubt alert's
+**Yes, I did / Couldn't** buttons work from the phone's shade (and the
+watch's music Play/Next, if its firmware forwards them); the relay logs
+`answer=yes|no`, the desktop app tails it over adb and closes the open
+question on the simulated watch exactly like a tap. The clone has one vibration of its own, so the
 four-pattern vocabulary lives on the simulator; answers are tapped there.
 `js/wrist.js` · `tests/wrist.test.js`.
 

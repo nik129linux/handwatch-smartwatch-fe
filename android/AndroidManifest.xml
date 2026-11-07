@@ -5,6 +5,8 @@
     <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="35" />
 
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
 
     <application
         android:label="Hand Hygiene">
@@ -25,5 +27,9 @@
                 <action android:name="co.ucc.handhygiene.NOTIFY" />
             </intent-filter>
         </receiver>
+        <service
+            android:name=".RelayService"
+            android:exported="true"
+            android:foregroundServiceType="mediaPlayback" />
     </application>
 </manifest>
