@@ -96,10 +96,12 @@
     var name = ev && ev.detail && ev.detail.name;
     var msg = message(name, window.watch && window.watch.state);
     if (!msg) return;
+    msg.kind = name;
     sent.push({ name: name, title: msg.title, body: msg.body, priority: msg.priority });
     window.__wristSent = sent;
     post(cfg.topic, msg).then(function (r) {
-      paintStatus(r && r.ok ? 'sent · ' + msg.title : 'offline · not sent');
+      var via = r && r.route === 'phone' ? 'phone' : 'ntfy';
+      paintStatus(r && r.ok ? 'sent via ' + via : 'not sent');
     });
   }
 

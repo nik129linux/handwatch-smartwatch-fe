@@ -14,11 +14,13 @@ accusation. See `DEMO.md` for the 2-minute script.
 ## Real watch (the "8 Ultra" clone)
 
 The test watch runs closed firmware: no custom apps, but it mirrors phone
-notifications and buzzes. Panel → **Real watch → Send to my wrist** posts
-each haptic as a short ntfy.sh push (title ≤ 4 words, bed/moment/totals
-only, no names). Phone: install **ntfy**, subscribe to the topic shown,
-and allow ntfy notifications in the watch's companion app (Wearfit Pro /
-FitPro / HiWatch Pro). The clone has one vibration of its own, so the
+notifications and buzzes. Panel → **Real watch → Send to my wrist** sends
+each haptic as a short alert (title ≤ 4 words, bed/moment/totals only, no
+names). With the phone on adb (USB or Wi-Fi debugging) the desktop app
+broadcasts to the **Hand Hygiene** relay app (`android/`, offline), which
+WearPro mirrors to the watch; without a phone it falls back to an ntfy.sh
+topic. One-time setup: install the relay, allow it in WearPro's message
+notifications, and on Honor set it to "Manage manually" in App launch. The clone has one vibration of its own, so the
 four-pattern vocabulary lives on the simulator; answers are tapped there.
 `js/wrist.js` · `tests/wrist.test.js`.
 

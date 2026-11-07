@@ -36,15 +36,44 @@ function setupAIIPC() {
 }
 
 /* --- real watch: the page hands over an already-built push (title, one
-   line, priority) and main posts it to ntfy.sh. Shape is re-checked here so
-   nothing else can ride along. 4 s timeout; failure is a value. */
+   line, priority, kind). Shape is re-checked here so nothing else can ride
+   along. Route 1: a phone on USB/Wi-Fi adb running the Hand Hygiene relay
+   app (android/), offline, the watch mirrors its notification. Route 2:
+   ntfy.sh. Failure is a value, never a throw. */
 function setupWristIPC() {
+  const { execFile } = require('child_process');
   const TOPIC_RE = /^[a-z0-9_-]{8,64}$/;
+  const KINDS = ['reminder', 'doubtful', 'ok', 'end'];
+  /* letters, digits, spaces and a few marks: safe inside the remote
+     shell's single quotes, and all the watch font can draw anyway */
+  const clean = (v, n) => String(v || '').replace(/·/g, '-')
+    .replace(/[^A-Za-z0-9 ?.,:-]/g, '').slice(0, n).trim();
+
+  function adb(args) {
+    return new Promise((resolve) => {
+      execFile('adb', args, { timeout: 4000 }, (err, out) =>
+        resolve(err ? null : String(out)));
+    });
+  }
+
+  async function viaPhone(title, body, kind) {
+    const state = await adb(['get-state']);
+    if (!state || state.trim() !== 'device') return false;
+    const out = await adb(['shell',
+      "am broadcast -n co.ucc.handhygiene/.NotifyReceiver -a co.ucc.handhygiene.NOTIFY" +
+      " --es title '" + title + "' --es body '" + body + "' --es kind '" + kind + "'"]);
+    return !!out && /result=0|Broadcast completed/.test(out);
+  }
+
   ipcMain.handle('wrist:send', async (_ev, topic, msg) => {
     try {
-      if (!TOPIC_RE.test(String(topic)) || !msg) return { ok: false };
-      const title = String(msg.title || '').slice(0, 40);
-      const body = String(msg.body || '').slice(0, 80);
+      if (!msg) return { ok: false };
+      const title = clean(msg.title, 40);
+      const body = clean(msg.body, 80);
+      const kind = KINDS.includes(msg.kind) ? msg.kind : 'reminder';
+      if (!title) return { ok: false };
+      if (await viaPhone(title, body, kind)) return { ok: true, route: 'phone' };
+      if (!TOPIC_RE.test(String(topic))) return { ok: false };
       const priority = [1, 2, 3, 4, 5].includes(msg.priority) ? msg.priority : 3;
       const r = await fetch('https://ntfy.sh/' + topic, {
         method: 'POST',
@@ -52,7 +81,7 @@ function setupWristIPC() {
         headers: { Title: title, Priority: String(priority) },
         signal: AbortSignal.timeout(4000)
       });
-      return { ok: r.ok };
+      return { ok: r.ok, route: 'ntfy' };
     } catch (e) {
       return { ok: false };
     }
