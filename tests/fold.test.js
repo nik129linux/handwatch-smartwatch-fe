@@ -44,6 +44,21 @@ function ok(cond, label, detail) {
       }
     }
   }
+  /* the unit page always has a way back: visible after scrolling, Esc works */
+  const UNIT = pathToFileURL(path.resolve(__dirname, '..', 'unit.html')).href;
+  for (const w of [1440, 375]) {
+    const u = await (await b.newContext({ viewport: { width: w, height: 812 } })).newPage();
+    await u.goto(UNIT);
+    await u.waitForTimeout(800);
+    await u.mouse.wheel(0, 2500);
+    await u.waitForTimeout(500);
+    const box = await u.locator('.unit__back').boundingBox();
+    ok(box && box.y >= 0 && box.y < 80 && box.height >= 44,
+      `unit page ${w}px: back button stays on screen after scrolling`, JSON.stringify(box));
+    await u.keyboard.press('Escape');
+    await u.waitForURL(/index\.html$/, { timeout: 3000 }).catch(() => {});
+    ok(/index\.html$/.test(u.url()), `unit page ${w}px: Esc goes back to the watch`, u.url());
+  }
   await b.close();
   console.log('\n  ' + pass + ' passed, ' + (process.exitCode ? 'some' : 0) + ' failed\n');
 })();
