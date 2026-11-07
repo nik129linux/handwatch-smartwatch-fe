@@ -289,6 +289,16 @@ var unit = (function () {
     corrections();
     fixes();
     ask(datascience());
+    /* Esc goes back to the watch, like Esc on the watch itself. Not while
+       the consent sheet is open or the question field has focus. */
+    document.addEventListener('keydown', function (ev) {
+      if (ev.key !== 'Escape' || ev.defaultPrevented) return;
+      if (document.querySelector('.ai-consent')) return;
+      var a = document.activeElement;
+      if (a && a.id === 'askInput') { a.blur(); return; }
+      var back = document.querySelector('.unit__back');
+      if (back) window.location.href = back.getAttribute('href');
+    });
     /* the Electron file copy can land after first paint — re-count then */
     if (typeof document !== 'undefined') {
       document.addEventListener('watch:log-sync', corrections);
