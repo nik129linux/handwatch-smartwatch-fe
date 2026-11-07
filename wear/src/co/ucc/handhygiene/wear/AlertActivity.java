@@ -259,6 +259,14 @@ public class AlertActivity extends Activity {
             }
             return true;
         }
+        // A mouse wheel (scrcpy mirror on the PC) stands in for the crown:
+        // wheel down moves the selection down.
+        if (event.getAction() == MotionEvent.ACTION_SCROLL
+                && event.isFromSource(InputDevice.SOURCE_CLASS_POINTER)) {
+            float v = event.getAxisValue(MotionEvent.AXIS_VSCROLL);
+            if (v != 0f) moveSelection(v < 0 ? 1 : -1);
+            return true;
+        }
         return super.onGenericMotionEvent(event);
     }
 

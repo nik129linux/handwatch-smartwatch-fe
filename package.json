@@ -5,8 +5,7 @@
   "main": "main.js",
   "scripts": {
     "start": "electron . --no-sandbox",
-    "watch": "$HOME/Android/sdk/emulator/emulator -avd hhw_watch -no-snapshot-save -no-boot-anim",
-    "watch:install": "adb -s emulator-5554 install -r wear/out/hand-hygiene-wear.apk"
+    "watch": "scripts/watch.sh"
   },
   "devDependencies": {
     "electron": "^44.5.1",
