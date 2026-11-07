@@ -279,10 +279,23 @@ var STRINGS_ES = (function () {
     /* --- consent sheet --- */
     'Share anonymous totals': 'Compartir totales anónimos',
     'Share anonymous totals?': '¿Compartir totales anónimos?',
-    'Only this leaves the page (no names, no people, no free text). The model may only cite these numbers back.':
-      'Solo esto sale de la página (sin nombres, sin personas, sin texto libre). El modelo solo puede citar estos números.',
+    'Only this leaves this computer, for the Ollama model (local, or ollama.com for -cloud models). No names, no people. The model may only cite these numbers back.':
+      'Solo esto sale de este computador, hacia el modelo de Ollama (local, u ollama.com en los modelos -cloud). Sin nombres, sin personas. El modelo solo puede citar estos números.',
     'Not now': 'Ahora no',
     'Allow once': 'Permitir una vez',
+
+    /* --- ask the unit --- */
+    'Ask the unit': 'Pregúntale a la unidad',
+    'Ask in plain words': 'Pregunta con tus palabras',
+    'Answers use only the anonymous totals on this page. A question about a person is refused here, before anything leaves.':
+      'Las respuestas usan solo los totales anónimos de esta página. Una pregunta sobre una persona se rechaza aquí, antes de que salga nada.',
+    'Your question': 'Tu pregunta',
+    'Ask': 'Preguntar',
+    'Where does the process slip?': '¿Dónde se cae el proceso?',
+    'When do we wash least?': '¿A qué hora nos lavamos menos?',
+    'Are we improving?': '¿Estamos mejorando?',
+    'How reliable is the watch?': '¿Qué tan confiable es el reloj?',
+    'What should we fix first?': '¿Qué arreglamos primero?',
 
     /* --- canvas labels --- */
     'W': 'S',

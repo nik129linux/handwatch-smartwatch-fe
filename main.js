@@ -47,6 +47,7 @@ function setupWristIPC() {
   /* letters, digits, spaces and a few marks: safe inside the remote
      shell's single quotes, and all the watch font can draw anyway */
   const clean = (v, n) => String(v || '').replace(/·/g, '-')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')   /* Lávate -> Lavate */
     .replace(/[^A-Za-z0-9 ?.,:-]/g, '').slice(0, n).trim();
 
   function adb(args) {

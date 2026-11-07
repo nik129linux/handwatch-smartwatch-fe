@@ -129,8 +129,17 @@ function watchErrors(page) {
   await unitPage.waitForTimeout(1200);
   const corrN = await unitPage.locator('#corrN').getAttribute('data-count');
   ok(corrN === '35', 'unit shows demo 34 + 1 real correction', 'corrN=' + corrN);
-  ok((await unitPage.locator('input, select').count()) === 0,
-    'the unit page has no filter controls at all');
+  /* The only field is "Ask the unit", and it cannot reach a person:
+     no select, no other input, and a person question is refused. */
+  ok((await unitPage.locator('select').count()) === 0, 'the unit page has no select controls');
+  const fields = await unitPage.locator('input').evaluateAll((els) => els.map((e) => e.id));
+  ok(fields.length === 1 && fields[0] === 'askInput',
+    'the only input is the Ask field', JSON.stringify(fields));
+  await unitPage.fill('#askInput', 'Which nurse misses the most?');
+  await unitPage.press('#askInput', 'Enter');
+  await unitPage.waitForTimeout(400);
+  ok(/no people/i.test(await unitPage.textContent('#askA')),
+    'asking about a person is refused on the page', await unitPage.textContent('#askA'));
   const byPerson = await unitPage.evaluate(() =>
     /filter by|per-person(?! filter)|by name|by nurse/i.test(document.body.innerText));
   ok(byPerson === false, 'no way to slice by person', '');
