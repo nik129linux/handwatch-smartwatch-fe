@@ -324,6 +324,10 @@ var STRINGS_ES = (function () {
     'Dark': 'Oscuro',
     'System': 'Sistema',
     'Artificial intelligence': 'Inteligencia artificial',
+    'Use the model': 'Usar el modelo',
+    'On: I show you what is sent before each query':
+      'Encendido: te muestro qué se envía antes de cada consulta',
+    'Off: the watch rules answer': 'Apagado: responden las reglas del reloj',
     'Rules always work. The model only runs if you allow it.':
       'Las reglas siempre funcionan. El modelo solo corre si lo permites.',
     'AI': 'IA',
@@ -372,7 +376,9 @@ var STRINGS_ES = (function () {
     /* --- guide level 1 --- */
     'Quick guide': 'Guía rápida',
     'Skip the guide': 'Saltar la guía',
+    'Guide on the watch': 'Guía en el reloj',
     'Next': 'Siguiente',
+    'Start': 'Empezar',
     'What this is': 'Qué es esto',
     'I warn you with vibration.': 'Te aviso con vibración.',
     'A hand-hygiene watch for one shift. No forms, no names.':

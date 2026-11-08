@@ -1706,6 +1706,122 @@ html.is-switching body *::after {
 }
 .guide__btn--primary:hover { background: var(--color-primary-300); }
 
+/* --- Level 1 lives on the watch face ------------------------------------
+   Same tokens as the watch screens: the guide is the screen, not a sheet
+   over the case. Three short cards, dots plus one counter, one 56px pill. */
+.guide-watch {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  border-radius: var(--watch-r);
+  background: var(--bg-screen);
+}
+.guide.guide--watch {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 18px var(--sp-6) 22px;
+  border: 0;
+  border-radius: inherit;
+  background: var(--bg-screen);
+  color: var(--text-primary);
+  overflow: hidden;
+  animation: guideFaceIn var(--dur-enter) var(--ease-enter) both;
+}
+@keyframes guideFaceIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.99); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.guide--watch .guide__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+}
+.guide--watch .guide__back,
+.guide--watch .guide__skip {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 var(--sp-3);
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  font-size: var(--w-caption);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+}
+.guide--watch .guide__back:disabled { opacity: 0.38; cursor: not-allowed; }
+.guide--watch .guide__back:focus-visible,
+.guide--watch .guide__skip:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+.guide--watch .guide__cards {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  margin: 0;
+}
+.guide--watch .guide__card {
+  width: 100%;
+  min-height: 0;
+  padding: 0;
+  text-align: center;
+}
+.guide--watch .guide__card[hidden] { display: none; }
+.guide--watch .guide__card-title {
+  margin: 0 0 var(--sp-3);
+  font-family: var(--font-mono);
+  font-size: var(--w-caption);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-micro);
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+.guide--watch .guide__body {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--w-title);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-subheading);
+  color: var(--text-accent);
+}
+.guide--watch .guide__meta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+  margin: var(--sp-2) 0 var(--sp-3);
+}
+.guide--watch .guide__count {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--w-caption);
+  letter-spacing: var(--tracking-micro);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-secondary);
+}
+.guide--watch .guide__foot { display: block; margin: 0; }
+.guide--watch .guide__next { width: 100%; min-height: 56px; flex: none; }
+
+/* the stage's only level-1 chrome: one small caption under the watch */
+.guide-caption {
+  position: relative;
+  z-index: var(--z-hint);
+  min-height: 0;
+  margin: 0;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  letter-spacing: var(--tracking-micro);
+  color: var(--text-secondary);
+}
+.guide-caption[hidden] { display: none; }
+
 /* --- Guide level 2: the coach mark -------------------------------------- */
 
 .tip {
@@ -1738,12 +1854,14 @@ html.is-switching body *::after {
 @media (prefers-reduced-motion: reduce) {
   .settings,
   .guide,
+  .guide.guide--watch,
   .tip { animation: none; }
   .settings-open,
   .set__choice,
   .set__switch-track,
   .set__switch-knob,
   .guide__btn,
+  .guide--watch .guide__next,
   .settings__close,
   .guide__skip,
   .tip__close { transition: none; }

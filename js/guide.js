@@ -12,21 +12,21 @@
 var Guide = (function () {
   'use strict';
 
+  /* Level 1 runs on the watch face: the three lines are short enough to
+     glance at (four words or fewer) and the desktop stage only gets one
+     small caption. */
   var CARDS = [
     {
       title: 'What this is',
-      body: 'I warn you with vibration.',
-      note: 'A hand-hygiene watch for one shift. No forms, no names.'
+      body: 'I warn you with vibration.'
     },
     {
       title: 'The core action',
-      body: 'If I doubt, I ask you.',
-      note: 'One tap answers. One tap also fixes a wrong mark.'
+      body: 'If I doubt, I ask you.'
     },
     {
       title: 'Privacy and AI',
-      body: 'Only you see this.',
-      note: 'AI is optional: you decide, and you can revoke it.'
+      body: 'Only you see this.'
     }
   ];
 
@@ -45,25 +45,16 @@ var Guide = (function () {
   var tipOpen = null;
   var tipTrap = null;
   var observer = null;
+  var level1Open = false;
 
-  function buildLayer() {
-    if (layer) return layer;
-    layer = document.createElement('div');
-    layer.className = 'guide-layer';
-    layer.id = 'guideLayer';
-    layer.hidden = true;
-    document.body.appendChild(layer);
-    return layer;
-  }
+  function t(s) { return (typeof I18N !== 'undefined') ? I18N.t(s) : s; }
 
   function cardsHTML() {
     return CARDS.map(function (c, i) {
       return '<article class="guide__card" data-card="' + i + '"' +
         (i === cardIx ? '' : ' hidden') + '>' +
-        '<p class="label guide__step">' + (i + 1) + ' / ' + CARDS.length + '</p>' +
         '<h3 class="guide__card-title">' + c.title + '</h3>' +
         '<p class="guide__body">' + c.body + '</p>' +
-        '<p class="guide__note">' + c.note + '</p>' +
         '</article>';
     }).join('');
   }
@@ -74,66 +65,134 @@ var Guide = (function () {
     }).join('');
   }
 
+  function counterText() {
+    return (cardIx + 1) + ' ' + t('of') + ' ' + CARDS.length;
+  }
+
+  function paintCaption() {
+    var cap = document.getElementById('guideCaption');
+    if (!cap) return;
+    cap.hidden = !level1Open;
+    if (level1Open) {
+      cap.textContent = t('Guide on the watch') + ' · ' + counterText();
+    }
+  }
+
   function paint() {
+    if (!layer) return;
     var host = layer.querySelector('.guide__cards');
     var dots = layer.querySelector('.guide__dots');
-    var prog = layer.querySelector('.guide__progress');
+    var count = layer.querySelector('[data-guide-count]');
     var back = layer.querySelector('[data-guide-back]');
     var next = layer.querySelector('[data-guide-next]');
     if (host) host.innerHTML = cardsHTML();
     if (dots) dots.innerHTML = dotsHTML();
-    if (prog) prog.textContent = (cardIx + 1) + ' of ' + CARDS.length;
+    if (count) count.textContent = counterText();
     if (back) back.disabled = cardIx === 0;
-    if (next) next.textContent = cardIx === CARDS.length - 1 ? 'Done' : 'Next';
+    if (next) next.textContent = t(cardIx === CARDS.length - 1 ? 'Start' : 'Next');
     if (typeof I18N !== 'undefined') I18N.apply(layer);
+    paintCaption();
   }
 
-  function closeLevel1(skipped) {
-    if (!layer || layer.hidden) return;
+  function goCard(ix) {
+    var next = Math.max(0, Math.min(CARDS.length - 1, ix));
+    if (next === cardIx) return;
+    cardIx = next;
+    paint();
+  }
+
+  function closeLevel1() {
+    if (!layer || !level1Open) return;
+    level1Open = false;
     if (trap) { trap.release(); trap = null; }
-    layer.hidden = true;
-    layer.innerHTML = '';
+    document.removeEventListener('wheel', onGuideWheel, true);
+    document.removeEventListener('keydown', onGuideKeys, true);
+    if (layer.parentNode) layer.parentNode.removeChild(layer);
+    layer = null;
+    var cap = document.getElementById('guideCaption');
+    if (cap) { cap.hidden = true; cap.textContent = ''; }
     Prefs.setGuideSeen(true);
-    /* a replay is still "seen": the first-run promise is kept */
-    if (skipped) { /* nothing else to do */ }
     startTips();
   }
 
+  /* the crown (wheel) and a vertical swipe move between cards; the pill only
+     moves forward. Esc and the Skip button leave; focus goes back. */
+  function onGuideWheel(ev) {
+    if (!level1Open) return;
+    if (ev.ctrlKey || ev.deltaY === 0) return;
+    ev.preventDefault();
+    ev.stopPropagation();
+    goCard(cardIx + (ev.deltaY > 0 ? 1 : -1));
+  }
+
+  function onGuideKeys(ev) {
+    if (!level1Open) return;
+    if (ev.key === 'ArrowRight') { ev.preventDefault(); goCard(cardIx + 1); }
+    if (ev.key === 'ArrowLeft') { ev.preventDefault(); goCard(cardIx - 1); }
+  }
+
+  function bindSwipe(box) {
+    var startY = null;
+    box.addEventListener('pointerdown', function (ev) {
+      if (ev.target.closest('button')) return;
+      startY = ev.clientY;
+    });
+    box.addEventListener('pointerup', function (ev) {
+      if (startY == null) return;
+      var dy = ev.clientY - startY;
+      startY = null;
+      if (Math.abs(dy) < 32) return;
+      goCard(cardIx + (dy < 0 ? 1 : -1));
+    });
+    box.addEventListener('pointercancel', function () { startY = null; });
+  }
+
   function openLevel1(card) {
-    buildLayer();
+    if (level1Open) closeLevel1();
+    var screen = document.getElementById('screen');
+    var host = screen || document.body;
     cardIx = Math.max(0, Math.min(CARDS.length - 1, card || 0));
+
+    layer = document.createElement('div');
+    layer.id = 'guideLayer';
+    /* on the app the guide IS the watch screen; the body fallback only
+       exists for pages without a watch (the unit report). */
+    layer.className = screen ? 'guide-watch' : 'guide-layer';
     layer.innerHTML =
-      '<div class="guide" role="dialog" aria-modal="true" aria-labelledby="guideTitle" tabindex="-1">' +
-        '<header class="guide__head">' +
-          '<h2 class="guide__title" id="guideTitle">Quick guide</h2>' +
+      '<div class="guide' + (screen ? ' guide--watch' : '') + '" role="dialog" ' +
+        'aria-modal="true" aria-label="Quick guide" tabindex="-1">' +
+        '<div class="guide__top">' +
+          '<button class="guide__skip guide__back" type="button" data-guide-back>Back</button>' +
           '<button class="guide__skip" type="button" data-guide-skip ' +
             'aria-label="Skip the guide">Skip</button>' +
-        '</header>' +
+        '</div>' +
         '<div class="guide__cards"></div>' +
-        '<p class="guide__progress" aria-live="polite"></p>' +
-        '<div class="guide__dots" aria-hidden="true"></div>' +
+        '<div class="guide__meta">' +
+          '<div class="guide__dots" aria-hidden="true"></div>' +
+          '<p class="guide__count" data-guide-count aria-live="polite"></p>' +
+        '</div>' +
         '<div class="guide__foot">' +
-          '<button class="guide__btn" type="button" data-guide-back>Back</button>' +
-          '<button class="guide__btn guide__btn--primary" type="button" data-guide-next>Next</button>' +
+          '<button class="pill pill--primary guide__next" type="button" data-guide-next>Next</button>' +
         '</div>' +
       '</div>';
-    layer.hidden = false;
+    host.appendChild(layer);
+    level1Open = true;
     paint();
+
     var box = layer.querySelector('.guide');
-    trap = Prefs.trapFocus(box, function () { closeLevel1(true); });
-    layer.querySelector('[data-guide-skip]').addEventListener('click', function () {
-      closeLevel1(true);
-    });
+    trap = Prefs.trapFocus(box, closeLevel1);
+    layer.querySelector('[data-guide-skip]').addEventListener('click', closeLevel1);
     layer.querySelector('[data-guide-next]').addEventListener('click', function () {
-      if (cardIx >= CARDS.length - 1) { closeLevel1(false); return; }
-      cardIx += 1;
-      paint();
+      if (cardIx >= CARDS.length - 1) { closeLevel1(); return; }
+      goCard(cardIx + 1);
     });
     layer.querySelector('[data-guide-back]').addEventListener('click', function () {
-      if (cardIx <= 0) return;
-      cardIx -= 1;
-      paint();
+      goCard(cardIx - 1);
     });
+    bindSwipe(box);
+    document.addEventListener('wheel', onGuideWheel, { capture: true, passive: false });
+    document.addEventListener('keydown', onGuideKeys, true);
+    paintCaption();
   }
 
   /* ------------------------------------------------------------- level 2 */
@@ -365,7 +424,7 @@ var Guide = (function () {
   /* --------------------------------------------------------------- mount */
 
   function refresh() {
-    if (layer && !layer.hidden) paint();
+    if (layer && level1Open) paint();
     if (tipOpen) {
       var t = tipOpen.node.querySelector('.tip__text');
       if (t) t.textContent = tipOpen.def.text;
