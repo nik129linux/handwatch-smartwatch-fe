@@ -501,6 +501,13 @@ var STRINGS_ES = (function () {
 
   /* pattern list: [regex, replacement(groups..., tr)] — first hit wins */
   function g(fn) { return fn; }
+  /* Spanish decimals use a comma: 0,35 / 0,002. */
+  function d(x) { return String(x).replace(/\./g, ','); }
+  /* Spanish thousands use a dot: 1800 -> 1.800. */
+  function n0(x) {
+    try { return new Intl.NumberFormat('es-CO').format(Number(x)); }
+    catch (e) { return String(x); }
+  }
   var patterns = [
     [/^([\d.,]+) of ([\d.,]+)$/, g(function (m, a, b) { return a + ' de ' + b; })],
     [/^([\d.,]+) of ([\d.,]+) moments$/, g(function (m, a, b) { return a + ' de ' + b + ' momentos'; })],
@@ -513,18 +520,18 @@ var STRINGS_ES = (function () {
     [/^Strong window: (.+)$/, g(function (m, a) { return 'Franja fuerte: ' + a; })],
     [/^Shift at week (\d+)$/, g(function (m, a) { return 'Cambio en la semana ' + a; })],
     [/^(.+?) reads (\d+%) \((\d+) of (\d+), 95% CI (\d+%)-(\d+%)\) against (\d+%) elsewhere; (.+?) after correction\. (.+)$/,
-      g(function (m, w, r, d, t, lo, hi, el, p, fix, tr) {
-        return w + ' marca ' + r + ' (' + d + ' de ' + t + ', IC 95% ' + lo + '-' + hi +
-          ') frente a ' + el + ' en el resto; ' + p + ' tras la corrección. ' + tr(fix);
+      g(function (m, w, r, a, t, lo, hi, el, p, fix, tr) {
+        return w + ' marca ' + r + ' (' + n0(a) + ' de ' + n0(t) + ', IC 95% ' + lo + '-' + hi +
+          ') frente a ' + el + ' en el resto; ' + d(p) + ' tras la corrección. ' + tr(fix);
       })],
     [/^Compliance moved from (\d+%) to (\d+%) starting week (\d+) \((\d+) checks, (.+?)\)\. (.+)$/,
       g(function (m, a, b, w, n, p, fix, tr) {
         return 'El cumplimiento pasó de ' + a + ' a ' + b + ' desde la semana ' + w +
-          ' (' + n + ' casos, ' + p + '). ' + tr(fix);
+          ' (' + n0(n) + ' casos, ' + d(p) + '). ' + tr(fix);
       })],
     [/^n=(\d+) · rate (\d+%) · CI (\d+%)-(\d+%) · (.+?) · effect ([+-][\d.]+)$/,
       g(function (m, n, r, lo, hi, p, e) {
-        return 'n=' + n + ' · tasa ' + r + ' · IC ' + lo + '-' + hi + ' · ' + p + ' · efecto ' + e;
+        return 'n=' + n + ' · tasa ' + r + ' · IC ' + lo + '-' + hi + ' · ' + d(p) + ' · efecto ' + d(e);
       })],
     [/^Next week reads near (\d+%) \(interval (\d+%)-(\d+%)\)\. Trend: (.+)\.$/,
       g(function (m, a, lo, hi, v, tr) {
@@ -538,9 +545,9 @@ var STRINGS_ES = (function () {
       })],
     [/^Trained model \(softmax regression, (\d+) synthetic training streams\) on (\d+) streams it never saw, noise ([\d.]+): accuracy (\d+%) vs (\d+%) for the hand-written rules\. Brier ([\d.]+)\. (.+)$/,
       g(function (m, n, t, nz, a, b, br, rest, tr) {
-        return 'Modelo entrenado (regresión softmax, ' + n + ' señales sintéticas de entrenamiento) sobre ' + t +
-          ' señales que nunca vio, ruido ' + nz + ': exactitud ' + a + ' frente a ' + b +
-          ' de las reglas escritas a mano. Brier ' + br + '. ' + tr(rest);
+        return 'Modelo entrenado (regresión softmax, ' + n0(n) + ' señales sintéticas de entrenamiento) sobre ' + n0(t) +
+          ' señales que nunca vio, ruido ' + d(nz) + ': exactitud ' + a + ' frente a ' + b +
+          ' de las reglas escritas a mano. Brier ' + d(br) + '. ' + tr(rest);
       })],
     [/^(.+?) reads (\d+)% vs (\d+)% unit mean \((\d+) of (\d+)\)\. (.+)$/,
       g(function (m, w, a, b, d, t, fix, tr) {

@@ -382,6 +382,8 @@ async function contrast(page, sel) {
     'unit.html also has the Configuración gear');
   ok(/1\.284 de 1\.362/.test(await unit.evaluate(() => document.body.innerText)),
     'unit numbers use Intl for Spanish');
+  ok(/Brier 0,002/.test(await unit.evaluate(() => document.body.innerText)),
+    'Spanish decimals use a comma');
   await unit.click('#settingsOpen');
   await unit.waitForTimeout(300);
   ok(await unit.locator('#settingsLayer .settings[aria-modal="true"]').count() === 1,

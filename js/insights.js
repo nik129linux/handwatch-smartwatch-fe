@@ -40,6 +40,12 @@ var Insights = (function () {
 
   /* canvas text does not pass through the DOM translator */
   function L(s) { return (typeof I18N !== 'undefined') ? I18N.t(s) : s; }
+  /* Numbers in data cells follow the active locale (0,98 vs 0.98). */
+  function num(v, d) {
+    var n = Number(v);
+    if (isFinite(n) && d != null) n = Number(n.toFixed(d));
+    return (typeof I18N !== 'undefined' && I18N.num) ? I18N.num(n) : String(v);
+  }
 
   function pct(v) {
     return Math.round(v * 100) + '%';
@@ -531,8 +537,8 @@ var Insights = (function () {
         '<th scope="col">F1</th><th scope="col">Checks</th></tr>';
       ev.perClass.forEach(function (c) {
         html += '<tr><th scope="row">' + esc(c.label) + '</th><td>' +
-          c.precision.toFixed(2) + '</td><td>' + c.recall.toFixed(2) +
-          '</td><td>' + c.f1.toFixed(2) + '</td><td>' + c.support + '</td></tr>';
+          num(c.precision, 2) + '</td><td>' + num(c.recall, 2) +
+          '</td><td>' + num(c.f1, 2) + '</td><td>' + num(c.support) + '</td></tr>';
       });
       table.innerHTML = html;
     }
