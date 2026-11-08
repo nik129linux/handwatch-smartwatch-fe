@@ -2,9 +2,9 @@ package co.ucc.handhygiene.wear;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
-import android.hardware.input.InputManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -25,28 +25,58 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class AlertActivity extends Activity {
+    private static final String PREFS = "hhw";
+    private static final String P_LANG = "lang";
+    private static final String P_DONE = "done";
+    private static final String P_PLAN = "plan";
+    private static final long HOME_DELAY_MS = 2000;
+
     private Vibrator vibrator;
     private Handler handler;
+    private SharedPreferences prefs;
     private LinearLayout root;
     private TextView titleView;
     private TextView bodyView;
     private LinearLayout buttonContainer;
+    private HomeView homeView;
     private final List<Button> buttons = new ArrayList<>();
     private int selectedIndex = 0;
     private String kind = "";
+    private String lang = Labels.EN;
+    private int done = 0;
+    private int plan = 15;
     private float rotaryAccum = 0f;
     private boolean answered = false;  // one alert, one answer
+
+    private int colLime;
+    private int colTrack;
+    private int colText;
+    private int colDim;
+    private int colOnLime;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
         handler = new Handler(Looper.getMainLooper());
+        prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
+
+        colLime = getResources().getColor(R.color.hh_lime, getTheme());
+        colTrack = getResources().getColor(R.color.hh_track, getTheme());
+        colText = getResources().getColor(R.color.hh_text, getTheme());
+        colDim = getResources().getColor(R.color.hh_text_dim, getTheme());
+        colOnLime = getResources().getColor(R.color.hh_on_lime, getTheme());
+
+        done = clamp(prefs.getInt(P_DONE, 0));
+        plan = clamp(prefs.getInt(P_PLAN, 15));
+        lang = Labels.normalize(prefs.getString(P_LANG, Labels.EN));
+
+        homeView = new HomeView(this);
 
         root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setGravity(Gravity.CENTER);
-        root.setBackgroundColor(Color.BLACK);
+        root.setBackgroundColor(getResources().getColor(R.color.hh_black, getTheme()));
 
         root.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
             @Override
@@ -63,13 +93,13 @@ public class AlertActivity extends Activity {
 
         titleView = new TextView(this);
         titleView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 18);
-        titleView.setTextColor(Color.WHITE);
+        titleView.setTextColor(colText);
         titleView.setGravity(Gravity.CENTER);
-        titleView.setText("Hand Hygiene");
+        titleView.setText(Labels.get(lang, Labels.APP_NAME));
 
         bodyView = new TextView(this);
         bodyView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
-        bodyView.setTextColor(Color.parseColor("#9a9a9a"));
+        bodyView.setTextColor(colDim);
         bodyView.setGravity(Gravity.CENTER);
 
         buttonContainer = new LinearLayout(this);
@@ -89,8 +119,6 @@ public class AlertActivity extends Activity {
         root.addView(buttonContainer, new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
 
-        setContentView(root);
-
         applyIntent(getIntent());
     }
 
@@ -103,44 +131,79 @@ public class AlertActivity extends Activity {
     }
 
     private void applyIntent(Intent intent) {
-        String t = intent != null ? intent.getStringExtra("title") : null;
-        String b = intent != null ? intent.getStringExtra("body") : null;
+        /* The last intent's language and counters survive relaunch, so Home
+           always shows the last known shift. */
+        if (intent != null) {
+            SharedPreferences.Editor edit = prefs.edit();
+            if (intent.hasExtra("lang")) {
+                lang = Labels.normalize(intent.getStringExtra("lang"));
+                edit.putString(P_LANG, lang);
+            }
+            if (intent.hasExtra("done")) {
+                done = clamp(intent.getIntExtra("done", done));
+                edit.putInt(P_DONE, done);
+            }
+            if (intent.hasExtra("plan")) {
+                plan = clamp(intent.getIntExtra("plan", plan));
+                edit.putInt(P_PLAN, plan);
+            }
+            edit.apply();
+        }
+
         String k = intent != null ? intent.getStringExtra("kind") : null;
         kind = k == null ? "" : k;
-        titleView.setText(t == null ? "Hand Hygiene" : t);
-        bodyView.setText(b == null ? "Waiting for the shift" : b);
-        bodyView.setTextColor(Color.parseColor("#9a9a9a"));
+
+        /* No kind = the launcher being opened: Home, not an alert. */
+        if (kind.isEmpty()) {
+            showHome();
+            return;
+        }
+
+        String t = intent.getStringExtra("title");
+        String b = intent.getStringExtra("body");
+        titleView.setText(t == null ? Labels.get(lang, Labels.APP_NAME) : t);
+        bodyView.setText(b == null ? Labels.get(lang, Labels.IDLE) : b);
+        bodyView.setTextColor(colDim);
         titleView.setVisibility(View.VISIBLE);
         buttonContainer.setVisibility(View.VISIBLE);
         answered = false;
         buildButtons();
         selectedIndex = 0;
         updateSelection();
-        if (!kind.isEmpty()) {
-            vibratePattern(kind);
-        }
+        setContentView(root);
+        vibratePattern(kind);
         if (kind.equals("ok") || kind.equals("end")) {
             handler.postDelayed(new Runnable() {
                 @Override
-                public void run() { finish(); }
-            }, 4000);
+                public void run() { showHome(); }
+            }, HOME_DELAY_MS);
         }
+    }
+
+    private void showHome() {
+        handler.removeCallbacksAndMessages(null);
+        buttonContainer.removeAllViews();
+        buttons.clear();
+        answered = true;
+        homeView.setState(done, plan, lang);
+        setContentView(homeView);
     }
 
     private void buildButtons() {
         buttonContainer.removeAllViews();
         buttons.clear();
         if (kind.equals("doubtful")) {
-            addButton("Yes, I did", Color.parseColor("#a6ff00"), Color.parseColor("#101010"));
-            addButton("Couldn't", Color.parseColor("#333333"), Color.WHITE);
+            addButton(Labels.get(lang, Labels.YES), "yes", colLime, colOnLime);
+            addButton(Labels.get(lang, Labels.NO), "no", colTrack, colText);
         } else if (kind.equals("reminder")) {
-            addButton("Already did it", Color.parseColor("#a6ff00"), Color.parseColor("#101010"));
+            addButton(Labels.get(lang, Labels.ALREADY), "yes", colLime, colOnLime);
         }
     }
 
-    private void addButton(String label, int fill, int textColor) {
+    private void addButton(String label, String tag, int fill, int textColor) {
         Button btn = new Button(this);
         btn.setText(label);
+        btn.setTag(tag);
         btn.setAllCaps(false);
         btn.setTextColor(textColor);
         btn.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
@@ -148,6 +211,12 @@ public class AlertActivity extends Activity {
         btn.setMinimumHeight(dp(44));
         btn.setGravity(Gravity.CENTER);
         btn.setPadding(dp(12), dp(6), dp(12), dp(6));
+        /* One selection system only: the lime-pill outline driven by the crown
+           and arrow keys. Native focus would move a second, invisible cursor,
+           so Enter could confirm a button the wearer does not see selected. */
+        btn.setFocusable(false);
+        btn.setFocusableInTouchMode(false);
+        btn.setDefaultFocusHighlightEnabled(false);
 
         GradientDrawable gd = new GradientDrawable();
         gd.setShape(GradientDrawable.RECTANGLE);
@@ -177,7 +246,7 @@ public class AlertActivity extends Activity {
             Button b = buttons.get(i);
             GradientDrawable gd = (GradientDrawable) b.getBackground();
             if (i == selectedIndex) {
-                gd.setStroke(dp(2), Color.WHITE);
+                gd.setStroke(dp(2), colText);
             } else {
                 gd.setStroke(0, Color.TRANSPARENT);
             }
@@ -199,23 +268,27 @@ public class AlertActivity extends Activity {
         if (buttons.isEmpty() || answered) return;
         answered = true;
         Button sel = buttons.get(selectedIndex);
-        String label = sel.getText().toString();
-        boolean yes = label.equals("Yes, I did") || label.equals("Already did it");
+        /* The answer is the button's tag, never its translated label. */
+        boolean yes = "yes".equals(sel.getTag());
         if (yes) {
             android.util.Log.i("HHW", "answer=yes");
         } else {
             android.util.Log.i("HHW", "answer=no");
         }
         vibratePattern("ok");
-        String msg = yes ? "Noted. Thanks." : "Stays with you.";
+        String msg = yes ? Labels.get(lang, Labels.NOTED) : Labels.get(lang, Labels.STAYS);
         titleView.setVisibility(View.GONE);
         bodyView.setText(msg);
-        bodyView.setTextColor(Color.WHITE);
+        bodyView.setTextColor(colText);
         buttonContainer.setVisibility(View.GONE);
         handler.postDelayed(new Runnable() {
             @Override
-            public void run() { finish(); }
-        }, 1500);
+            public void run() { showHome(); }
+        }, HOME_DELAY_MS);
+    }
+
+    private int clamp(int v) {
+        return Math.max(0, Math.min(99, v));
     }
 
     @Override

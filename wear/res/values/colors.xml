@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The watch palette: black canvas, lime only for the active action
+         and the progress ring, white/grey text. -->
+    <color name="hh_black">#000000</color>
+    <color name="hh_lime">#a6ff00</color>
+    <color name="hh_track">#333333</color>
+    <color name="hh_text">#ffffff</color>
+    <color name="hh_text_dim">#9a9a9a</color>
+    <color name="hh_on_lime">#101010</color>
+</resources>

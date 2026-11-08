@@ -37,6 +37,38 @@ ok(['reminder', 'doubtful', 'ok', 'end'].every((n) => Wrist.message(n, S).title.
   'titles are glanceable (≤ 4 words)');
 ok(Wrist.TOPIC_RE.test(Wrist.randomTopic()), 'random topic is valid');
 
+console.log('\nlanguage + home counters');
+const c = Wrist.message('reminder', S);
+ok(c.lang === 'en' && c.done === 15 && c.plan === 15,
+  'message carries lang/done/plan', JSON.stringify(c));
+const dflt = Wrist.message('ok', {});
+ok(dflt.done === 0 && dflt.plan === 15, 'counters default to 0/15', JSON.stringify(dflt));
+const nums = Wrist.message('reminder', { done: '9', plan: 15.9 });
+ok(nums.done === 9 && nums.plan === 15, 'counters are integers', JSON.stringify(nums));
+global.I18N = { lang: 'es', t: (s) => 'ES ' + s };
+const es = Wrist.message('reminder', S);
+ok(es.lang === 'es' && es.title === 'ES Wash hands', 'Spanish follows I18N', JSON.stringify(es));
+delete global.I18N;
+
+console.log('\nwrist:send sanitizer');
+const Main = require('../main.js');
+const fallback = Main.sanitizeWrist({ lang: 'fr' });
+ok(fallback.lang === 'en', 'bad lang falls back to en', JSON.stringify(fallback));
+ok(fallback.done === 0 && fallback.plan === 15, 'missing counters use 0/15', JSON.stringify(fallback));
+ok(Main.sanitizeWrist({ lang: 'es' }).lang === 'es', 'es is accepted');
+const clamped = Main.sanitizeWrist({ done: 150, plan: -3 });
+ok(clamped.done === 99 && clamped.plan === 0, 'done/plan clamp to 0..99', JSON.stringify(clamped));
+const coerced = Main.sanitizeWrist({ done: '7', plan: '20' });
+ok(coerced.done === 7 && coerced.plan === 20, 'numeric strings reach the watch as integers', JSON.stringify(coerced));
+const accents = Main.sanitizeWrist({ title: 'Sí, ¿lavaste?', body: 'No alcancé' });
+ok(accents.title === 'Sí, ¿lavaste?' && accents.body === 'No alcancé',
+  'wear extras keep accents and ¿', JSON.stringify(accents));
+const shell = Main.sanitizeWrist({ title: "a'; rm -rf /", body: '$(id) `x` & | > "b"' });
+const flat = shell.title + shell.body;
+ok(!/[';$`\\|&()<>"]/.test(flat), 'quotes and shell metacharacters never pass', flat);
+ok(Main.sanitizeWrist({ title: 'Sí' }).phoneTitle === 'Si',
+  'phone route keeps the ASCII clean()', JSON.stringify(Main.sanitizeWrist({ title: 'Sí' })));
+
 (async () => {
   console.log('\nbrowser');
   const browser = await chromium.launch();
