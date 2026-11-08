@@ -4,9 +4,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Unit 4B · Infection control</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600&family=Inter:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/fonts.css">
 <link rel="stylesheet" href="css/tokens.css">
 <link rel="stylesheet" href="css/watch.css">
@@ -61,6 +58,7 @@
         enterkeyhint="send" placeholder="Where does the process slip?">
       <button class="ask__send" type="submit">Ask</button>
     </form>
+    <p class="ask__empty" id="askEmpty" role="status" hidden></p>
     <div class="ask__chips" id="askChips">
       <button class="ask__chip" type="button">Where does the process slip?</button>
       <button class="ask__chip" type="button">When do we wash least?</button>
@@ -72,6 +70,7 @@
       <p class="ask__q" id="askQ" data-no-i18n></p>
       <p class="ask__a" id="askA" data-no-i18n></p>
       <span class="ai-badge" id="askBadge">Rules</span>
+      <p class="ask__fallback" id="askFallback" hidden></p>
     </div>
   </section>
 
@@ -130,8 +129,12 @@
         <p class="model__cap">Stated certainty against observed hit rate; dot size is sample count.</p>
       </div>
     </div>
-    <table class="model__table" id="modelTable"
-      aria-label="Precision recall and F1 by moment type"></table>
+    <div class="model__table-wrap" role="region" tabindex="0"
+      aria-label="Precision recall and F1 by moment type">
+      <table class="model__table" id="modelTable"
+        aria-label="Precision recall and F1 by moment type"></table>
+    </div>
+    <p class="model__scrollhint">Scroll sideways for the whole table.</p>
     <p class="ucard__note" id="calibNote"></p>
   </section>
 

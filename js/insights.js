@@ -51,6 +51,10 @@ var Insights = (function () {
     return Math.round(v * 100) + '%';
   }
 
+  function n0(v) {
+    return (typeof I18N !== 'undefined' && I18N.num) ? I18N.num(v) : String(v);
+  }
+
   function fmtP(p) {
     if (!(p >= 0)) return 'p —';
     if (p < 0.001) return 'p<0.001';
@@ -117,7 +121,7 @@ var Insights = (function () {
         title: 'Shift at week ' + (change.week + 1),
         body: ('Compliance moved from ' + pct(change.pre) + ' to ' +
           pct(change.post) + ' starting week ' + (change.week + 1) +
-          ' (' + totalChecks + ' checks, ' + fmtP(change.p) +
+          ' (' + n0(totalChecks) + ' checks, ' + fmtP(change.p) +
           '). Keep the handover overlap and recheck in two weeks.'
         ).slice(0, REWRITE_MAX),
         n: totalChecks,
@@ -497,9 +501,10 @@ var Insights = (function () {
   }
 
   function statLine(c) {
-    return 'n=' + c.n + ' · rate ' + pct(c.rate) +
+    return 'n=' + num(c.n) + ' · ' + L('rate') + ' ' + pct(c.rate) +
       ' · CI ' + pct(c.lo) + '-' + pct(c.hi) +
-      ' · ' + fmtP(c.pAdj) + ' · effect ' + (c.h >= 0 ? '+' : '') + c.h.toFixed(2);
+      ' · ' + fmtP(c.pAdj) + ' · ' + L('effect') + ' ' +
+      (c.h >= 0 ? '+' : '') + num(c.h, 2);
   }
 
   function paintCards(cards) {
@@ -511,6 +516,7 @@ var Insights = (function () {
         '<p class="insight__body" data-insight-id="' + esc(c.id) + '">' +
         esc(c.body) + '</p>' +
         '<p class="insight__stats">' + esc(statLine(c)) + '</p>' +
+        '<span class="insight__demo">' + esc(L('Demo data')) + '</span>' +
         '</li>';
     }).join('');
   }

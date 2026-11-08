@@ -25,6 +25,9 @@ var Ask = (function () {
 
   /* blame words in both languages: the process slips, people do not fail */
   var BLAME_RE = /\b(fail\w*|fault\w*|blam\w*|neglig\w*|lazy|careless|culpa\w*|negligen\w*|incumpl\w*|perezos\w*|descuid\w*|sancion\w*|castig\w*)\b/i;
+  /* "falla/fallan/falló" only blames when the subject is a person */
+  var FAIL_RE = /\bfall\w*\b/i;
+  var PERSON_SUBJECT_RE = /\b(enfermer[oa]s?|persona|personas|personal|emplead[oa]s?|nurse|nurses|staff|worker|wearer)\b/i;
   var PERSON_KEY_RE = /^(nurse|nurses|person|people|staff|staffid|employee|user|userid|wearer|badge)$/i;
 
   function strings() {
@@ -142,6 +145,27 @@ var Ask = (function () {
 
   var ALLOW_CAPS = /^(WHO|OMS|UCI|ICU|AM|PM|OK|I|Unit|Unidad|Ollama|Gemma)$/;
 
+  /* The app's own vocabulary is not a person, even capitalized: moment
+     names, the unit, and the infection-control team. Strip it before the
+     capitalized-word heuristic so "Antes del paciente" never reads as a name. */
+  var APP_TERMS = [
+    /antes del paciente/gi, /despues del paciente/gi,
+    /antes de (un )?(procedimiento|tarea) limpia?/gi,
+    /despues de (la exposicion a )?fluidos?/gi, /tras (la exposicion a )?fluidos?/gi,
+    /despues del entorno/gi,
+    /before (the )?patient/gi, /after (the )?patient/gi,
+    /before a clean procedure/gi, /after fluid exposure/gi,
+    /after the surroundings/gi,
+    /control de infecciones/gi, /infection control/gi,
+    /unidad 4b/gi, /unit 4b/gi, /los cinco momentos/gi, /the five who moments/gi
+  ];
+
+  function stripAppTerms(q) {
+    var out = String(q || '');
+    for (var i = 0; i < APP_TERMS.length; i++) out = out.replace(APP_TERMS[i], ' ');
+    return out;
+  }
+
   function guard(question) {
     var q = String(question || '');
     var f = fold(q);
@@ -153,7 +177,7 @@ var Ask = (function () {
       }
     }
     /* a capitalized word that does not start a sentence reads as a name */
-    var tokens = q.split(/\s+/);
+    var tokens = stripAppTerms(q).split(/\s+/);
     for (var i = 0; i < tokens.length; i++) {
       var raw = tokens[i];
       var w = raw.replace(/^[¿¡"'(]+|[?!.,;:"')]+$/g, '');
@@ -358,6 +382,7 @@ var Ask = (function () {
     var a = data.answer.trim();
     if (!a || a.length > ANSWER_MAX + 40) return null;
     if (BLAME_RE.test(a)) return null;
+    if (FAIL_RE.test(a) && PERSON_SUBJECT_RE.test(a)) return null;
     /* a leaked JSON key (quietestWindow) means the model echoed the data */
     if (/\b[a-z]+[A-Z][A-Za-z]*\b/.test(a)) return null;
     var allowed = numbers(JSON.stringify(ctx.facts) + ' ' + ctx.question);
@@ -382,6 +407,14 @@ var Ask = (function () {
     };
     var transport = deps.transport || null;
     if (!transport || !q) return rules();
+    /* Known-down server: no consent sheet, no model call, one honest line. */
+    if (typeof transport.health === 'function') {
+      var health = null;
+      try { health = await transport.health(); } catch (e) { health = null; }
+      if (!health || !health.ok) {
+        return Object.assign(rules(), { modelFailed: true });
+      }
+    }
     var consent = deps.consent || null;
     if (consent !== 'yes') {
       if (consent === 'no' || typeof deps.onConsent !== 'function') return rules();
@@ -391,12 +424,14 @@ var Ask = (function () {
     }
     try {
       var res = await transport.query(prompt(facts, q, lang));
-      if (!res || !res.ok || typeof res.text !== 'string' || !res.model) return rules();
+      if (!res || !res.ok || typeof res.text !== 'string' || !res.model) {
+        return Object.assign(rules(), { modelFailed: true });
+      }
       var a = parse(res.text, { facts: facts, question: q });
-      if (!a) return rules();
+      if (!a) return Object.assign(rules(), { modelFailed: true });
       return Object.assign(base, { answer: a, source: 'Ollama · ' + res.model, refused: false });
     } catch (e) {
-      return rules();
+      return Object.assign(rules(), { modelFailed: true });
     }
   }
 

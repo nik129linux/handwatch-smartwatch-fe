@@ -115,9 +115,24 @@ var AI = (function () {
   };
   var CANNED_DEFAULT = 'The signal sat near the unsure line, so the watch asked instead of deciding.';
 
+  /* The sentence is built from the signal that actually made the watch
+     ask, not from a canned line per moment: a short rub, a broken rhythm,
+     low motion and high sensor noise each read differently. */
   function rulesExplain(input) {
     var m = input && input.moment;
-    var line = CANNED[m] || CANNED_DEFAULT;
+    var conf = input && input.confidence;
+    var noise = Number(input && input.noise);
+    var hasNoise = input && input.noise !== undefined && input.noise !== null;
+    if (conf == null && !hasNoise) {
+      return (CANNED[m] || CANNED_DEFAULT).slice(0, EXPLAIN_MAX);
+    }
+    var read;
+    if (conf === 'low') read = 'the rub was short';
+    else if (conf === 'high') read = 'the motion was low and steady';
+    else read = 'the rhythm was broken';
+    if (hasNoise && noise >= 0.5) read += ' and sensor noise was high';
+    else if (hasNoise) read += ' with little sensor noise';
+    var line = 'The watch asked because ' + read + '.';
     return line.slice(0, EXPLAIN_MAX);
   }
 
@@ -309,6 +324,15 @@ var AI = (function () {
     deps = deps || {};
     var transport = deps.transport || null;
     if (!transport) return { value: rules(), source: rulesSource() };
+    /* A known-down server must never open the consent sheet: ask health
+       first, and answer with the rules silently when it is not there. */
+    if (typeof transport.health === 'function') {
+      var health = null;
+      try { health = await transport.health(); } catch (e) { health = null; }
+      if (!health || !health.ok) {
+        return { value: rules(), source: rulesSource(), modelFailed: true };
+      }
+    }
     var consent = deps.consent || null;
     if (consent !== 'yes') {
       if (consent === 'no' || typeof deps.onConsent !== 'function') {
@@ -322,13 +346,13 @@ var AI = (function () {
     try {
       var res = await transport.query(prompt);
       if (!res || !res.ok || typeof res.text !== 'string' || !res.model) {
-        return { value: rules(), source: rulesSource() };
+        return { value: rules(), source: rulesSource(), modelFailed: true };
       }
       var parsed = parse(res.text, ctx);
-      if (!parsed) return { value: rules(), source: rulesSource() };
+      if (!parsed) return { value: rules(), source: rulesSource(), modelFailed: true };
       return { value: parsed, source: ollamaSource(res.model) };
     } catch (e) {
-      return { value: rules(), source: rulesSource() };
+      return { value: rules(), source: rulesSource(), modelFailed: true };
     }
   }
 
@@ -338,7 +362,8 @@ var AI = (function () {
     var ctx = { payload: payload, prompt: prompt };
     var r = await chain(prompt, ctx, parseFindings,
       function () { return rulesFindings(payload); }, deps);
-    return { findings: r.value, source: r.source, payload: payload };
+    return { findings: r.value, source: r.source, payload: payload,
+      modelFailed: !!r.modelFailed };
   }
 
   async function requestExplain(input, lastRun, deps) {
@@ -351,7 +376,8 @@ var AI = (function () {
     var r = await chain(explainPrompt(facts),
       { payload: facts, prompt: explainPrompt(facts) }, parseExplanation,
       function () { return rulesExplain(facts); }, deps);
-    return { line: r.value, source: r.source, payload: facts };
+    return { line: r.value, source: r.source, payload: facts,
+      modelFailed: !!r.modelFailed };
   }
 
   /* --- consent: the exact payload before the first model call ----------- */
@@ -370,8 +396,9 @@ var AI = (function () {
       var host = document.createElement('div');
       host.className = 'ai-consent';
       host.innerHTML =
-        '<div class="ai-consent__card" role="dialog" aria-label="Share anonymous totals">' +
-        '<p class="ai-consent__title">Share anonymous totals?</p>' +
+        '<div class="ai-consent__card" role="dialog" aria-modal="true" ' +
+          'aria-labelledby="aiConsentTitle">' +
+        '<p class="ai-consent__title" id="aiConsentTitle">Share anonymous totals?</p>' +
         '<p class="ai-consent__body">Only this leaves this computer, for the ' +
         'Ollama model (local, or ollama.com for -cloud models). No names, ' +
         'no people. The model may only cite these numbers back.</p>' +
@@ -382,11 +409,42 @@ var AI = (function () {
         '</div></div>';
       host.querySelector('.ai-consent__payload').textContent =
         JSON.stringify(payload, null, 2);
+
+      var card = host.querySelector('.ai-consent__card');
+      var opener = document.activeElement;
+      var settled = false;
+
+      function onKey(ev) {
+        if (ev.key === 'Escape') {
+          ev.preventDefault();
+          ev.stopPropagation();
+          done('no');
+          return;
+        }
+        if (ev.key !== 'Tab') return;
+        var list = Array.prototype.filter.call(card.querySelectorAll('button'),
+          function (b) { return b.offsetParent !== null; });
+        if (!list.length) { ev.preventDefault(); card.focus(); return; }
+        var first = list[0];
+        var last = list[list.length - 1];
+        if (ev.shiftKey && document.activeElement === first) {
+          ev.preventDefault(); last.focus();
+        } else if (!ev.shiftKey && document.activeElement === last) {
+          ev.preventDefault(); first.focus();
+        }
+      }
+
       function done(answer) {
+        if (settled) return;
+        settled = true;
+        document.removeEventListener('keydown', onKey, true);
         consentMemory = answer;
         try { host.parentNode.removeChild(host); } catch (e) {}
+        /* focus returns to the control that opened the sheet */
+        try { if (opener && opener.focus) opener.focus(); } catch (e) {}
         resolve(answer);
       }
+      card.setAttribute('tabindex', '-1');
       host.querySelector('[data-ai-no]').addEventListener('click', function () {
         done('no');
       });
@@ -394,6 +452,7 @@ var AI = (function () {
         done('yes');
       });
       document.body.appendChild(host);
+      document.addEventListener('keydown', onKey, true);
       var ok = host.querySelector('[data-ai-yes]');
       if (ok && ok.focus) { try { ok.focus(); } catch (e) {} }
     });
@@ -404,7 +463,13 @@ var AI = (function () {
   function browserTransport() {
     try {
       if (typeof window !== 'undefined' && window.__aiAPI && window.__aiAPI.query) {
-        return { query: function (prompt) { return window.__aiAPI.query(prompt); } };
+        return {
+          query: function (prompt) { return window.__aiAPI.query(prompt); },
+          health: function () {
+            if (window.__aiAPI.health) return window.__aiAPI.health();
+            return Promise.resolve({ ok: true });
+          }
+        };
       }
     } catch (e) { /* plain browser — rules only */ }
     return null;

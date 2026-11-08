@@ -9,28 +9,64 @@ var unit = (function () {
 
   /* --- demo data --------------------------------------------------------- */
 
-  var MOMENTS = [
-    { name: 'Before the patient',        done: 1284, total: 1362, pct: 94 },
-    { name: 'Before a clean procedure', done: 402, total: 451, pct: 89 },
-    { name: 'After fluid exposure', done: 191, total: 269, pct: 71 },
-    { name: 'After the patient',      done: 1188, total: 1381, pct: 86 },
-    { name: 'After the surroundings',       done: 508, total: 819, pct: 62 }
-  ];
-
-  /* Washes per hour of the day (00 → 23). The two spikes are the shift start
-     (07) and the shift change (19) — exactly where the unit is weakest. */
-  var HOURS = [
-    0, 0, 0, 0, 0, 2, 9,
-    28, 34, 31, 27, 24, 19,
-    14, 11, 12, 16, 21, 26,
-    33, 29, 12, 5, 1
-  ];
+  /* One seeded six-week history feeds every figure on this page: the bars,
+     the heatmap, the corrections and the charts. No card carries its own
+     invented numbers, so the bars' mean and the last week of the trend are
+     the same number. */
+  var SEED = 7;
 
   /* The ripple starts at the shift-change hour: --i is the distance
      |hour - 19|, so the stagger delay is monotonic in distance outward. */
   var SHIFT_CHANGE = 19;
 
-  var CORRECTIONS = 34;
+  var FALLBACK = {
+    moments: [
+      { name: 'Before the patient',        done: 1284, total: 1362, pct: 94 },
+      { name: 'Before a clean procedure', done: 402, total: 451, pct: 89 },
+      { name: 'After fluid exposure', done: 191, total: 269, pct: 71 },
+      { name: 'After the patient',      done: 1188, total: 1381, pct: 86 },
+      { name: 'After the surroundings',       done: 508, total: 819, pct: 62 }
+    ],
+    hours: [
+      0, 0, 0, 0, 0, 2, 9,
+      28, 34, 31, 27, 24, 19,
+      14, 11, 12, 16, 21, 26,
+      33, 29, 12, 5, 1
+    ],
+    corrections: 34
+  };
+
+  function demoData() {
+    try {
+      if (typeof Dataset === 'undefined' || !Dataset.generate) return null;
+      var data = Dataset.generate(SEED);
+      var lastWeek = data.events.filter(function (e) {
+        return e.week === Dataset.WEEKS - 1;
+      });
+      var byMoment = Dataset.byMoment(lastWeek);
+      var moments = byMoment.map(function (m) {
+        return {
+          name: m.label,
+          done: m.done,
+          total: m.total,
+          pct: Math.round(m.done / Math.max(1, m.total) * 100)
+        };
+      });
+      var hours = [];
+      for (var h = 0; h < 24; h++) hours.push(0);
+      lastWeek.forEach(function (e) { hours[e.hour] += 1; });
+      return {
+        moments: moments,
+        hours: hours,
+        corrections: Dataset.corrections(data.events)
+      };
+    } catch (e) { return null; }
+  }
+
+  var DEMO = demoData() || FALLBACK;
+  var MOMENTS = DEMO.moments;
+  var HOURS = DEMO.hours;
+  var CORRECTIONS = DEMO.corrections;
   var MAX_HOUR = Math.max.apply(null, HOURS);
 
   /* --- render ------------------------------------------------------------ */
@@ -248,29 +284,40 @@ var unit = (function () {
     var send = form.querySelector('.ask__send');
     var busy = false;
 
-    function show(q, text, source, loading) {
+    function show(q, text, source, loading, failed) {
       box.hidden = false;
       box.classList.toggle('is-loading', !!loading);
       document.getElementById('askQ').textContent = q;
       document.getElementById('askA').textContent = text;
       document.getElementById('askBadge').textContent = source;
+      var fb = document.getElementById('askFallback');
+      if (fb) {
+        fb.hidden = !failed;
+        if (failed) fb.textContent = tr('I could not use the model; the watch rules answered.');
+      }
       if (!loading) lastAsk = { q: q, facts: facts };
+    }
+
+    function hideEmpty() {
+      var e = document.getElementById('askEmpty');
+      if (e) e.hidden = true;
     }
 
     function run(q) {
       q = String(q || '').trim();
       if (!q || busy) return;
       busy = true;
+      hideEmpty();
       if (send) send.disabled = true;
-      show(q, tr('Reading the totals…'), '…', true);
+      show(q, tr('Reading the totals…'), '…', true, false);
       Ask.request(q, facts, {
         transport: transport,
         consent: (typeof AIPrefs !== 'undefined') ? AIPrefs.consent() : null,
         onConsent: (typeof AIPrefs !== 'undefined') ? AIPrefs.ask : AI.requestConsent
       }, lang).then(function (r) {
-        show(q, r.answer, r.source, false);
+        show(q, r.answer, r.source, false, !!r.modelFailed);
       }).catch(function () {
-        show(q, Ask.rulesAnswer(facts, Ask.intent(q), lang, q), 'Rules', false);
+        show(q, Ask.rulesAnswer(facts, Ask.intent(q), lang, q), 'Rules', false, true);
       }).then(function () {
         busy = false;
         if (send) send.disabled = false;
@@ -279,6 +326,15 @@ var unit = (function () {
 
     form.addEventListener('submit', function (ev) {
       ev.preventDefault();
+      if (!String(input.value || '').trim()) {
+        var e = document.getElementById('askEmpty');
+        if (e) {
+          e.textContent = tr('Write a question about the moments or the hours.');
+          e.hidden = false;
+        }
+        input.focus();
+        return;
+      }
       run(input.value);
     });
     var chips = document.querySelectorAll('#askChips .ask__chip');

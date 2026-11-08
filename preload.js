@@ -14,7 +14,8 @@ contextBridge.exposeInMainWorld('__logAPI', {
 /* Model bridge: prompts go to the main process, which asks Ollama on
    localhost. Absent in a plain browser — then the pages use rules only. */
 contextBridge.exposeInMainWorld('__aiAPI', {
-  query: (prompt) => ipcRenderer.invoke('ai:query', prompt)
+  query: (prompt) => ipcRenderer.invoke('ai:query', prompt),
+  health: () => ipcRenderer.invoke('ai:health')
 });
 
 /* Real-watch bridge: a short push (title, one line, priority) to ntfy.sh,

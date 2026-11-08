@@ -239,6 +239,11 @@ var STRINGS_ES = (function () {
     'There is no per-person filter.': 'No existe un filtro por persona.',
     'Synthetic data: it measures the model against the simulator, not a ward.':
       'Datos sintéticos: mide el modelo contra el simulador, no contra una sala real.',
+    'Scroll sideways for the whole table.': 'Desliza de lado para ver toda la tabla.',
+    'Write a question about the moments or the hours.':
+      'Escribe una pregunta sobre los momentos o las horas.',
+    'I could not use the model; the watch rules answered.':
+      'No pude usar el modelo; respondieron las reglas del reloj.',
 
     /* --- rules AI lines --- */
     'The rub was short or broken by noise, so the watch asked instead of deciding.':
@@ -299,6 +304,8 @@ var STRINGS_ES = (function () {
 
     /* --- canvas labels --- */
     'W': 'S',
+    'rate': 'tasa',
+    'effect': 'efecto',
     'shift': 'cambio',
     'next': 'próx',
     'stated': 'declarada',
@@ -530,12 +537,12 @@ var STRINGS_ES = (function () {
         return w + ' marca ' + r + ' (' + n0(a) + ' de ' + n0(t) + ', IC 95% ' + lo + '-' + hi +
           ') frente a ' + el + ' en el resto; ' + d(p) + ' tras la corrección. ' + tr(fix);
       })],
-    [/^Compliance moved from (\d+%) to (\d+%) starting week (\d+) \((\d+) checks, (.+?)\)\. (.+)$/,
+    [/^Compliance moved from (\d+%) to (\d+%) starting week (\d+) \(([\d.,]+) checks, (.+?)\)\. (.+)$/,
       g(function (m, a, b, w, n, p, fix, tr) {
         return 'El cumplimiento pasó de ' + a + ' a ' + b + ' desde la semana ' + w +
           ' (' + n0(n) + ' casos, ' + d(p) + '). ' + tr(fix);
       })],
-    [/^n=(\d+) · rate (\d+%) · CI (\d+%)-(\d+%) · (.+?) · effect ([+-][\d.]+)$/,
+    [/^n=([\d.,]+) · rate (\d+%) · CI (\d+%)-(\d+%) · (.+?) · effect ([+-][\d.,]+)$/,
       g(function (m, n, r, lo, hi, p, e) {
         return 'n=' + n + ' · tasa ' + r + ' · IC ' + lo + '-' + hi + ' · ' + d(p) + ' · efecto ' + d(e);
       })],

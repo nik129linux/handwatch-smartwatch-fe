@@ -66,6 +66,18 @@ function setupAIIPC() {
       return { ok: false, reason: 'down' };
     }
   });
+  /* Health first: the page asks before opening the consent sheet, so a
+     known-down server never asks for permission it cannot use. */
+  ipcMain.handle('ai:health', async () => {
+    try {
+      if (!Ollama) return { ok: false, reason: 'no-model' };
+      const listed = await Ollama.listModels();
+      if (!listed || !listed.ok) return { ok: false, reason: 'down' };
+      return { ok: true, model: listed.picked || null };
+    } catch (e) {
+      return { ok: false, reason: 'down' };
+    }
+  });
 }
 
 /* --- real watch: the page hands over an already-built push (title, one
