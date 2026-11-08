@@ -44,17 +44,31 @@ function ok(cond, label, detail) {
       }
     }
   }
-  /* the unit page always has a way back: visible after scrolling, Esc works */
+  /* the unit page always has a way back: a fixed shortcut on desktop, a
+     header control on phones (fixed it sat on the insight text), Esc works */
   const UNIT = pathToFileURL(path.resolve(__dirname, '..', 'unit.html')).href;
   for (const w of [1440, 375]) {
     const u = await (await b.newContext({ viewport: { width: w, height: 812 } })).newPage();
     await u.goto(UNIT);
     await u.waitForTimeout(800);
+    const position = await u.evaluate(() =>
+      getComputedStyle(document.querySelector('.unit__back')).position);
     await u.mouse.wheel(0, 2500);
     await u.waitForTimeout(500);
-    const box = await u.locator('.unit__back').boundingBox();
-    ok(box && box.y >= 0 && box.y < 80 && box.height >= 44,
-      `unit page ${w}px: back button stays on screen after scrolling`, JSON.stringify(box));
+    if (w <= 600) {
+      ok(position === 'static',
+        `unit page ${w}px: back control is part of the page header`, position);
+      await u.evaluate(() => window.scrollTo(0, 0));
+      await u.waitForTimeout(300);
+      const top = await u.locator('.unit__back').boundingBox();
+      ok(top && top.y >= 0 && top.y < 80 && top.height >= 44,
+        `unit page ${w}px: back control is reachable at the top`,
+        JSON.stringify(top));
+    } else {
+      const box = await u.locator('.unit__back').boundingBox();
+      ok(box && box.y >= 0 && box.y < 80 && box.height >= 44,
+        `unit page ${w}px: back button stays on screen after scrolling`, JSON.stringify(box));
+    }
     await u.keyboard.press('Escape');
     await u.waitForURL(/index\.html$/, { timeout: 3000 }).catch(() => {});
     ok(/index\.html$/.test(u.url()), `unit page ${w}px: Esc goes back to the watch`, u.url());
