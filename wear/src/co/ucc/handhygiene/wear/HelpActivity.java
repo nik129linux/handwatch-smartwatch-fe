@@ -80,22 +80,23 @@ public class HelpActivity extends BaseActivity {
         roundInsets(root);
     }
 
+    /* One card per pattern: name + line on top, play button below.
+       A side-by-side row squeezed "Recordatorio" into a hyphenated stub
+       on the 336 px round-safe column, so every card stacks vertically. */
     private View hapticRow(final int index) {
-        LinearLayout row = new LinearLayout(this);
-        row.setOrientation(LinearLayout.HORIZONTAL);
-        row.setGravity(Gravity.CENTER_VERTICAL);
-        row.setBackground(Ui.rounded(this, color(R.color.hh_track), 14));
-        row.setPadding(dp(12), dp(8), dp(8), dp(8));
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setBackground(Ui.rounded(this, color(R.color.hh_track), 14));
+        card.setPadding(dp(12), dp(10), dp(12), dp(10));
 
-        LinearLayout labels = new LinearLayout(this);
-        labels.setOrientation(LinearLayout.VERTICAL);
-        labels.addView(Ui.text(this, str(NAMES[index]), 15, color(R.color.hh_text)));
+        card.addView(Ui.text(this, str(NAMES[index]), 15, color(R.color.hh_text)),
+                new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT));
         LinearLayout.LayoutParams lineLp = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         lineLp.topMargin = dp(2);
-        labels.addView(Ui.text(this, str(LINES[index]), 12, color(R.color.hh_text_dim)), lineLp);
-        row.addView(labels, new LinearLayout.LayoutParams(
-                0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        card.addView(Ui.text(this, str(LINES[index]), 12, color(R.color.hh_text_dim)), lineLp);
 
         Button play = Ui.pill(this, str(R.string.help_play),
                 color(R.color.hh_lime), color(R.color.hh_on_lime), Ui.MIN_TOUCH_DP);
@@ -106,9 +107,11 @@ public class HelpActivity extends BaseActivity {
                 Haptics.play(HelpActivity.this, KINDS[index]);
             }
         });
-        row.addView(play, new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
-        return row;
+        LinearLayout.LayoutParams playLp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        playLp.topMargin = dp(8);
+        card.addView(play, playLp);
+        return card;
     }
 
     private LinearLayout.LayoutParams rowParams(int topMargin) {

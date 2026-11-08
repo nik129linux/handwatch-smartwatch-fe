@@ -44,9 +44,11 @@ public class GuideActivity extends BaseActivity {
         root.setGravity(Gravity.CENTER_HORIZONTAL);
         root.setBackgroundColor(color(R.color.hh_black));
 
+        /* Centered: the top corners of a round screen cut anything parked
+           at the edge (the old Gravity.END pill lost its ends to the mask). */
         LinearLayout top = new LinearLayout(this);
         top.setOrientation(LinearLayout.HORIZONTAL);
-        top.setGravity(Gravity.END);
+        top.setGravity(Gravity.CENTER_HORIZONTAL);
         Button skip = Ui.pill(this, str(R.string.guide_skip),
                 color(R.color.hh_track), color(R.color.hh_text), Ui.MIN_TOUCH_DP);
         skip.setMinWidth(dp(72));
@@ -58,8 +60,8 @@ public class GuideActivity extends BaseActivity {
         LinearLayout mid = new LinearLayout(this);
         mid.setOrientation(LinearLayout.VERTICAL);
         mid.setGravity(Gravity.CENTER);
-        kicker = Ui.text(this, "", 13, color(R.color.hh_text_dim));
-        body = Ui.text(this, "", 22, color(R.color.hh_text));
+        kicker = Ui.text(this, "", 12, color(R.color.hh_text_dim));
+        body = Ui.text(this, "", 18, color(R.color.hh_text));
         LinearLayout.LayoutParams kickerLp = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         kickerLp.bottomMargin = dp(8);
@@ -80,7 +82,7 @@ public class GuideActivity extends BaseActivity {
         counter = Ui.text(this, "", 12, color(R.color.hh_text_dim));
         LinearLayout.LayoutParams counterLp = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        counterLp.topMargin = dp(6);
+        counterLp.topMargin = dp(4);
         meta.addView(counter, counterLp);
         root.addView(meta, new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
@@ -89,7 +91,7 @@ public class GuideActivity extends BaseActivity {
                 color(R.color.hh_lime), color(R.color.hh_on_lime), Ui.ROW_DP);
         LinearLayout.LayoutParams nextLp = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        nextLp.topMargin = dp(10);
+        nextLp.topMargin = dp(6);
         root.addView(next, nextLp);
 
         skip.setOnClickListener(new View.OnClickListener() {
@@ -150,7 +152,7 @@ public class GuideActivity extends BaseActivity {
             shape.setShape(GradientDrawable.OVAL);
             shape.setColor(color(i == card ? R.color.hh_lime : R.color.hh_track));
             dot.setBackground(shape);
-            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(9), dp(9));
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(7), dp(7));
             lp.leftMargin = dp(4);
             lp.rightMargin = dp(4);
             dots.addView(dot, lp);

@@ -128,8 +128,12 @@ abstract class BaseActivity extends Activity {
     }
 
     /* Round screen: generous sides, shallow top and bottom, and never less
-       than the system bars or a display cutout ask for. */
+       than the system bars or a display cutout ask for. The base padding is
+       set immediately from the display width (listeners alone proved too
+       late on the emulator: content rendered edge-to-edge, pills and long
+       lines clipped by the round mask), then raised to the system insets. */
     void roundInsets(final View root) {
+        padBase(root);
         root.setOnApplyWindowInsetsListener(new View.OnApplyWindowInsetsListener() {
             @Override
             public WindowInsets onApplyWindowInsets(View view, WindowInsets insets) {
@@ -151,6 +155,13 @@ abstract class BaseActivity extends Activity {
             }
         });
         root.requestApplyInsets();
+    }
+
+    private void padBase(View view) {
+        int width = getResources().getDisplayMetrics().widthPixels;
+        if (width <= 0) width = dp(227);
+        int side = (int) (width * 0.13f);
+        view.setPadding(side, (int) (width * 0.05f), side, (int) (width * 0.04f));
     }
 
     private void pad(View view) {
