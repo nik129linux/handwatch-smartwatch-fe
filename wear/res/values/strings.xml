@@ -8,6 +8,7 @@
 
     <!-- Home -->
     <string name="home_moments">Momentos</string>
+    <string name="home_of">/ %1$d</string>
     <string name="home_shift">Turno · Unidad 4B</string>
     <string name="home_settings">Ajustes</string>
     <string name="home_settings_desc">Abrir ajustes</string>

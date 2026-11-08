@@ -99,7 +99,8 @@ public class HomeView extends View {
         canvas.drawText(String.valueOf(done), cx, numBaseline, numPaint);
 
         ofPaint.setTextSize(unit * 0.075f);
-        canvas.drawText("/ " + plan, cx, numBaseline + unit * 0.085f, ofPaint);
+        canvas.drawText(getContext().getString(R.string.home_of, plan), cx,
+                numBaseline + unit * 0.085f, ofPaint);
 
         float below = cy + radius + stroke / 2f;
         labelPaint.setTextSize(unit * 0.075f);

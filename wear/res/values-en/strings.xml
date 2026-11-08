@@ -6,6 +6,7 @@
 
     <!-- Home -->
     <string name="home_moments">Moments</string>
+    <string name="home_of">/ %1$d</string>
     <string name="home_shift">Shift · Unit 4B</string>
     <string name="home_settings">Settings</string>
     <string name="home_settings_desc">Open settings</string>

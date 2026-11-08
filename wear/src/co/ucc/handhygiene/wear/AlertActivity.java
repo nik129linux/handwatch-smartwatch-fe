@@ -1,7 +1,6 @@
 package co.ucc.handhygiene.wear;
 
 import android.content.Intent;
-import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.os.Handler;
@@ -193,7 +192,7 @@ public class AlertActivity extends BaseActivity {
             if (i == selectedIndex) {
                 shape.setStroke(dp(2), colText);
             } else {
-                shape.setStroke(0, Color.TRANSPARENT);
+                shape.setStroke(0, colTrack);
             }
         }
     }
@@ -237,6 +236,12 @@ public class AlertActivity extends BaseActivity {
                 finish();
             }
         }, delayMs);
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (handler != null) handler.removeCallbacksAndMessages(null);
+        super.onDestroy();
     }
 
     @Override

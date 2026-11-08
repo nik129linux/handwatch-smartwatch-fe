@@ -115,7 +115,7 @@ public class GuideActivity extends BaseActivity {
                 switch (event.getActionMasked()) {
                     case MotionEvent.ACTION_DOWN:
                         touchStartY = event.getY();
-                        return false;
+                        return true;
                     case MotionEvent.ACTION_UP:
                         if (!Float.isNaN(touchStartY)) {
                             float dy = event.getY() - touchStartY;
