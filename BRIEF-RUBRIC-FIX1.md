@@ -1,0 +1,9 @@
+# Fix round 1 for phase A (rules: BRIEF-RUBRIC.md)
+Reviewer screenshots at 1440x900, fresh profile, OS en-US + dark. Fix all, assert each in tests/phase-a.test.js, keep `npm test` fully green, commit.
+1. Level-1 guide is a desktop modal that covers the watch. The guide is for the nurse, so level 1 must run ON THE WATCH SCREEN: 3 glanceable cards inside the watch face (max ~4 words per line, one 56px pill "Siguiente"/"Empezar", crown or swipe to go back, "Saltar" reachable). The desktop stage may show at most a small caption next to the watch ("Guía en el reloj · 1 de 3"). Assert the guide nodes are descendants of the watch screen element and that the watch is not covered by any overlay during level 1.
+2. Level-1 card shows the counter twice ("1 / 3" at the top and "1 de 3" at the bottom). Keep only the dots + one counter.
+3. Settings → Idioma: language names must be endonyms in both UIs: "Español" and "English" (each with lang="es"/lang="en"). This is the standard pattern and is NOT a language leak; exempt these two labels in the leak scanners.
+4. Settings header shows "CONFIGURACIÓN" as a kicker AND "Configuración" as the title. Drop the kicker.
+5. AI section is confusing: the toggle says "IA: Activada" while "Consentimiento: sin preguntar", with two separate consent buttons. Merge into ONE control: a switch "Usar el modelo" with one status line that says exactly what happens ("Apagado: responden las reglas del reloj" / "Encendido: te muestro qué se envía antes de cada consulta"). Turning it on = granting consent; off = revoking. Remove the two consent buttons.
+6. Also confirm the on-watch "Ajustes" screen exists and is reachable from the watch's own navigation; add a screenshot-free assertion that walks to it with the crown/side button only.
+Final message: each item PASS/FAIL with test names, full npm test counts.
