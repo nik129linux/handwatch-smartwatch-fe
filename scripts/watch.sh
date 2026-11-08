@@ -36,4 +36,5 @@ fi
 
 [ -f wear/out/hand-hygiene-wear.apk ] || wear/build.sh
 adb -s "$SERIAL" install -r wear/out/hand-hygiene-wear.apk >/dev/null
+adb -s "$SERIAL" shell am start -n co.ucc.handhygiene.wear/.AlertActivity >/dev/null
 echo "Watch ready. (Fallback mirror: scrcpy -s $SERIAL)"
