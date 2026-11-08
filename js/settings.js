@@ -26,11 +26,6 @@ var Settings = (function () {
     catch (e) { return 'light'; }
   }
 
-  function consentLabel() {
-    var s = AIPrefs.consentState();
-    return t(s === 'granted' ? 'granted' : s === 'revoked' ? 'revoked' : 'not asked');
-  }
-
   function inventoryLine() {
     var inv = Prefs.inventory();
     var events = inv.events === 1
@@ -38,12 +33,13 @@ var Settings = (function () {
       : num(inv.events) + ' ' + t('events, 24 h');
     var tips = inv.tips === 1 ? '1 ' + t('tip') : num(inv.tips) + ' ' + t('tips');
     var guide = t(inv.guide ? 'guide seen' : 'guide not seen');
-    return events + ' · ' + tips + ' · ' + guide + ' · ' + t('AI') + ': ' + consentLabel();
+    return events + ' · ' + tips + ' · ' + guide;
   }
 
-  function choice(attr, value, label, active) {
+  function choice(attr, value, label, active, extra) {
     return '<button class="set__choice" type="button" ' + attr + '="' + value + '" ' +
-      'aria-pressed="' + (active ? 'true' : 'false') + '">' + label + '</button>';
+      (extra || '') + ' aria-pressed="' + (active ? 'true' : 'false') + '">' +
+      label + '</button>';
   }
 
   function generalHTML() {
@@ -52,8 +48,10 @@ var Settings = (function () {
         '<h3 class="set__title">Language</h3>' +
         '<p class="set__hint">Applies right away. No reload.</p>' +
         '<div class="set__choices">' +
-          choice('data-lang', 'es', t('Spanish'), (typeof I18N !== 'undefined' && I18N.lang === 'es')) +
-          choice('data-lang', 'en', t('English'), (typeof I18N !== 'undefined' && I18N.lang === 'en')) +
+          choice('data-lang', 'es', 'Español', (typeof I18N !== 'undefined' && I18N.lang === 'es'),
+            ' lang="es" data-no-i18n') +
+          choice('data-lang', 'en', 'English', (typeof I18N !== 'undefined' && I18N.lang === 'en'),
+            ' lang="en" data-no-i18n') +
         '</div>' +
       '</section>' +
 
@@ -69,19 +67,16 @@ var Settings = (function () {
 
       '<section class="set">' +
         '<h3 class="set__title">Artificial intelligence</h3>' +
-        '<p class="set__hint">Rules always work. The model only runs if you allow it.</p>' +
         '<button class="set__switch" type="button" data-ai-toggle role="switch" ' +
-          'aria-checked="' + (aiOn ? 'true' : 'false') + '" aria-label="' + t('AI') + '">' +
-          '<span class="set__switch-label">' + t('AI') + '</span>' +
+          'aria-checked="' + (aiOn ? 'true' : 'false') + '" aria-label="' + t('Use the model') + '">' +
+          '<span class="set__switch-label">' + t('Use the model') + '</span>' +
           '<span class="set__switch-track" aria-hidden="true">' +
             '<span class="set__switch-knob"></span></span>' +
         '</button>' +
-        '<p class="set__state">' + t('AI') + ': ' + t(aiOn ? 'On' : 'Off') + '</p>' +
-        '<p class="set__state">' + t('Consent') + ': ' + consentLabel() + '</p>' +
-        '<div class="set__choices">' +
-          '<button class="set__choice" type="button" data-ai-grant>' + t('Grant consent') + '</button>' +
-          '<button class="set__choice" type="button" data-ai-revoke>' + t('Revoke consent') + '</button>' +
-        '</div>' +
+        '<p class="set__state" data-ai-status>' +
+          t(aiOn ? 'On: I show you what is sent before each query'
+                 : 'Off: the watch rules answer') +
+        '</p>' +
       '</section>' +
 
       '<section class="set">' +
@@ -133,7 +128,6 @@ var Settings = (function () {
       '<div class="settings" role="dialog" aria-modal="true" aria-labelledby="settingsTitle" tabindex="-1">' +
         '<header class="settings__head">' +
           '<div>' +
-            '<p class="label">Settings</p>' +
             '<h2 class="settings__title" id="settingsTitle">Settings</h2>' +
           '</div>' +
           '<button class="settings__close" type="button" data-settings-close ' +
@@ -163,12 +157,15 @@ var Settings = (function () {
         return;
       }
       if (b.hasAttribute('data-ai-toggle')) {
-        AIPrefs.setOn(!AIPrefs.on());
+        /* one control owns both the switch and consent: on = grant,
+           off = revoke. No second pair of consent buttons. */
+        var next = !AIPrefs.on();
+        AIPrefs.setOn(next);
+        if (next) AIPrefs.grant();
+        else AIPrefs.revoke();
         paint();
         return;
       }
-      if (b.hasAttribute('data-ai-grant')) { AIPrefs.grant(); paint(); return; }
-      if (b.hasAttribute('data-ai-revoke')) { AIPrefs.revoke(); paint(); return; }
       if (b.hasAttribute('data-delete')) {
         Prefs.deleteAll();
         deleteMessage = t('All data deleted.');

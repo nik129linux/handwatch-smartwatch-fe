@@ -41,9 +41,12 @@ async function leftovers(page) {
     while ((n = w.nextNode())) {
       const t = n.nodeValue.trim();
       if (!t || n.parentElement.closest('script,style,pre,code,[data-no-i18n]')) continue;
+      /* language pickers are endonyms by design ("Español" / "English") */
+      if (n.parentElement.closest('[lang]:not(html)')) continue;
       if (re.test(t)) out.add(t);
     }
     document.querySelectorAll('[aria-label]').forEach((el) => {
+      if (el.closest('[lang]:not(html)')) return;
       const a = el.getAttribute('aria-label');
       if (re.test(a)) out.add('@' + a);
     });

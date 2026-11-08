@@ -409,10 +409,9 @@ var watch = (function () {
     title: 'Watch settings',
     anim: 'fwd',
     build: function () {
-      var langVal = tr('English');
-      try {
-        if (typeof I18N !== 'undefined' && I18N.lang === 'es') langVal = 'Español';
-      } catch (e) { langVal = 'English'; }
+      var curLang = 'es';
+      try { if (typeof I18N !== 'undefined') curLang = I18N.lang; } catch (e) { curLang = 'es'; }
+      var langVal = curLang === 'es' ? 'Español' : 'English';
       var th = 'light';
       try { th = window.__themePref ? window.__themePref() : 'light'; } catch (e) { th = 'light'; }
       var themeVal = tr(th === 'dark' ? 'Dark' : th === 'system' ? 'System' : 'Light');
@@ -429,7 +428,9 @@ var watch = (function () {
             return '<button class="pill pill--secondary set-watch__row" type="button" ' +
               'data-act="' + r[2] + '">' +
               '<span class="set-watch__key">' + r[0] + '</span>' +
-              '<span class="set-watch__val">' + esc(r[1]) + '</span></button>';
+              '<span class="set-watch__val"' +
+                (r[2] === 'cfg-lang' ? ' lang="' + curLang + '"' : '') + '>' +
+                esc(r[1]) + '</span></button>';
           }).join('') +
         '</div>' +
         '<div class="screen__foot">' +
