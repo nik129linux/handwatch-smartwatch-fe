@@ -150,6 +150,9 @@ async function contrast(page, sel) {
   ok(/Gira la corona/.test(tipText), 'the crown coach mark appears in Spanish', tipText);
   ok(await page.locator('#guideTip[role="dialog"]').count() === 1,
     'the coach mark is a dismissible dialog');
+  ok(await page.evaluate(() => Guide.TIPS.length >= 3), 'at least three key features get a tip');
+  ok(await page.evaluate(() => Guide.TIPS.every((t) => !!document.querySelector(t.anchor))),
+    'every tip is anchored to a real feature');
   await page.click('#guideTip .tip__close');
   await page.waitForTimeout(400);
   ok(await page.evaluate(() => Prefs.tipSeen('crown')) === true,

@@ -222,21 +222,25 @@ var Guide = (function () {
   }
 
   /* First time the person reaches a feature: a tip waits until the anchor
-     is on screen. One at a time, each shown once, persisted. */
+     is on screen. One at a time, each shown once, persisted. The observer
+     is rebuilt for the remaining tips so an anchor already on screen
+     fires its first callback instead of being missed. */
   function observeAnchors() {
-    if (observer || !('IntersectionObserver' in window)) return;
+    if (!('IntersectionObserver' in window)) return;
+    if (observer) { observer.disconnect(); observer = null; }
     observer = new IntersectionObserver(function (entries) {
       if (tipOpen) return;
       entries.forEach(function (e) {
         if (!e.isIntersecting) return;
         var def = TIPS.filter(function (t) { return t.anchor === '#' + e.target.id; })[0];
-        if (!def && e.target.classList.contains('haptic-strip')) {
+        if (!def && e.target.classList && e.target.classList.contains('haptic-strip')) {
           def = TIPS.filter(function (t) { return t.id === 'strip'; })[0];
         }
         if (def && !Prefs.tipSeen(def.id)) showTip(def);
       });
     }, { threshold: 0.4 });
     TIPS.forEach(function (t) {
+      if (Prefs.tipSeen(t.id)) return;
       var a = document.querySelector(t.anchor);
       if (a) observer.observe(a);
     });
