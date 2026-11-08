@@ -1,9 +1,11 @@
 /* ==========================================================================
-   tests/i18n.test.js — the Spanish build, in a browser (es-CO locale)
+   tests/i18n.test.js — the Spanish build, in a browser
    node tests/i18n.test.js   (run from the prototype folder)
+   Spanish is the default on a fresh profile, whatever the OS locale says.
    Pass lines fixed before the run: zero English text nodes left on either
    page across every watch screen, watch lines <= 4 words in Spanish, no
-   text overflowing the watch screen, the EN | ES switch persists.
+   text overflowing the watch screen, and the EN | ES switch flips in place
+   without a reload.
    ========================================================================== */
 
 const path = require('path');
@@ -49,6 +51,17 @@ async function leftovers(page) {
   }, EN_RE.source);
 }
 
+/* the guide is verified by phase-a.test.js: keep this file on the app copy */
+async function quietGuide(ctx) {
+  await ctx.addInitScript(() => {
+    try {
+      localStorage.setItem('handwatch-guide1', 'seen');
+      localStorage.setItem('handwatch-tips',
+        JSON.stringify(['crown', 'strip', 'free', 'privacy']));
+    } catch (e) { /* file:// storage is fine; this is a safety net */ }
+  });
+}
+
 (async () => {
   head('0 · dictionary hygiene');
   {
@@ -60,21 +73,23 @@ async function leftovers(page) {
   }
 
   const browser = await chromium.launch();
-  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, locale: 'es-CO' });
+  /* No locale override: the default must be Spanish even on an en-US OS. */
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  await quietGuide(ctx);
   const errors = [];
 
-  head('1 · index.html in Spanish');
+  head('1 · index.html opens in Spanish');
   const page = await ctx.newPage();
   page.on('pageerror', (e) => errors.push(String(e)));
   page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
   await page.goto(INDEX, { waitUntil: 'load' });
   await page.waitForSelector('.view[data-screen="home"]');
-  ok(await page.evaluate(() => document.documentElement.lang) === 'es', 'html lang is es');
+  ok(await page.evaluate(() => document.documentElement.lang) === 'es', 'html lang is es on a fresh profile');
   ok(await page.evaluate(() => document.title) === 'Reloj de Higiene de Manos', 'window title translated');
   ok(await page.locator('#langToggle').count() === 1, 'EN | ES switch is on the page');
 
   await page.evaluate(() => { window.__timeScale = 0.05; });
-  const names = ['home', 'recordatorio', 'lavando', 'dudoso', 'fin', 'quien', 'pausa'];
+  const names = ['home', 'recordatorio', 'lavando', 'dudoso', 'fin', 'quien', 'pausa', 'ajustes'];
   const longLines = [];
   const overflow = [];
   for (const n of names) {
@@ -106,10 +121,24 @@ async function leftovers(page) {
   await page.click('#sideButton').catch(() => {});
   await page.evaluate(() => document.querySelectorAll('details').forEach((d) => { d.open = true; }));
   await page.waitForTimeout(600);
-  const left = await leftovers(page);
-  ok(left.length === 0, 'no English left on the stage after every event', left.join(' // '));
+  ok((await leftovers(page)).length === 0,
+    'no English left on the stage after every event', (await leftovers(page)).join(' // '));
 
-  head('2 · unit.html in Spanish');
+  head('2 · Settings and Help are Spanish too');
+  await page.evaluate(() => Settings.open('general'));
+  await page.waitForTimeout(300);
+  ok((await leftovers(page)).length === 0,
+    'no English left in Configuración', (await leftovers(page)).join(' // '));
+  await page.evaluate(() => Settings.open('help'));
+  await page.waitForTimeout(400);
+  ok((await leftovers(page)).length === 0,
+    'no English left in Ayuda', (await leftovers(page)).join(' // '));
+  ok(await page.locator('#helpVocab .vocab__row').count() === 4,
+    'Ayuda holds the four vibration patterns');
+  await page.evaluate(() => Settings.close());
+  await page.waitForTimeout(300);
+
+  head('3 · unit.html in Spanish');
   const unit = await ctx.newPage();
   unit.on('pageerror', (e) => errors.push('unit: ' + e));
   await unit.goto(UNIT, { waitUntil: 'load' });
@@ -118,18 +147,33 @@ async function leftovers(page) {
   ok(leftU.length === 0, 'no English left on the unit page', leftU.join(' // '));
   ok(/Mide el proceso/.test(await unit.evaluate(() => document.body.innerText)),
     'the manifesto reads "Mide el proceso"');
+  ok(/1\.284 de 1\.362/.test(await unit.evaluate(() => document.body.innerText)),
+    'numbers are formatted with Intl for Spanish');
 
-  head('3 · the switch persists and both languages load clean');
+  head('4 · the switch works in place and both languages load clean');
+  await page.evaluate(() => { window.__alive = true; watch.state.done = 9; });
   await page.click('#langToggle');
-  await page.waitForLoadState('load');
-  await page.waitForSelector('.view[data-screen="home"]');
+  await page.waitForTimeout(600);
+  ok(await page.evaluate(() => window.__alive === true), 'switching does not reload the page');
   ok(await page.evaluate(() => document.documentElement.lang) === 'en', 'one click switches to English');
+  ok(await page.evaluate(() => watch.state.done) === 9, 'in-memory state survives the switch');
   ok(/Day shift on Unit 4B/.test(await page.evaluate(() => document.body.innerText)), 'English copy is back');
+  await page.evaluate(() => Settings.open('help'));
+  await page.waitForTimeout(400);
+  const enLeft = await page.evaluate(() => {
+    const re = /\b(el|la|los|las|del|una|para|con|por|turno|reloj|lavado|momentos?|cama|paciente|gracias|ajustes|configuración|ayuda|idioma|tema|privacidad)\b/i;
+    return [...document.querySelectorAll('*')]
+      .filter((n) => n.children.length === 0 && n.textContent.trim() && re.test(n.textContent))
+      .map((n) => n.textContent.trim());
+  });
+  ok(enLeft.length === 0, 'no Spanish left in English Help', enLeft.join(' // '));
+  await page.evaluate(() => Settings.close());
   await unit.reload({ waitUntil: 'load' });
   ok(await unit.evaluate(() => document.documentElement.lang) === 'en', 'the unit page follows the same choice');
   await page.click('#langToggle');
-  await page.waitForLoadState('load');
+  await page.waitForTimeout(600);
   ok(await page.evaluate(() => document.documentElement.lang) === 'es', 'and back to Spanish');
+  ok(await page.evaluate(() => window.__alive === true), 'still no reload on the way back');
   ok(errors.length === 0, 'zero console errors in Spanish', errors.join(' // '));
 
   await browser.close();

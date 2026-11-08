@@ -78,6 +78,19 @@ async function settledScreen(page, name) {
     return getComputedStyle(views[0]).opacity === '1';
   }, name, { timeout: 8000 });
 }
+/* The first-run guide and the coach marks are covered by phase-a.test.js.
+   Every other test starts from a profile that has already seen them. */
+async function seedSeen(ctx) {
+  await ctx.addInitScript(() => {
+    try {
+      localStorage.setItem('handwatch-guide1', 'seen');
+      localStorage.setItem('handwatch-tips',
+        JSON.stringify(['crown', 'strip', 'free', 'privacy']));
+    } catch (e) { /* file:// storage is fine; safety net */ }
+  });
+  return ctx;
+}
+
 async function opaqueScreens(page) {
   return await page.evaluate(() =>
     Array.from(document.querySelectorAll('#viewport .view'))
@@ -95,6 +108,7 @@ async function opaqueScreens(page) {
   head('1 · index.html and unit.html load with zero console errors');
 
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
+  await seedSeen(ctx);
   await ctx.addInitScript(() => {
     window.__vibe = [];
     try {
@@ -157,7 +171,7 @@ async function opaqueScreens(page) {
   await page.waitForSelector('.view[data-screen="dudoso"]', { timeout: 4000 });
   ok(true, 'Doubtful wash → Did you wash? visible');
   const q = await page.locator('.doubt__q').textContent();
-  ok(q.trim() === 'Did you wash?', 'the screen asks "Did you wash?"', q);
+  ok(q.trim() === '¿Te lavaste?', 'the screen asks "¿Te lavaste?"', q);
   const pills = await page.locator('.view[data-screen="dudoso"] .pill').count();
   ok(pills === 2, 'two pills, no form fields', 'found ' + pills);
   ok((await page.locator('.view[data-screen="dudoso"] input').count()) === 0,
@@ -166,7 +180,7 @@ async function opaqueScreens(page) {
   await page.click('.pill[data-act="doubt-yes"]');
   await page.waitForSelector('.toast.is-on', { timeout: 4000 });
   const toast = (await page.locator('#toastText').textContent()).trim();
-  ok(toast === 'Noted. Thanks.', 'toast says "Noted. Thanks."', toast);
+  ok(toast === 'Anotado. Gracias.', 'toast says "Anotado. Gracias."', toast);
   await page.waitForSelector('.view[data-screen="home"]', { timeout: 4000 });
   await settle(page, 400);
   ok(await screenIs(page, 'dudoso') === false, 'the doubt screen closes after one tap');
@@ -187,7 +201,7 @@ async function opaqueScreens(page) {
   ok(await screenIs(page, 'recordatorio') === false,
     'Enter patient zone while paused does NOT show Reminder');
   const logText = await page.locator('#log').textContent();
-  ok(/muted/i.test(logText), 'the swallowed reminder is logged as "muted"',
+  ok(/silenciado/i.test(logText), 'the swallowed reminder is logged as "silenciado"',
     logText.slice(0, 120));
 
   /* =============================================================== 4. end of shift */
@@ -197,8 +211,8 @@ async function opaqueScreens(page) {
   await page.waitForSelector('.view[data-screen="fin"]', { timeout: 4000 });
   ok(true, 'End shift → Shift over visible');
   const finText = await page.locator('.view[data-screen="fin"]').textContent();
-  ok(/moments/i.test(finText), 'Shift over shows the moment count');
-  ok(/fixed\s*by\s*you/i.test(finText.replace(/\s+/g, ' ')),
+  ok(/momentos/i.test(finText), 'Shift over shows the moment count');
+  ok(/corregido\s*por\s*ti/i.test(finText.replace(/\s+/g, ' ')),
     'Shift over shows how many she fixed herself');
   ok(/24 h/.test(finText), 'Shift over states the 24 h window');
 
@@ -206,9 +220,9 @@ async function opaqueScreens(page) {
   await page.waitForSelector('.view[data-screen="quien"]', { timeout: 4000 });
   ok(true, 'the side button opens Who sees this');
   const who = (await page.locator('.view[data-screen="quien"]').textContent()).replace(/\s+/g, ' ');
-  ok(/You/.test(who) && /Infection control/.test(who) && /No one/.test(who),
-    'three rows: You · Infection control · No one', who.slice(0, 160));
-  ok(/no names/.test(who), 'the unit sees totals without names');
+  ok(/Tú/.test(who) && /Control de infecciones/.test(who) && /Nadie/.test(who),
+    'three rows: Tú · Control de infecciones · Nadie', who.slice(0, 160));
+  ok(/sin nombres/.test(who), 'the unit sees totals without names');
 
   /* =============================================================== 6. haptics */
   head('6 · the vibration vocabulary reaches navigator.vibrate');
@@ -223,7 +237,7 @@ async function opaqueScreens(page) {
   const rows = await page.locator('.vocab__row').count();
   ok(rows === 4, 'the panel documents 4 patterns', 'found ' + rows);
   const strip = await page.locator('.haptic-strip').textContent();
-  ok(/No sound\. Ever\./.test(strip), 'the strip states: No sound. Ever.');
+  ok(/Sin sonido\. Nunca\./.test(strip), 'the strip states: Sin sonido. Nunca.');
 
   /* =============================================================== 7. tokens */
   head('7 · changing the primary propagates everywhere');
@@ -286,8 +300,8 @@ async function opaqueScreens(page) {
 
   for (const t of ['index.html', 'unit.html']) {
     const p = t === 'index.html' ? page : unitPage;
-    ok(await p.locator('#themeToggle[aria-label="Switch theme"]').count() === 1,
-      t + ' has a theme toggle labelled "Switch theme"');
+    ok(await p.locator('#themeToggle[aria-label="Cambiar tema"]').count() === 1,
+      t + ' has a theme toggle labelled "Cambiar tema"');
     ok(await p.locator('#themeToggle svg').count() === 2,
       t + ' toggle carries sun + moon icons');
   }
@@ -472,10 +486,11 @@ async function opaqueScreens(page) {
       out.push(el.getAttribute('aria-label')));
     return out.join('\n');
   });
-  const esHit = (renderedCopy + '\n' + renderedUnit).split('\n')
-    .filter(l => spanish.test(l));
-  ok(esHit.length === 0, 'no Spanish stopwords remain in rendered UI strings',
-    esHit.slice(0, 4).join(' | '));
+  const english = /\b(the|and|you|your|watch|wash|washes|shift|of|with|not|never|bed|moments?|reads|week|only|who|sees)\b/i;
+  const enHit = (renderedCopy + '\n' + renderedUnit).split('\n')
+    .filter(l => english.test(l));
+  ok(enHit.length === 0, 'no English stopwords remain in rendered UI strings',
+    enHit.slice(0, 4).join(' | '));
 
   /* every watch screen, walked one by one */
   const watchCopy = await page.evaluate(async () => {
@@ -496,8 +511,10 @@ async function opaqueScreens(page) {
     'no watch screen accuses: failure / violation / non-compliance / fault / error / negligence',
     bad.join(', '));
   const allCopy = watchCopy + '\n' + (await page.evaluate(() => document.body.innerText));
-  ok(!/\b(el|la|los|las|del|una|para|con|turno|reloj|lavado|momentos?|cama|paciente|gracias)\b/i.test(allCopy),
-    'all rendered UI copy is English (no Spanish stopwords)');
+  ok(!/\b(the|and|you|your|watch|wash|washes|shift|of|with|not|never|bed|moments?|reads|week|only|who|sees)\b/i.test(allCopy),
+    'all rendered UI copy is Spanish (no English stopwords)');
+  ok(/\b(momentos?|turno|reloj|lavado)\b/i.test(allCopy),
+    'the rendered copy really is Spanish');
 
   /* =============================================================== 9. motion */
   head('9 · reduced motion');
@@ -529,6 +546,7 @@ async function opaqueScreens(page) {
   const rmCtx = await browser.newContext({
     viewport: { width: 1440, height: 1000 }, reducedMotion: 'reduce'
   });
+  await seedSeen(rmCtx);
   const rmPage = await rmCtx.newPage();
   const rmErrs = watchErrors(rmPage);
   await rmPage.goto(INDEX, { waitUntil: 'load' });
@@ -734,6 +752,7 @@ async function opaqueScreens(page) {
   const narrow = await browser.newContext({
     viewport: { width: 375, height: 900 }
   });
+  await seedSeen(narrow);
   const nPage = await narrow.newPage();
   const nErrs = watchErrors(nPage);
   await nPage.goto(INDEX, { waitUntil: 'load' });
@@ -775,6 +794,7 @@ async function opaqueScreens(page) {
 
   /* the watch is the hero: the case clears 55% of the viewport at 1440x900 */
   const wide = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  await seedSeen(wide);
   const wPage = await wide.newPage();
   const wErrs = watchErrors(wPage);
   await wPage.goto(INDEX, { waitUntil: 'load' });
@@ -801,7 +821,7 @@ async function opaqueScreens(page) {
   /* the strip names live vibration, not the vocabulary list */
   const stripName = await wPage.evaluate(() =>
     document.querySelector('#hapticName').textContent);
-  ok(/Live vibration/.test(stripName), 'the strip is "Live vibration"',
+  ok(/Vibración en vivo/.test(stripName), 'the strip is "Vibración en vivo"',
     stripName);
   const idleBars = await wPage.locator('.haptic-strip__bars .haptic-bar').count();
   ok(idleBars === 1, 'idle is one flat line, no static block row',
@@ -810,7 +830,7 @@ async function opaqueScreens(page) {
   /* one global Reiniciar in the panel */
   const resets = await wPage.evaluate(() =>
     [...document.querySelectorAll('.panel .btn')]
-      .filter(b => /reset/i.test(b.textContent)).length);
+      .filter(b => /reiniciar/i.test(b.textContent)).length);
   ok(resets === 1, 'a single Reset in the panel', 'found ' + resets);
 
   await wPage.screenshot({ path: shot('stage-1440.png') });
@@ -818,6 +838,7 @@ async function opaqueScreens(page) {
 
   /* 375px: the watch stacks above the panel, nothing scrolls sideways */
   const slim = await browser.newContext({ viewport: { width: 375, height: 900 } });
+  await seedSeen(slim);
   const sPage = await slim.newPage();
   const sErrs = watchErrors(sPage);
   await sPage.goto(INDEX, { waitUntil: 'load' });
@@ -920,9 +941,9 @@ async function opaqueScreens(page) {
   await subPage.waitForFunction(
     () => (document.getElementById('subtitle').textContent || '').length > 0,
     { timeout: 8000 });
-  ok(true, 'the story shows a one-line English subtitle');
+  ok(true, 'the story shows a one-line Spanish subtitle');
   const sub = await subPage.locator('#subtitle').textContent();
-  ok(!/\b(el|la|los|las|del|una|para|con|turno|reloj|lavad|cama|paciente)\b/i.test(sub), 'the subtitle has no Spanish leftovers', sub);
+  ok(!/\b(the|and|you|your|watch|wash|shift|of|with|not|never|bed|moments?)\b/i.test(sub), 'the subtitle has no English leftovers', sub);
   await subPage.waitForSelector('[data-speed]', { timeout: 20000 });
   const speed = await subPage.locator('[data-speed]').textContent();
   ok(speed.trim() === '×5', 'the wash runs at ×5 in the story and says so', speed);
@@ -1027,6 +1048,7 @@ async function opaqueScreens(page) {
   const rmCtx2 = await browser.newContext({
     viewport: { width: 1440, height: 1000 }, reducedMotion: 'reduce'
   });
+  await seedSeen(rmCtx2);
   const rmTilt = await rmCtx2.newPage();
   await rmTilt.goto(INDEX, { waitUntil: 'load' });
   await rmTilt.waitForSelector('.view[data-screen="home"]');
@@ -1254,6 +1276,7 @@ async function opaqueScreens(page) {
      (case + both band stubs) and the Guided shift pill clear the fold */
   for (const [fw, fh] of [[1440, 900], [1280, 720]]) {
     const fCtx = await browser.newContext({ viewport: { width: fw, height: fh } });
+    await seedSeen(fCtx);
     const fPage = await fCtx.newPage();
     const fErrs = watchErrors(fPage);
     await fPage.goto(INDEX, { waitUntil: 'load' });
@@ -1321,7 +1344,7 @@ async function opaqueScreens(page) {
     await cPage.evaluate(() => { window.__bus.dudoso('On exit'); });
     await settledScreen(cPage, 'dudoso');
     const scopeWhy = await cPage.locator('#scopeWhy').textContent();
-    ok(/rhythm \d\.\d\d · \d+ of \d+ s · \d\.\d Hz -> unsure/.test(scopeWhy),
+    ok(/ritmo \d\.\d\d · \d+ de \d+ s · \d\.\d Hz -> dudoso/.test(scopeWhy),
       'the scope panel keeps the why line', scopeWhy);
     await cPage.close();
   }

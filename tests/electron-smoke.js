@@ -38,15 +38,36 @@ function head(s) { console.log('\n' + s); }
   await window.waitForLoadState('domcontentloaded');
   await window.waitForSelector('.view[data-screen="home"]', { timeout: 15000 });
 
-  ok(await window.title() === 'Hand Hygiene Watch',
-    'window title is "Hand Hygiene Watch"', await window.title());
+  /* the smoke run always starts from a fresh profile: the desktop app keeps
+     localStorage in userData, so wipe it and boot again */
+  await window.evaluate(() => { try { localStorage.clear(); } catch (e) { /* none */ } });
+  await window.reload({ waitUntil: 'load' });
+  await window.waitForSelector('.view[data-screen="home"]', { timeout: 15000 });
+  ok(await window.evaluate(() => document.documentElement.lang) === 'es',
+    'a fresh profile opens in Spanish',
+    await window.evaluate(() => document.documentElement.lang));
+  ok(await window.evaluate(() => document.documentElement.dataset.theme) === 'light',
+    'a fresh profile opens in the light theme',
+    await window.evaluate(() => document.documentElement.dataset.theme));
+  ok(await window.title() === 'Reloj de Higiene de Manos',
+    'window title is "Reloj de Higiene de Manos"', await window.title());
+  /* the first-run guide is covered by phase-a; mark it seen for this run */
+  if (await window.locator('[data-guide-skip]').count()) {
+    await window.locator('[data-guide-skip]').click();
+    await window.waitForTimeout(300);
+  }
+  await window.evaluate(() => {
+    Prefs.setGuideSeen(true);
+    Guide.TIP_IDS.forEach((id) => Prefs.markTip(id));
+  });
+  await window.waitForTimeout(300);
 
   const errs = [];
   window.on('console', m => { if (m.type() === 'error') errs.push(m.text()); });
   window.on('pageerror', e => errs.push(e.message));
 
   /* theme toggle flips data-theme inside the app window */
-  ok(await window.locator('#themeToggle[aria-label="Switch theme"]').count() === 1,
+  ok(await window.locator('#themeToggle[aria-label="Cambiar tema"]').count() === 1,
     'the app window has a theme toggle');
   const before = await window.evaluate(() => document.documentElement.dataset.theme);
   await window.locator('#themeToggle').click();
@@ -139,7 +160,7 @@ function head(s) { console.log('\n' + s); }
   await window.locator('#freeMode [data-act="dudoso"]').click();
   await settled('dudoso');
   const q = (await window.locator('.doubt__q').textContent()).trim();
-  ok(q === 'Did you wash?', 'Doubtful wash shows the confirm screen', q);
+  ok(q === '¿Te lavaste?', 'Doubtful wash shows the confirm screen', q);
   ok(await window.evaluate(() =>
     document.querySelector('#screen [data-features], #screen .doubt__why') === null),
     'the watch carries no diagnostic line');

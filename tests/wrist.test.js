@@ -73,6 +73,11 @@ ok(Main.sanitizeWrist({ title: 'Sí' }).phoneTitle === 'Si',
   console.log('\nbrowser');
   const browser = await chromium.launch();
   const page = await browser.newPage();
+  await page.addInitScript(() => {
+    localStorage.setItem('handwatch-guide1', 'seen');
+    localStorage.setItem('handwatch-tips',
+      JSON.stringify(['crown', 'strip', 'free', 'privacy']));
+  });
   const hits = [];
   await page.route('https://ntfy.sh/**', (route) => {
     const req = route.request();
@@ -95,10 +100,11 @@ ok(Main.sanitizeWrist({ title: 'Sí' }).phoneTitle === 'Si',
   await page.evaluate(() => haptics.play('doubtful'));
   await page.waitForTimeout(600);
   ok(hits.length === 1 && hits[0].method === 'POST', 'on: one POST per haptic', JSON.stringify(hits));
-  ok(hits[0] && hits[0].title === 'Did you wash?', 'title reaches ntfy', hits[0] && hits[0].title);
+  ok(hits[0] && /Te lavaste\?/.test(hits[0].title), 'title reaches ntfy in Spanish',
+    hits[0] && hits[0].title);
   const topic = await page.textContent('#wristTopic');
   ok(hits[0] && hits[0].url === 'https://ntfy.sh/' + topic, 'posts to the shown topic');
-  ok(/sent/.test(await page.textContent('#wristStatus')), 'status says sent');
+  ok(/enviado/.test(await page.textContent('#wristStatus')), 'status says sent');
 
   await page.reload();
   await page.waitForTimeout(600);
@@ -109,7 +115,7 @@ ok(Main.sanitizeWrist({ title: 'Sí' }).phoneTitle === 'Si',
   await page.evaluate(() => { window.__storySpeed = 6; });
   await page.click('#storyPlay');
   await page.waitForFunction(() => watch.state.screen === 'dudoso', null, { timeout: 30000 });
-  ok(/Answer on your wrist/.test(await page.textContent('#subtitle')), 'subtitle asks for the wrist',
+  ok(/en tu muñeca/.test(await page.textContent('#subtitle')), 'subtitle asks for the wrist',
     await page.textContent('#subtitle'));
   await page.waitForTimeout(14000);
   ok(await page.evaluate(() => watch.state.screen) === 'dudoso', 'still waiting after the old 12 s deadline');

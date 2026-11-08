@@ -32,6 +32,11 @@ function watchErrors(page) {
 (async () => {
   const browser = await chromium.launch();
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
+  await ctx.addInitScript(() => {
+    localStorage.setItem('handwatch-guide1', 'seen');
+    localStorage.setItem('handwatch-tips',
+      JSON.stringify(['crown', 'strip', 'free', 'privacy']));
+  });
   const page = await ctx.newPage();
   const errs = watchErrors(page);
   await page.goto(INDEX, { waitUntil: 'load' });
@@ -42,8 +47,9 @@ function watchErrors(page) {
   head('1 · the story doubt comes from the classifier');
 
   await page.evaluate(() => { window.__timeScale = 0.02; });
+  await page.evaluate(() => { window.__bus.dudoso('On exit'); });
+  await page.waitForTimeout(300);
   const doubt = await page.evaluate(() => {
-    window.__bus.dudoso('On exit');
     const w = document.querySelector('#screen [data-features], #screen .doubt__why');
     return {
       screen: document.getElementById('screen').dataset.screen,
@@ -53,7 +59,7 @@ function watchErrors(page) {
   });
   ok(doubt.screen === 'dudoso', 'gel under noise opens Did you wash?');
   ok(doubt.watchWhy === null, 'the watch carries no diagnostic line');
-  ok(/rhythm \d\.\d\d · \d+ of \d+ s · \d\.\d Hz -> unsure/.test(doubt.scopeWhy),
+  ok(/ritmo \d\.\d\d · \d+ de \d+ s · \d\.\d Hz -> dudoso/.test(doubt.scopeWhy),
     'the scope panel carries the classifier features line', doubt.scopeWhy);
   const logged = await page.evaluate(() =>
     Log.list().map((e) => e.outcome).join(','));
@@ -70,11 +76,11 @@ function watchErrors(page) {
   const seen = page.waitForFunction(() => {
     const v = document.querySelector('.view[data-screen="dudoso"]');
     const w = (document.getElementById('scopeWhy') || {}).textContent || '';
-    return v && w.length > 10 && /-> unsure/.test(w) ? w : false;
+    return v && w.length > 10 && /-> dudoso/.test(w) ? w : false;
   }, { timeout: 90000 }).then((h) => h.jsonValue()).catch(() => null);
   await page.click('#storyPlay');
   const beatLine = await seen;
-  ok(typeof beatLine === 'string' && /-> unsure/.test(beatLine),
+  ok(typeof beatLine === 'string' && /-> dudoso/.test(beatLine),
     'the story beat shows a classifier unsure line', String(beatLine));
   await page.waitForFunction(() => window.__storyDone === true, { timeout: 90000 });
   ok(true, 'the guided shift reached its last beat');
@@ -138,10 +144,11 @@ function watchErrors(page) {
   await unitPage.fill('#askInput', 'Which nurse misses the most?');
   await unitPage.press('#askInput', 'Enter');
   await unitPage.waitForTimeout(400);
-  ok(/no people/i.test(await unitPage.textContent('#askA')),
+  ok(/sin personas|no tiene personas/i.test(await unitPage.textContent('#askA')),
     'asking about a person is refused on the page', await unitPage.textContent('#askA'));
   const byPerson = await unitPage.evaluate(() =>
-    /filter by|per-person(?! filter)|by name|by nurse/i.test(document.body.innerText));
+    /filter by|per-person(?! filter)|by name|by nurse|por nombre|por enfermera/i
+      .test(document.body.innerText));
   ok(byPerson === false, 'no way to slice by person', '');
   ok(unitErrs.length === 0, 'unit.html has no console errors', unitErrs.join(' | '));
 
@@ -156,7 +163,7 @@ function watchErrors(page) {
   });
   await page.waitForTimeout(400);
   const youRow = await page.locator('.view[data-screen="quien"]').textContent();
-  ok(/2 events, 24 h/.test(youRow), 'the You row counts the live log',
+  ok(/2 eventos, 24 h/.test(youRow), 'the You row counts the live log',
     youRow.replace(/\s+/g, ' ').slice(0, 120));
 
   /* 3 · the noise slider --------------------------------------------------- */
