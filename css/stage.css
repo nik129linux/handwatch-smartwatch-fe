@@ -1126,6 +1126,14 @@ body.is-ready [data-rise] {
   .unotice { padding: var(--sp-3) var(--sp-5); }
 }
 
+/* Phones: the back pill belongs to the page header, not to the viewport.
+   Fixed, it sat on top of the insight text while scrolling at 390px. */
+@media (max-width: 600px) {
+  .unit { scroll-padding-top: var(--sp-3); }
+  .unit__head { padding-top: var(--sp-8); }
+  .unit__back { position: static; }
+}
+
 /* --------------------------------------------------------------------------
    8. Theme switch (light / dark)
    -------------------------------------------------------------------------- */

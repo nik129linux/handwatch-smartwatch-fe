@@ -93,6 +93,17 @@ var unit = (function () {
     return (typeof I18N !== 'undefined' && I18N.t) ? I18N.t(s) : s;
   }
 
+  /* Answers cite totals: format them for the active locale before they reach
+     the page. The user's own question is never rewritten. */
+  function formatAnswer(s) {
+    try {
+      if (typeof Insights !== 'undefined' && Insights.formatNumbers) {
+        return Insights.formatNumbers(s);
+      }
+    } catch (e) { /* keep the plain text */ }
+    return s;
+  }
+
   function momentBars() {
     var host = document.getElementById('momentBars');
     if (!host) return;
@@ -288,7 +299,7 @@ var unit = (function () {
       box.hidden = false;
       box.classList.toggle('is-loading', !!loading);
       document.getElementById('askQ').textContent = q;
-      document.getElementById('askA').textContent = text;
+      document.getElementById('askA').textContent = formatAnswer(text);
       document.getElementById('askBadge').textContent = source;
       var fb = document.getElementById('askFallback');
       if (fb) {
@@ -367,7 +378,7 @@ var unit = (function () {
     if (box && !box.hidden && lastAsk && typeof Ask !== 'undefined') {
       var lang = (typeof I18N !== 'undefined') ? I18N.lang : 'en';
       var a = document.getElementById('askA');
-      if (a) a.textContent = Ask.rulesAnswer(lastAsk.facts, Ask.intent(lastAsk.q), lang, lastAsk.q);
+      if (a) a.textContent = formatAnswer(Ask.rulesAnswer(lastAsk.facts, Ask.intent(lastAsk.q), lang, lastAsk.q));
       var badge = document.getElementById('askBadge');
       if (badge) badge.textContent = 'Rules';
     }
