@@ -447,11 +447,19 @@ async function contrast(page, sel) {
   ok(/Idioma/.test(adjText) && /Tema/.test(adjText) && /IA/.test(adjText) &&
     /Guía/.test(adjText) && /Ayuda/.test(adjText),
     'Ajustes holds Idioma, Tema, IA, Guía and Ayuda', adjText);
+  ok(await page.evaluate(() => {
+    const v = document.querySelector('#screen [data-act="cfg-lang"] .set-watch__val');
+    return !!v && v.textContent.trim() === 'Español' && v.getAttribute('lang') === 'es';
+  }), 'the watch also shows the endonym Español with lang="es"');
   /* the watch writes the same stored language */
   await page.click('#screen [data-act="cfg-lang"]');
   await page.waitForTimeout(700);
   ok(await page.evaluate(() => document.documentElement.lang) === 'en',
     'the watch toggles the shared language');
+  ok(await page.evaluate(() => {
+    const v = document.querySelector('#screen [data-act="cfg-lang"] .set-watch__val');
+    return !!v && v.textContent.trim() === 'English' && v.getAttribute('lang') === 'en';
+  }), 'the watch shows the endonym English with lang="en"');
   await page.click('#screen [data-act="cfg-lang"]');
   await page.waitForTimeout(700);
   ok(await page.evaluate(() => document.documentElement.lang) === 'es',
