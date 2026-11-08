@@ -33,7 +33,10 @@ four-pattern vocabulary lives on the simulator; answers are tapped there.
 ## Wear OS emulator (a real watch OS on the PC)
 
 `npm run watch` boots a Wear OS 5 emulator (AVD `hhw_watch`) as a floating
-454×454 window and installs `wear/`. On Hyprland the emulator auto-zooms
+454×454 window, installs `wear/` and opens the app (first run: Home with the
+3-card guide on top; later: Home). Cold boot is ~33 s, warm re-runs ~1 s.
+Reset the watch copy with `adb -s emulator-5554 shell pm clear
+co.ucc.handhygiene.wear` (Spanish + first-run guide back). On Hyprland the emulator auto-zooms
 and crops the watch; the script pins `window.scale = 1` (the emulator resets
 it on exit) and floats the window. Use the side toolbar's ⋯ for the crown
 and buttons; `scrcpy -s emulator-5554` is a fallback mirror where the mouse
