@@ -211,6 +211,12 @@ public class AlertActivity extends Activity {
         btn.setMinimumHeight(dp(44));
         btn.setGravity(Gravity.CENTER);
         btn.setPadding(dp(12), dp(6), dp(12), dp(6));
+        /* One selection system only: the lime-pill outline driven by the crown
+           and arrow keys. Native focus would move a second, invisible cursor,
+           so Enter could confirm a button the wearer does not see selected. */
+        btn.setFocusable(false);
+        btn.setFocusableInTouchMode(false);
+        btn.setDefaultFocusHighlightEnabled(false);
 
         GradientDrawable gd = new GradientDrawable();
         gd.setShape(GradientDrawable.RECTANGLE);
