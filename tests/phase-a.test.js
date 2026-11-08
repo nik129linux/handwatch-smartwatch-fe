@@ -28,6 +28,10 @@ function head(s) { console.log('\n' + s); }
 /* English words that must never survive on a Spanish screen. */
 const EN_WORDS = /\b(settings?|language|theme|privacy|help|guide|next|back|skip|done|light|dark|system|consent|granted|revoked|tip|close|open|watch|wash|washes|shift|bed|moments?|reads|week|who|sees|only|you|your|the|and|of|with|not|never)\b/i;
 
+/* Language pickers are endonyms by design: "Español" and "English" are the
+   same two labels in both UIs, so the scanners skip them. */
+const ENDONYMS = ['Español', 'English'];
+
 async function englishVisible(page) {
   return page.evaluate((src) => {
     const re = new RegExp(src, 'i');
@@ -45,7 +49,7 @@ async function englishVisible(page) {
       });
     });
     return [...new Set(out)];
-  }, EN_WORDS.source);
+  }, EN_WORDS.source).then((list) => list.filter((t) => !ENDONYMS.includes(t.replace(/^@/, ''))));
 }
 
 async function contrast(page, sel) {
@@ -111,29 +115,109 @@ async function contrast(page, sel) {
   ok(await page.evaluate(() => document.title) === 'Reloj de Higiene de Manos',
     'fresh profile: Spanish window title');
 
-  head('B · guide level 1: three cards, once, replayable');
+  head('B · guide level 1: on the watch face, three glanceable cards');
   await page.waitForSelector('#guideLayer .guide[role="dialog"]', { timeout: 4000 });
+  ok(await page.evaluate(() => {
+    const g = document.getElementById('guideLayer');
+    return !!g && g.closest('#screen') === document.getElementById('screen');
+  }), 'level 1 renders inside the watch screen');
+  ok(await page.locator('.guide-layer:not([hidden])').count() === 0 &&
+    await page.locator('body > #guideLayer').count() === 0,
+    'no desktop guide modal covers the watch');
+  ok(await page.evaluate(() => {
+    const scr = document.getElementById('screen').getBoundingClientRect();
+    const pts = [[0.5, 0.5], [0.2, 0.25], [0.8, 0.25], [0.2, 0.8], [0.8, 0.8]];
+    return pts.every(([x, y]) => {
+      const el = document.elementFromPoint(scr.left + scr.width * x, scr.top + scr.height * y);
+      return !!el && el.closest('#screen') === document.getElementById('screen');
+    });
+  }), 'the watch screen is not covered by any overlay during level 1');
   ok(await page.locator('#guideLayer .guide[aria-modal="true"]').count() === 1,
     'level 1 is a role=dialog with aria-modal');
-  ok(await page.locator('.guide__card').count() === 3, 'three welcome cards');
-  ok(await page.locator('.guide__dot').count() === 3, 'three progress dots');
+  ok(await page.locator('#guideCaption').isVisible(),
+    'the stage shows only a small caption next to the watch');
+  ok((await page.locator('#guideCaption').textContent()).trim() ===
+    'Guía en el reloj · 1 de 3', 'the caption reads "Guía en el reloj · 1 de 3"',
+    (await page.locator('#guideCaption').textContent()).trim());
+  ok(await page.evaluate(() => !document.getElementById('watch')
+    .contains(document.getElementById('guideCaption'))),
+    'the caption lives on the desk, outside the watch');
+  ok(await page.locator('#guideLayer .guide__card').count() === 3, 'three welcome cards');
+  ok(await page.locator('#guideLayer .guide__card:not([hidden])').count() === 1,
+    'one card is shown at a time');
+  ok(await page.locator('#guideLayer .guide__dot').count() === 3, 'three progress dots');
+  ok(await page.locator('#guideLayer [data-guide-count]').count() === 1,
+    'one counter, not two');
+  ok((await page.locator('#guideLayer [data-guide-count]').textContent()).trim() === '1 de 3',
+    'the single counter reads "1 de 3"');
+  ok(!/\b1\s*\/\s*3\b/.test(await page.evaluate(() =>
+    document.querySelector('#guideLayer .guide').innerText)),
+    'no duplicate "1 / 3" counter at the top');
   const nextLabel = (await page.locator('[data-guide-next]').textContent()).trim();
   const backLabel = (await page.locator('[data-guide-back]').textContent()).trim();
   const skipLabel = (await page.locator('[data-guide-skip]').textContent()).trim();
   ok(nextLabel === 'Siguiente' && backLabel === 'Atrás' && skipLabel === 'Saltar',
     'buttons read Siguiente / Atrás / Saltar', [nextLabel, backLabel, skipLabel].join(' / '));
   ok(await page.evaluate(() => {
+    const b = document.querySelector('[data-guide-next]');
+    return parseFloat(getComputedStyle(b).minHeight) >= 56;
+  }), 'the Siguiente pill is 56px tall');
+  ok(await page.evaluate(() => {
+    const b = document.querySelector('[data-guide-skip]');
+    const r = b.getBoundingClientRect();
+    return r.width > 0 && getComputedStyle(b).minHeight !== '0px';
+  }), 'Saltar is reachable on the watch');
+  ok(await page.locator('[data-guide-back]').isDisabled(),
+    'Atrás is disabled on the first card');
+  ok(await page.evaluate(() => {
     const box = document.querySelector('#guideLayer .guide');
     return box.contains(document.activeElement);
   }), 'focus starts inside the modal (trapped)');
-  const bodyText = await page.evaluate(() => document.getElementById('guideLayer').textContent);
-  ok(/Te aviso con vibración/.test(bodyText) &&
-    /Si dudo, te pregunto/.test(bodyText) && /Solo tú lo ves/.test(bodyText),
-    'the three watch cards carry the promised lines');
+  const card1 = await page.evaluate(() =>
+    document.querySelector('#guideLayer .guide__card:not([hidden])').innerText);
+  ok(/Te aviso con vibración/.test(card1), 'card 1: "Te aviso con vibración."', card1);
+
+  await page.click('[data-guide-next]');
+  await page.waitForTimeout(200);
+  const card2 = await page.evaluate(() =>
+    document.querySelector('#guideLayer .guide__card:not([hidden])').innerText);
+  ok(/Si dudo, te pregunto/.test(card2), 'card 2: "Si dudo, te pregunto."', card2);
+  ok((await page.locator('[data-guide-count]').textContent()).trim() === '2 de 3',
+    'the counter advances to "2 de 3"');
+  ok(await page.locator('[data-guide-back]').isEnabled(), 'Atrás wakes up on card 2');
+
+  /* the crown (wheel) goes back; the caption follows */
+  await page.hover('#crown');
+  await page.mouse.wheel(0, -120);
+  await page.waitForTimeout(250);
+  ok((await page.locator('[data-guide-count]').textContent()).trim() === '1 de 3',
+    'the crown goes back to the first card');
+  ok((await page.locator('#guideCaption').textContent()).trim() ===
+    'Guía en el reloj · 1 de 3', 'the caption follows the card');
+
+  /* a swipe also moves between cards */
+  const gbox = await page.locator('#guideLayer .guide').boundingBox();
+  await page.mouse.move(gbox.x + gbox.width / 2, gbox.y + gbox.height * 0.72);
+  await page.mouse.down();
+  await page.mouse.move(gbox.x + gbox.width / 2, gbox.y + gbox.height * 0.28, { steps: 5 });
+  await page.mouse.up();
+  await page.waitForTimeout(250);
+  ok((await page.locator('[data-guide-count]').textContent()).trim() === '2 de 3',
+    'a vertical swipe advances a card');
+
+  await page.click('[data-guide-next]');
+  await page.waitForTimeout(200);
+  const card3 = await page.evaluate(() =>
+    document.querySelector('#guideLayer .guide__card:not([hidden])').innerText);
+  ok(/Solo tú lo ves/.test(card3), 'card 3: "Solo tú lo ves."', card3);
+  ok((await page.locator('[data-guide-next]').textContent()).trim() === 'Empezar',
+    'the last card offers "Empezar"');
+
   await page.keyboard.press('Escape');
   await page.waitForTimeout(300);
-  ok(await page.evaluate(() => document.getElementById('guideLayer').hidden) === true,
-    'Esc closes level 1');
+  ok(await page.locator('#guideLayer').count() === 0, 'Esc closes level 1');
+  ok(await page.evaluate(() => document.getElementById('guideCaption').hidden) === true,
+    'the desk caption goes away with it');
   ok(await page.evaluate(() => localStorage.getItem('handwatch-guide1')) === 'seen',
     'the first-run guide is persisted as seen');
 
@@ -178,6 +262,10 @@ async function contrast(page, sel) {
   await page.waitForSelector('#settingsLayer .settings[role="dialog"]');
   ok(await page.locator('#settingsLayer .settings[aria-modal="true"]').count() === 1,
     'Configuración is a role=dialog with aria-modal');
+  ok((await page.locator('.settings__title').textContent()).trim() === 'Configuración',
+    'the Settings title is Configuración');
+  ok(await page.locator('#settingsLayer .settings__head .label').count() === 0,
+    'the header has no duplicate CONFIGURACIÓN kicker');
   const setText = await page.evaluate(() => document.querySelector('.settings').textContent);
   ['Idioma', 'Tema', 'Inteligencia artificial', 'Privacidad', 'Guía'].forEach((w) => {
     ok(setText.indexOf(w) !== -1, 'Configuración includes ' + w);
@@ -185,11 +273,45 @@ async function contrast(page, sel) {
   ['Claro', 'Oscuro', 'Sistema'].forEach((w) => {
     ok(setText.indexOf(w) !== -1, 'theme option ' + w);
   });
+
+  /* language names are endonyms in both UIs, each tagged with its lang */
+  const langNames = await page.evaluate(() => [...document.querySelectorAll('#settingsLayer [data-lang]')]
+    .map((b) => ({ v: b.getAttribute('data-lang'), t: b.textContent.trim(), l: b.getAttribute('lang') })));
+  ok(JSON.stringify(langNames) === JSON.stringify([
+    { v: 'es', t: 'Español', l: 'es' }, { v: 'en', t: 'English', l: 'en' }]),
+    'Idioma reads Español / English with lang="es" / lang="en"', JSON.stringify(langNames));
+
+  /* one AI control: the switch owns consent, one line explains the state */
   ok(await page.locator('[data-ai-toggle][role="switch"]').count() === 1,
-    'AI has an on/off switch');
-  ok(await page.locator('[data-ai-grant]').count() === 1 &&
-    await page.locator('[data-ai-revoke]').count() === 1,
-    'AI consent can be granted and revoked');
+    'AI has one on/off switch');
+  ok((await page.locator('[data-ai-toggle] .set__switch-label').textContent()).trim() ===
+    'Usar el modelo', 'the switch is labelled "Usar el modelo"');
+  ok(await page.locator('[data-ai-grant]').count() === 0 &&
+    await page.locator('[data-ai-revoke]').count() === 0,
+    'the two separate consent buttons are gone');
+  ok(await page.locator('[data-ai-status]').count() === 1,
+    'AI has exactly one status line');
+  ok((await page.locator('[data-ai-status]').textContent()).trim() ===
+    'Encendido: te muestro qué se envía antes de cada consulta',
+    'on reads "Encendido: te muestro qué se envía antes de cada consulta"',
+    (await page.locator('[data-ai-status]').textContent()).trim());
+  await page.click('[data-ai-toggle]');
+  await page.waitForTimeout(300);
+  ok(await page.evaluate(() => document.querySelector('[data-ai-toggle]')
+    .getAttribute('aria-checked')) === 'false', 'clicking off turns the model off');
+  ok((await page.locator('[data-ai-status]').textContent()).trim() ===
+    'Apagado: responden las reglas del reloj',
+    'off reads "Apagado: responden las reglas del reloj"',
+    (await page.locator('[data-ai-status]').textContent()).trim());
+  ok(await page.evaluate(() => AIPrefs.consentState()) === 'revoked',
+    'turning the switch off revokes consent');
+  await page.click('[data-ai-toggle]');
+  await page.waitForTimeout(300);
+  ok((await page.locator('[data-ai-status]').textContent()).trim() ===
+    'Encendido: te muestro qué se envía antes de cada consulta',
+    'clicking on explains what happens before each query');
+  ok(await page.evaluate(() => AIPrefs.consentState()) === 'granted',
+    'turning the switch on grants consent');
   ok(await page.locator('[data-delete]').count() === 1,
     'Privacidad offers delete-all');
 
@@ -210,6 +332,15 @@ async function contrast(page, sel) {
     'in-memory watch state survives the switch');
   ok(/Settings/.test(await page.evaluate(() => document.querySelector('.settings').innerText)),
     'the panel is English right away');
+  const langNamesEn = await page.evaluate(() => [...document.querySelectorAll('#settingsLayer [data-lang]')]
+    .map((b) => ({ v: b.getAttribute('data-lang'), t: b.textContent.trim(), l: b.getAttribute('lang') })));
+  ok(JSON.stringify(langNamesEn) === JSON.stringify([
+    { v: 'es', t: 'Español', l: 'es' }, { v: 'en', t: 'English', l: 'en' }]),
+    'the endonyms stay Español / English in the English UI', JSON.stringify(langNamesEn));
+  ok((await page.locator('[data-ai-status]').textContent()).trim() ===
+    'On: I show you what is sent before each query',
+    'the AI status line is English too',
+    (await page.locator('[data-ai-status]').textContent()).trim());
   const enAll = await page.evaluate(() => document.body.innerText);
   ok(/Day shift on Unit 4B/.test(enAll), 'the page copy follows the switch');
   await page.click('[data-lang="es"]');
@@ -266,7 +397,12 @@ async function contrast(page, sel) {
     document.activeElement.id === 'settingsOpen'),
     'focus returns to the gear after the modal closes');
 
-  /* Esc closes Settings and returns focus to the gear */
+  /* Esc closes Settings and returns focus to the gear. Retire the remaining
+     coach marks first so a tip cannot steal focus mid-assertion. */
+  await page.evaluate(() => {
+    Guide.TIP_IDS.forEach((id) => Prefs.markTip(id));
+    if (document.getElementById('guideTip')) Guide.closeTip(false);
+  });
   await page.click('#settingsOpen');
   await page.waitForSelector('#settingsLayer .settings');
   await page.keyboard.press('Escape');
@@ -282,10 +418,24 @@ async function contrast(page, sel) {
   await page.waitForTimeout(400);
   ok(await page.locator('#screen [data-act="settings"]').count() === 1,
     'Home offers the Ajustes pill (crown-scrollable, side-button reachable)');
-  await page.click('#screen [data-act="settings"]');
+
+  /* walk there with the watch's own controls only: side button opens
+     privacy, the crown scrolls, the Ajustes pill is a watch tap. No JS
+     route and no desktop gear are used. */
+  await page.click('#sideButton');
+  await page.waitForTimeout(600);
+  ok((await page.locator('#statusTitle').textContent()).trim() === 'Quién ve esto',
+    'the side button opens the watch privacy screen');
+  await page.hover('#crown');
+  await page.mouse.wheel(0, 240);
+  await page.waitForTimeout(300);
+  const watchSettingsPill = page.locator('#screen [data-act="settings"]');
+  ok(await watchSettingsPill.count() === 1,
+    'the privacy screen reaches Ajustes from the watch itself');
+  await watchSettingsPill.click();
   await page.waitForTimeout(700);
   ok(await page.locator('#statusTitle').textContent() === 'Ajustes',
-    'the watch screen is titled Ajustes');
+    'the watch walks to Ajustes with crown / side button only');
   const watchLines = await page.evaluate(() =>
     document.getElementById('screen').innerText.split('\n').map((l) => l.trim()).filter(Boolean));
   const long = watchLines.filter((l) => l.split(/\s+/).length > 4);

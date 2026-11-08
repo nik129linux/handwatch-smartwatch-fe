@@ -202,12 +202,10 @@ function head(s) { console.log('\n' + s); }
     const n = document.querySelector('.unotice');
     if (n) n.style.display = 'none';
   });
-  await window.evaluate(() => window.__setTheme('dark'));
-  await window.waitForTimeout(1200);
-  await window.screenshot({ path: path.join(SHOTS, 'app-unit-dark.png'), fullPage: true });
-  await window.evaluate(() => window.__setTheme('light'));
-  await window.waitForTimeout(1200);
-  await window.screenshot({ path: path.join(SHOTS, 'app-unit-light.png'), fullPage: true });
+  /* The unit page is already asserted above (sections revealed, bars grown,
+     theme tokens applied). Capturing it in this Electron/SwiftShader build
+     stalls the compositor (any screenshot after the stage stills hangs), and
+     the stage stills already cover both themes, so no unit artifact here. */
 
   /* back to the watch */
   await window.evaluate(() =>
