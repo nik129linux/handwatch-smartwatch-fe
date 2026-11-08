@@ -576,16 +576,18 @@ var Insights = (function () {
     } catch (e) { transport = null; }
     if (!transport) return;
     btn.hidden = false;
+    btn._analysis = analysis;
+    if (btn.dataset.bound) return;
+    btn.dataset.bound = '1';
     btn.addEventListener('click', function () {
       btn.disabled = true;
-      var consent = null;
+      var consent = (typeof AIPrefs !== 'undefined') ? AIPrefs.consent() : null;
       var onConsent = null;
       try {
-        if (typeof AI !== 'undefined' && AI.requestConsent) {
-          onConsent = AI.requestConsent;
-        }
+        if (typeof AIPrefs !== 'undefined' && AIPrefs.ask) onConsent = AIPrefs.ask;
+        else if (typeof AI !== 'undefined' && AI.requestConsent) onConsent = AI.requestConsent;
       } catch (e) { onConsent = null; }
-      rewriteTop3(analysis.cards, {
+      rewriteTop3(btn._analysis.cards, {
         transport: transport,
         consent: consent,
         onConsent: onConsent

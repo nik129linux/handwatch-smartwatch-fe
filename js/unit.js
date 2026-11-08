@@ -50,6 +50,13 @@ var unit = (function () {
     return 5;
   }
 
+  function num(v) {
+    return (typeof I18N !== 'undefined' && I18N.num) ? I18N.num(v) : String(v);
+  }
+  function tr(s) {
+    return (typeof I18N !== 'undefined' && I18N.t) ? I18N.t(s) : s;
+  }
+
   function momentBars() {
     var host = document.getElementById('momentBars');
     if (!host) return;
@@ -60,7 +67,7 @@ var unit = (function () {
         '<div class="ubar__top">' +
           '<span class="ubar__name">' + esc(m.name) + '</span>' +
           '<span class="ubar__val">' + m.pct + '%<small>' +
-            m.done + ' of ' + m.total + '</small></span>' +
+            num(m.done) + ' ' + tr('of') + ' ' + num(m.total) + '</small></span>' +
         '</div>' +
         '<div class="ubar__track">' +
           '<span class="ubar__fill" style="--i:' + i + ';--pct:' + m.pct + '%"></span>' +
@@ -76,7 +83,7 @@ var unit = (function () {
     var cells = HOURS.map(function (v, i) {
       return '<span class="uheat__cell" style="--i:' + Math.abs(i - SHIFT_CHANGE) +
         ';background:var(--heat-' + heatStep(v) + ')" ' +
-        'title="' + pad2(i) + ':00 · ' + v + ' washes"></span>';
+        'title="' + pad2(i) + ':00 · ' + num(v) + ' ' + tr('washes') + '"></span>';
     }).join('');
 
     host.innerHTML =
@@ -117,7 +124,7 @@ var unit = (function () {
       var t0 = performance.now();
       (function step(t) {
         var p = Math.min(1, (t - t0) / 700);
-        n.textContent = String(Math.round(total * (1 - Math.pow(1 - p, 3))));
+        n.textContent = num(Math.round(total * (1 - Math.pow(1 - p, 3))));
         if (p < 1) requestAnimationFrame(step);
       })(t0);
       n.setAttribute('data-count', String(total));
@@ -189,12 +196,14 @@ var unit = (function () {
     try { transport = AI.browserTransport(); } catch (e) { transport = null; }
     if (!transport) return;
     btn.hidden = false;
+    if (btn.dataset.bound) return;
+    btn.dataset.bound = '1';
     btn.addEventListener('click', function () {
       btn.disabled = true;
       AI.requestFindings(agg, {
         transport: transport,
-        consent: null,
-        onConsent: AI.requestConsent
+        consent: (typeof AIPrefs !== 'undefined') ? AIPrefs.consent() : null,
+        onConsent: (typeof AIPrefs !== 'undefined') ? AIPrefs.ask : AI.requestConsent
       }).then(function (r) {
         if (r && r.findings && r.findings.length) paintFixes(r.findings, r.source);
       }).catch(function () { /* rules already on screen — keep them */ })
@@ -245,6 +254,7 @@ var unit = (function () {
       document.getElementById('askQ').textContent = q;
       document.getElementById('askA').textContent = text;
       document.getElementById('askBadge').textContent = source;
+      if (!loading) lastAsk = { q: q, facts: facts };
     }
 
     function run(q) {
@@ -252,11 +262,11 @@ var unit = (function () {
       if (!q || busy) return;
       busy = true;
       if (send) send.disabled = true;
-      show(q, lang === 'es' ? 'Leyendo los totales…' : 'Reading the totals…', '…', true);
+      show(q, tr('Reading the totals…'), '…', true);
       Ask.request(q, facts, {
         transport: transport,
-        consent: null,
-        onConsent: AI.requestConsent
+        consent: (typeof AIPrefs !== 'undefined') ? AIPrefs.consent() : null,
+        onConsent: (typeof AIPrefs !== 'undefined') ? AIPrefs.ask : AI.requestConsent
       }, lang).then(function (r) {
         show(q, r.answer, r.source, false);
       }).catch(function () {
@@ -283,6 +293,30 @@ var unit = (function () {
 
   function pad2(n) { return (n < 10 ? '0' : '') + n; }
 
+  /* Re-render everything that carries a number or a translated word; the
+     underlying demo data and the real log are untouched. */
+  var lastAsk = null;
+
+  function refresh() {
+    momentBars();
+    heatmap();
+    corrections();
+    try {
+      if (typeof Insights !== 'undefined' && Insights.mount) Insights.mount();
+    } catch (e) { /* the bars above already repainted */ }
+    try { fixes(); } catch (e) { /* rules stay on screen */ }
+    /* The answered question keeps its place: re-answer it in the new
+       language from the same facts, never from the network. */
+    var box = document.getElementById('askAnswer');
+    if (box && !box.hidden && lastAsk && typeof Ask !== 'undefined') {
+      var lang = (typeof I18N !== 'undefined') ? I18N.lang : 'en';
+      var a = document.getElementById('askA');
+      if (a) a.textContent = Ask.rulesAnswer(lastAsk.facts, Ask.intent(lastAsk.q), lang, lastAsk.q);
+      var badge = document.getElementById('askBadge');
+      if (badge) badge.textContent = 'Rules';
+    }
+  }
+
   function mount() {
     momentBars();
     heatmap();
@@ -299,6 +333,11 @@ var unit = (function () {
       var back = document.querySelector('.unit__back');
       if (back) window.location.href = back.getAttribute('href');
     });
+    /* Language changes repaint every figure in place: no reload, no loss. */
+    document.addEventListener('i18n:change', function () {
+      refresh();
+      if (typeof I18N !== 'undefined') I18N.apply(document.body);
+    });
     /* the Electron file copy can land after first paint — re-count then */
     if (typeof document !== 'undefined') {
       document.addEventListener('watch:log-sync', corrections);
@@ -307,6 +346,7 @@ var unit = (function () {
 
   return {
     mount: mount,
+    refresh: refresh,
     MOMENTS: MOMENTS,
     HOURS: HOURS,
     CORRECTIONS: CORRECTIONS,

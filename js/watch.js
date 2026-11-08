@@ -57,9 +57,17 @@ var watch = (function () {
     return REDUCED ? Math.min(n, 40) : Math.max(16, Math.round(n * s));
   }
 
+  /* Clock times follow the active locale (00-23, Intl). */
   function clock() {
     var d = new Date(state.now);
+    if (typeof I18N !== 'undefined' && I18N.time) return I18N.time(d);
     return pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+  }
+  function n(v) {
+    return (typeof I18N !== 'undefined' && I18N.num) ? I18N.num(v) : String(v);
+  }
+  function tr(s) {
+    return (typeof I18N !== 'undefined' && I18N.t) ? I18N.t(s) : s;
   }
   function setClock(hh, mm) {
     var d = new Date(state.now);
@@ -166,11 +174,11 @@ var watch = (function () {
   function countTo(node, to) {
     var from = parseInt(node.getAttribute('data-count') || '0', 10) || 0;
     node.setAttribute('data-count', String(to));
-    if (from === to || REDUCED) { node.textContent = String(to); return; }
+    if (from === to || REDUCED) { node.textContent = n(to); return; }
     var t0 = performance.now();
     (function step(t) {
       var p = Math.min(1, (t - t0) / 520);
-      node.textContent = String(Math.round(from + (to - from) * (1 - Math.pow(1 - p, 3))));
+      node.textContent = n(Math.round(from + (to - from) * (1 - Math.pow(1 - p, 3))));
       if (p < 1) requestAnimationFrame(step);
     })(t0);
   }
@@ -199,12 +207,13 @@ var watch = (function () {
       var foot = isPaused()
         ? '<button class="pill pill--secondary" data-act="resume">Resume alerts</button>'
         : '<button class="pill pill--ghost" data-act="pause">Pause 30 min</button>';
+      foot += '<button class="pill pill--ghost" data-act="settings">Watch settings</button>';
 
       return '<div class="home__hero">' +
           '<div class="ring" style="--ring-size:' + HOME_RING.size + 'px">' + s.markup +
             '<div class="ring__center">' +
-              '<div class="hero-num" data-count="' + state.done + '">' + state.done + '</div>' +
-              '<div class="home__of">/ ' + state.plan + '</div>' +
+              '<div class="hero-num" data-count="' + state.done + '">' + n(state.done) + '</div>' +
+              '<div class="home__of">/ ' + n(state.plan) + '</div>' +
             '</div></div>' +
           '<div class="home__headline">Moments</div>' +
           '<div class="caption home__shift">Shift · Unit 4B</div>' +
@@ -319,15 +328,17 @@ var watch = (function () {
       return '<div class="caption caption--center">Shift · Unit 4B</div>' +
         '<div class="shift__rows">' +
           '<div class="shift__row">' +
-            '<span class="num">' + state.done + ' of ' + state.opportunities + '</span>' +
+            '<span class="num">' + n(state.done) + ' ' + tr('of') + ' ' +
+              n(state.opportunities) + '</span>' +
             '<span class="caption">moments</span></div>' +
           '<div class="shift__row">' +
-            '<span class="num num--accent">' + state.corrections + '</span>' +
+            '<span class="num num--accent">' + n(state.corrections) + '</span>' +
             '<span class="caption">fixed<br>by you</span></div>' +
         '</div>' +
         '<div class="shift__note caption">Only you see this.<br>Gone in 24 h.</div>' +
         '<div class="screen__foot">' +
           '<button class="pill pill--ghost" data-act="home">Back to start</button>' +
+          '<button class="pill pill--ghost" data-act="settings">Watch settings</button>' +
         '</div>';
     }
   };
@@ -343,9 +354,9 @@ var watch = (function () {
       try {
         if (window.Log) kept = window.Log.count();
       } catch (e) { kept = 0; }
-      var youWhat = kept === 0
-        ? 'Empty · 24 h'
-        : kept + (kept === 1 ? ' event, 24 h' : ' events, 24 h');
+      var youWhat;
+      if (kept === 0) youWhat = tr('Empty') + ' · 24 h';
+      else youWhat = n(kept) + ' ' + tr(kept === 1 ? 'event, 24 h' : 'events, 24 h');
       var rows = [
         ['You', youWhat, 'you'],
         ['Infection control', 'unit totals, no names', ''],
@@ -363,6 +374,7 @@ var watch = (function () {
           (learningOn()
             ? '<button class="pill pill--ghost" data-act="reset-learn">Reset learning</button>'
             : '') +
+          '<button class="pill pill--ghost" data-act="settings">Watch settings</button>' +
           '<button class="pill pill--ghost" data-act="back">Close</button>' +
         '</div>';
     }
@@ -388,6 +400,41 @@ var watch = (function () {
       if (!n) return;
       var left = Math.max(0, state.pausedUntil - Date.now());
       n.textContent = pad2(Math.floor(left / 60000)) + ':' + pad2(Math.floor(left / 1000) % 60);
+    }
+  };
+
+  /* 8 — Settings: compact, glanceable, max ~4 words per line, 56px rows.
+     It writes the same stored values as the page's Configuración panel. */
+  VIEWS.ajustes = {
+    title: 'Watch settings',
+    anim: 'fwd',
+    build: function () {
+      var langVal = tr('English');
+      try {
+        if (typeof I18N !== 'undefined' && I18N.lang === 'es') langVal = 'Español';
+      } catch (e) { langVal = 'English'; }
+      var th = 'light';
+      try { th = window.__themePref ? window.__themePref() : 'light'; } catch (e) { th = 'light'; }
+      var themeVal = tr(th === 'dark' ? 'Dark' : th === 'system' ? 'System' : 'Light');
+      var aiVal = tr(AIPrefs.on() ? 'On' : 'Off');
+      var rows = [
+        ['Language', langVal, 'cfg-lang'],
+        ['Theme', themeVal, 'cfg-theme'],
+        ['AI', aiVal, 'cfg-ai'],
+        ['Guide', tr('Watch again'), 'cfg-guide'],
+        ['Help', tr('Open'), 'cfg-help']
+      ];
+      return '<div class="set-watch">' +
+          rows.map(function (r) {
+            return '<button class="pill pill--secondary set-watch__row" type="button" ' +
+              'data-act="' + r[2] + '">' +
+              '<span class="set-watch__key">' + r[0] + '</span>' +
+              '<span class="set-watch__val">' + esc(r[1]) + '</span></button>';
+          }).join('') +
+        '</div>' +
+        '<div class="screen__foot">' +
+          '<button class="pill pill--ghost" data-act="back">Close</button>' +
+        '</div>';
     }
   };
 
@@ -753,6 +800,32 @@ var watch = (function () {
       case 'privacy':
         go('quien', 'fwd');
         break;
+      case 'settings':
+        go('ajustes', 'fwd');
+        break;
+      case 'cfg-lang':
+        if (typeof I18N !== 'undefined') {
+          I18N.set(I18N.lang === 'es' ? 'en' : 'es');
+        }
+        break;
+      case 'cfg-theme': {
+        var prefs = ['light', 'dark', 'system'];
+        var cur = window.__themePref ? window.__themePref() : 'light';
+        var next = prefs[(prefs.indexOf(cur) + 1) % prefs.length];
+        if (window.__setTheme) window.__setTheme(next);
+        go('ajustes', 'zoom', { noPush: true });
+        break;
+      }
+      case 'cfg-ai':
+        AIPrefs.setOn(!AIPrefs.on());
+        go('ajustes', 'zoom', { noPush: true });
+        break;
+      case 'cfg-guide':
+        if (window.Guide) Guide.openLevel1(0);
+        break;
+      case 'cfg-help':
+        if (window.Settings) Settings.open('help');
+        break;
       case 'reset-learn':
         try { if (typeof Calibrate !== 'undefined') Calibrate.reset(); } catch (e) {}
         toast('Learning reset.');
@@ -803,6 +876,16 @@ var watch = (function () {
     go('home', 'zoom');
     paintSpin();
     fit();
+
+    /* Switching language repaints dynamic screens without a reload. A wash
+       in flight keeps its countdown; every other screen can rebuild. */
+    document.addEventListener('i18n:change', function () {
+      if (state.screen === 'lavando') return;
+      refresh();
+    });
+    document.addEventListener('theme:change', function () {
+      if (state.screen === 'ajustes') refresh();
+    });
   }
 
   /* Fit the whole watch into the stage with one transform. The scale is

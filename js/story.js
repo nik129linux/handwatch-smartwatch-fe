@@ -155,7 +155,7 @@ var story = (function () {
 
   function renderLog() {
     if (!el.log) return;
-    el.log.innerHTML = logLines.map(function (l, i) {
+    el.log.innerHTML = logLines.length ? logLines.map(function (l, i) {
       var row = '<li class="log__row" style="--i:' + i + '">' +
         '<span class="log__time">' + l.time + '</span>' +
         '<span class="log__dot log__dot--' + l.kind + '"></span>' +
@@ -165,7 +165,8 @@ var story = (function () {
           '<span class="log__explain" data-explain="' + i + '" hidden></span>';
       }
       return row + '</li>';
-    }).join('');
+    }).join('')
+      : '<li class="log__empty">Nothing yet</li>';
     el.logCount.textContent = String(logLines.length);
   }
 
@@ -181,8 +182,8 @@ var story = (function () {
     try { transport = AI.browserTransport(); } catch (e) { transport = null; }
     AI.requestExplain(line.facts.entry, line.facts.run, {
       transport: transport,
-      consent: null,
-      onConsent: AI.requestConsent
+      consent: (typeof AIPrefs !== 'undefined') ? AIPrefs.consent() : null,
+      onConsent: (typeof AIPrefs !== 'undefined') ? AIPrefs.ask : AI.requestConsent
     }).then(function (r) {
       if (!r || !r.line) return;
       host.innerHTML = '<p class="log__line"></p><span class="ai-badge"></span>';

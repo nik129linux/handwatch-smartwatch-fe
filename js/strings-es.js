@@ -307,15 +307,205 @@ var STRINGS_ES = (function () {
     /* --- trend verdicts --- */
     'improving': 'mejorando',
     'declining': 'empeorando',
-    'no significant change': 'sin cambio significativo'
+    'no significant change': 'sin cambio significativo',
+
+    /* --- settings (page + watch) --- */
+    'Settings': 'Configuración',
+    'Watch settings': 'Ajustes',
+    'Close settings': 'Cerrar configuración',
+    'General': 'General',
+    'Privacy': 'Privacidad',
+    'Help': 'Ayuda',
+    'Language': 'Idioma',
+    'Theme': 'Tema',
+    'Applies right away. No reload.': 'Se aplica al instante. Sin recargar.',
+    'Light is the default on a new profile.': 'Claro es el tema por defecto.',
+    'Light': 'Claro',
+    'Dark': 'Oscuro',
+    'System': 'Sistema',
+    'Artificial intelligence': 'Inteligencia artificial',
+    'Rules always work. The model only runs if you allow it.':
+      'Las reglas siempre funcionan. El modelo solo corre si lo permites.',
+    'AI': 'IA',
+    'Consent': 'Consentimiento',
+    'granted': 'otorgado',
+    'revoked': 'revocado',
+    'not asked': 'sin preguntar',
+    'Grant consent': 'Otorgar consentimiento',
+    'Revoke consent': 'Revocar consentimiento',
+    'This computer keeps the event log for 24 h, your guide progress and your AI choice. It keeps no names.':
+      'Este computador guarda el registro de eventos 24 h, tu avance en la guía y tu elección de IA. No guarda nombres.',
+    'Delete all data': 'Borrar todos los datos',
+    'All data deleted.': 'Datos borrados.',
+    'Guide': 'Guía',
+    'Three welcome cards, plus a tip the first time you reach a feature.':
+      'Tres tarjetas de bienvenida y un consejo la primera vez que llegas a una función.',
+    'Play the guide again': 'Ver la guía otra vez',
+    'Open help': 'Abrir ayuda',
+    'Open': 'Abrir',
+    'Watch again': 'Ver otra vez',
+    'Spanish': 'Español',
+    'English': 'Inglés',
+    'On': 'Activada',
+    'Off': 'Desactivada',
+    'tip': 'consejo',
+    'tips': 'consejos',
+    'event, 24 h': 'evento, 24 h',
+    'events, 24 h': 'eventos, 24 h',
+    'guide seen': 'Guía vista',
+    'guide not seen': 'Guía no vista',
+    'Reading the totals…': 'Leyendo los totales…',
+    'washes': 'lavados',
+    'of': 'de',
+
+    /* --- small strings that used to leak English --- */
+    'Empty': 'Vacío',
+    'Marked': 'Marcado',
+    'Bed 5': 'Cama 5',
+    'over': 'terminado',
+    'not sent': 'no enviado',
+    'answered on the watch': 'respondido en el reloj',
+    'answered on the phone': 'respondido en el teléfono',
+    'yes': 'sí',
+    'no': 'no',
+
+    /* --- guide level 1 --- */
+    'Quick guide': 'Guía rápida',
+    'Skip the guide': 'Saltar la guía',
+    'Next': 'Siguiente',
+    'What this is': 'Qué es esto',
+    'I warn you with vibration.': 'Te aviso con vibración.',
+    'A hand-hygiene watch for one shift. No forms, no names.':
+      'Un reloj de higiene de manos para un turno. Sin formularios ni nombres.',
+    'The core action': 'La acción central',
+    'If I doubt, I ask you.': 'Si dudo, te pregunto.',
+    'One tap answers. One tap also fixes a wrong mark.':
+      'Un toque responde. Un toque también corrige una marca equivocada.',
+    'Privacy and AI': 'Privacidad e IA',
+    'Only you see this.': 'Solo tú lo ves.',
+    'AI is optional: you decide, and you can revoke it.':
+      'La IA es opcional: tú decides y puedes revocarla.',
+
+    /* --- guide level 2 (coach marks) --- */
+    'Tip': 'Consejo',
+    'Close tip': 'Cerrar consejo',
+    'Turn the crown to scroll. Press it for Home.':
+      'Gira la corona para desplazarte. Presiónala para Inicio.',
+    'Four vibrations, no sound. Press play to feel one.':
+      'Cuatro vibraciones, sin sonido. Presiona reproducir para sentir una.',
+    'Free mode: run any moment by hand.': 'Modo libre: corre cualquier momento a mano.',
+    'The side button shows who sees this.': 'El botón lateral muestra quién ve esto.',
+
+    /* --- guide level 3 (Ayuda) --- */
+    'Every screen, every icon and every word, in one place.':
+      'Cada pantalla, cada ícono y cada palabra, en un solo lugar.',
+    'Quick answers': 'Respuestas rápidas',
+    'What is this app for?': '¿Para qué sirve esta app?',
+    'A hand-hygiene watch for one shift. It counts moments and asks when it is unsure.':
+      'Un reloj de higiene de manos para un turno. Cuenta momentos y pregunta cuando duda.',
+    'Why does it never make a sound?': '¿Por qué nunca suena?',
+    'It taps your wrist. Nothing plays out loud in front of a patient.':
+      'Vibra en tu muñeca. Nada suena frente a un paciente.',
+    'What happens when it doubts?': '¿Qué pasa cuando duda?',
+    'It asks one short question. One tap answers it.':
+      'Hace una pregunta corta. Un toque la responde.',
+    'Can I fix a wrong mark?': '¿Puedo corregir una marca equivocada?',
+    'Yes. One tap corrects it, and the watch learns from that tap.':
+      'Sí. Un toque la corrige y el reloj aprende de ese toque.',
+    'Who sees my data?': '¿Quién ve mis datos?',
+    'Only you. Infection control sees anonymous unit totals, never names.':
+      'Solo tú. Control de infecciones ve totales anónimos, nunca nombres.',
+    'When does the AI run?': '¿Cuándo corre la IA?',
+    'Only if you allow it in Settings. Without consent, the written rules answer.':
+      'Solo si la permites en Configuración. Sin consentimiento, responden las reglas escritas.',
+    'How long is data kept?': '¿Cuánto tiempo se guardan los datos?',
+    'Event detail is deleted after 24 hours. Beds and people are never stored.':
+      'El detalle de cada evento se borra a las 24 horas. Nunca se guardan camas ni personas.',
+    'How do I wipe everything?': '¿Cómo borro todo?',
+    'Settings, then Privacy, then Delete all data.':
+      'Configuración, luego Privacidad, luego Borrar todos los datos.',
+    'Vibration vocabulary': 'Vocabulario de vibraciones',
+    'Four patterns. No sound, ever. Press play to feel one.':
+      'Cuatro patrones. Sin sonido, nunca. Presiona reproducir para sentir uno.',
+    'Features': 'Funciones',
+    'Plays the whole story: reminder, wash, correction, pause and end.':
+      'Reproduce toda la historia: recordatorio, lavado, corrección, pausa y fin.',
+    'Runs any moment by hand, without the script.':
+      'Corre cualquier momento a mano, sin el guion.',
+    'Haptics': 'Vibraciones',
+    'Four distinct vibration patterns, never a sound.':
+      'Cuatro patrones de vibración distintos, nunca un sonido.',
+    'Every event of this shift, in order, with no names.':
+      'Cada evento de este turno, en orden y sin nombres.',
+    'Language, theme, AI, privacy and this help, in one place.':
+      'Idioma, tema, IA, privacidad y esta ayuda, en un solo lugar.',
+    'Privacy peek': 'Vista de privacidad',
+    'The side button shows who sees what, at any time.':
+      'El botón lateral muestra quién ve qué, en cualquier momento.',
+    'Unit view': 'Vista de la unidad',
+    'The anonymous report for Infection Control.':
+      'El reporte anónimo para Control de Infecciones.',
+    'Questions answered from anonymous totals only.':
+      'Preguntas respondidas solo con totales anónimos.',
+    'Mirrors each buzz to your phone and watch over ntfy.':
+      'Refleja cada vibración a tu teléfono y reloj por ntfy.',
+    'Icons and status': 'Íconos y estados',
+    'Gear': 'Engranaje',
+    'Settings: language, theme, AI, privacy and help.':
+      'Configuración: idioma, tema, IA, privacidad y ayuda.',
+    'Crown': 'Corona',
+    'Turn it to scroll. Press it for Home.': 'Gírala para desplazarte. Presiónala para Inicio.',
+    'Side button': 'Botón lateral',
+    'Opens Who sees this.': 'Abre Quién ve esto.',
+    'Moon': 'Luna',
+    'Alerts are paused.': 'Los avisos están en pausa.',
+    'Segmented ring': 'Anillo segmentado',
+    'Moments met this shift.': 'Momentos cumplidos en este turno.',
+    'Lime dot': 'Punto lima',
+    'Yours: a correction or a pause.': 'Tuyo: una corrección o una pausa.',
+    'Check': 'Marca de visto',
+    'The wash is done.': 'El lavado está listo.',
+    'Lock': 'Candado',
+    'This view keeps no names.': 'Esta vista no guarda nombres.',
+    'The guided shift is ready to start.': 'El turno guiado está listo para empezar.',
+    'Free mode is live.': 'El modo libre está activo.',
+    'A pause silenced the alerts.': 'Una pausa silenció los avisos.',
+    'The wrist bridge is sending.': 'El puente a la muñeca está enviando.',
+    'The wrist bridge is idle.': 'El puente a la muñeca está inactivo.',
+    'The guided shift ended.': 'El turno guiado terminó.',
+    'learning': 'aprendiendo',
+    'The watch is learning from your corrections.': 'El reloj aprende de tus correcciones.',
+    'Glossary': 'Glosario',
+    'WHO moment': 'Momento OMS',
+    'One of the five WHO hand-hygiene moments.':
+      'Uno de los cinco momentos de higiene de manos de la OMS.',
+    'Compliance': 'Cumplimiento',
+    'Washes done out of the moments that came up.':
+      'Lavados hechos sobre los momentos que se presentaron.',
+    'Correction': 'Corrección',
+    'One tap that says the watch was wrong.':
+      'Un toque que dice que el reloj se equivocó.',
+    'Doubtful wash': 'Lavado dudoso',
+    'A signal too weak to call, so the watch asks.':
+      'Una señal muy débil para decidir, así que el reloj pregunta.',
+    'Shift': 'Turno',
+    'One nurse, one stretch of work; nothing else is stored.':
+      'Una enfermera, una jornada de trabajo; no se guarda nada más.',
+    'Unit totals': 'Totales de la unidad',
+    'Anonymous sums for the whole unit.': 'Sumas anónimas de toda la unidad.',
+    'Only anonymous totals leave this computer, and only if you allow the model.':
+      'Solo salen totales anónimos de este computador, y solo si permites el modelo.',
+    'No names, no beds, no location. The watch has no person field.':
+      'Sin nombres, sin camas, sin ubicación. El reloj no tiene campo de persona.'
   };
 
   /* pattern list: [regex, replacement(groups..., tr)] — first hit wins */
   function g(fn) { return fn; }
   var patterns = [
-    [/^(\d+) of (\d+)$/, g(function (m, a, b) { return a + ' de ' + b; })],
-    [/^(\d+) of (\d+) moments$/, g(function (m, a, b) { return a + ' de ' + b + ' momentos'; })],
-    [/^(\d+) events?, 24 h$/, g(function (m, a) { return a + (a === '1' ? ' evento' : ' eventos') + ', 24 h'; })],
+    [/^([\d.,]+) of ([\d.,]+)$/, g(function (m, a, b) { return a + ' de ' + b; })],
+    [/^([\d.,]+) of ([\d.,]+) moments$/, g(function (m, a, b) { return a + ' de ' + b + ' momentos'; })],
+    [/^([\d.,]+) events?, 24 h$/, g(function (m, a) { return a + (a === '1' ? ' evento' : ' eventos') + ', 24 h'; })],
+    [/^sent via (.+)$/, g(function (m, a) { return 'enviado por ' + a; })],
     [/^(\d\d:\d\d) · (\d+) washes$/, g(function (m, h, n) { return h + ' · ' + n + ' lavados'; })],
     [/^Play (.+)$/, g(function (m, a, tr) { return 'Reproducir ' + tr(a); })],
     [/^(\d+) s$/, g(function (m, a) { return a + ' s'; })],

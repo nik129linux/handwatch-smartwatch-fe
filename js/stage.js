@@ -59,11 +59,34 @@
     walk(el);
   }
 
-  function revealSoon() {
+  /* The blur-in headline is split into word spans, so a language switch
+     rebuilds it from the English source attribute, translates the whole
+     line first, then splits — word order stays the language's own. */
+  function renderBlur(el) {
+    var en = el.getAttribute('data-en');
+    if (en != null) {
+      el.textContent = en;
+      if (typeof I18N !== 'undefined' && I18N.lang === 'es') I18N.apply(el);
+    }
+    splitWords(el);
+  }
+  function renderRich(el) {
+    var html = el.getAttribute('data-en-html');
+    if (html != null) {
+      el.innerHTML = html;
+      if (typeof I18N !== 'undefined' && I18N.lang === 'es') I18N.apply(el);
+    }
+    splitWordsRich(el);
+  }
+  function rerenderWords() {
     var els = document.querySelectorAll('[data-blur]');
-    for (var i = 0; i < els.length; i++) splitWords(els[i]);
+    for (var i = 0; i < els.length; i++) renderBlur(els[i]);
     var rich = document.querySelectorAll('[data-words]');
-    for (var k = 0; k < rich.length; k++) splitWordsRich(rich[k]);
+    for (var k = 0; k < rich.length; k++) renderRich(rich[k]);
+  }
+
+  function revealSoon() {
+    rerenderWords();
     requestAnimationFrame(function () {
       requestAnimationFrame(function () {
         document.body.classList.add('is-ready');
@@ -253,6 +276,10 @@
     atmosphere();
     reveals();
     notice();
+    document.addEventListener('i18n:change', function () {
+      rerenderWords();
+      document.body.classList.add('is-ready');
+    });
   }
 
   if (document.readyState === 'loading') {
