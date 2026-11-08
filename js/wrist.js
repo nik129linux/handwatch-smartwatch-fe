@@ -30,11 +30,26 @@
 
   /* Pure: haptic name + watch state → the push. null = nothing to send.
      Priorities follow ntfy: 4 buzzes the phone, 2 arrives quietly. */
-  /* The alert follows the page language (I18N), English when absent. */
+  function int(v, fallback) {
+    var n = parseInt(v, 10);
+    return isFinite(n) ? n : fallback;
+  }
+
+  /* The alert follows the page language (I18N), English when absent.
+     The watch app also needs the language and the Home counters, so every
+     message carries lang/done/plan (main.js re-checks them before adb). */
   function message(name, s) {
+    s = s || {};
     var m = messageEn(name, s);
-    if (!m || typeof I18N === 'undefined' || I18N.lang !== 'es') return m;
-    return { title: I18N.t(m.title), body: I18N.t(m.body), priority: m.priority };
+    if (!m) return m;
+    var lang = (typeof I18N !== 'undefined' && I18N.lang === 'es') ? 'es' : 'en';
+    var out = lang === 'es'
+      ? { title: I18N.t(m.title), body: I18N.t(m.body), priority: m.priority }
+      : m;
+    out.lang = lang;
+    out.done = int(s.done, 0);
+    out.plan = int(s.plan, 15);
+    return out;
   }
 
   function messageEn(name, s) {
