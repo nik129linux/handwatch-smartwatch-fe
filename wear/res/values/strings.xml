@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Spanish (neutral Colombian, "tú") is the default locale of the watch.
+     Every visible string lives here or in values-en/; Java never prints a
+     literal. Copy mirrors js/strings-es.js wherever the desktop has the
+     same screen. -->
+<resources>
+    <string name="app_name">Higiene de Manos</string>
+
+    <!-- Home -->
+    <string name="home_moments">Momentos</string>
+    <string name="home_shift">Turno · Unidad 4B</string>
+    <string name="home_settings">Ajustes</string>
+    <string name="home_settings_desc">Abrir ajustes</string>
+
+    <!-- Alert -->
+    <string name="alert_doubt_title">¿Te lavaste?</string>
+    <string name="alert_doubt_body">El reloj duda</string>
+    <string name="alert_reminder_title">Antes del paciente</string>
+    <string name="alert_ok_title">Anotado</string>
+    <string name="alert_end_title">Turno cerrado</string>
+    <string name="alert_idle_body">Esperando el turno</string>
+    <string name="answer_yes">Sí, me lavé</string>
+    <string name="answer_no">No alcancé</string>
+    <string name="answer_already">Ya lo hice</string>
+    <string name="noted">Anotado. Gracias.</string>
+    <string name="stays">Queda solo para ti.</string>
+
+    <!-- Guide (level 1) -->
+    <string name="guide_kicker_1">Qué es esto</string>
+    <string name="guide_body_1">Te aviso con vibración.</string>
+    <string name="guide_kicker_2">La acción central</string>
+    <string name="guide_body_2">Si dudo, te pregunto.</string>
+    <string name="guide_kicker_3">Privacidad e IA</string>
+    <string name="guide_body_3">Solo tú lo ves.</string>
+    <string name="guide_next">Siguiente</string>
+    <string name="guide_start">Empezar</string>
+    <string name="guide_skip">Saltar</string>
+    <string name="guide_position">%1$d de %2$d</string>
+
+    <!-- Ajustes -->
+    <string name="settings_title">Ajustes</string>
+    <string name="settings_language">Idioma</string>
+    <string name="lang_es">Español</string>
+    <string name="lang_en">English</string>
+    <string name="settings_replay_guide">Ver la guía otra vez</string>
+    <string name="settings_help">Ayuda</string>
+    <string name="settings_delete">Borrar mis datos</string>
+    <string name="settings_close">Cerrar</string>
+    <string name="delete_done">Datos borrados.</string>
+
+    <!-- Ayuda -->
+    <string name="help_title">Ayuda</string>
+    <string name="help_lede">Cuatro patrones. Sin sonido, nunca.</string>
+    <string name="help_play">Reproducir</string>
+    <string name="help_play_desc">Reproducir %1$s</string>
+    <string name="help_back">Atrás</string>
+    <string name="haptic_reminder">Recordatorio</string>
+    <string name="haptic_reminder_line">Tocaba y no pasó</string>
+    <string name="haptic_ok">Ok</string>
+    <string name="haptic_ok_line">Lavado anotado</string>
+    <string name="haptic_doubtful">Dudoso</string>
+    <string name="haptic_doubtful_line">El reloj duda</string>
+    <string name="haptic_end">Fin</string>
+    <string name="haptic_end_line">Fin de turno</string>
+</resources>
