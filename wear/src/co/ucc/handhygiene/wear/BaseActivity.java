@@ -79,23 +79,26 @@ abstract class BaseActivity extends Activity {
         bottomBand = bottomFraction;
     }
 
+    /* The share of the list viewport paid as empty space under the last
+       row, so the last card can scroll up to the middle of the face and its
+       rounded corners are never clipped by the screen edge. */
+    private static final float LIST_END_FRACTION = 0.25f;
+
     /**
-     * A list is the only scroller on its screen: pay the top and the bottom
-     * with half a viewport so the first and the last row can settle in the
-     * middle of the face instead of under the round mask. Nothing is pinned
-     * to the bottom any more, so the last row is the close chip itself.
+     * A list is the only scroller on its screen. The top stays flush (the
+     * title is the first row, Wear convention) and the end pays ~25% of the
+     * viewport, so the last row can settle in the middle of the face instead
+     * of having its bottom edge cut by the round mask. Nothing is pinned to
+     * the bottom any more, so the last row is the close chip itself.
      */
     void centerList(final ScrollView scroll, final View content) {
         scroll.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
             @Override
             public void onLayoutChange(View view, int left, int top, int right, int bottom,
                                        int oldLeft, int oldTop, int oldRight, int oldBottom) {
-                int edge = 0;
-                if (content.getHeight() > scroll.getHeight()) {
-                    edge = Math.max(0, (scroll.getHeight() - dp(Ui.MIN_TOUCH_DP)) / 2);
-                }
-                if (content.getPaddingTop() != edge || content.getPaddingBottom() != edge) {
-                    content.setPadding(0, edge, 0, edge);
+                int end = Math.round(scroll.getHeight() * LIST_END_FRACTION);
+                if (content.getPaddingTop() != 0 || content.getPaddingBottom() != end) {
+                    content.setPadding(0, 0, 0, end);
                 }
             }
         });

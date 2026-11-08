@@ -41,10 +41,7 @@ public class HelpActivity extends BaseActivity {
         root.setGravity(Gravity.CENTER_HORIZONTAL);
         root.setBackgroundColor(color(R.color.hh_black));
 
-        root.addView(Ui.text(this, str(R.string.help_title), 16, color(R.color.hh_text)),
-                new LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT));
+        TextView title = Ui.text(this, str(R.string.help_title), 16, color(R.color.hh_text));
 
         ScrollView scroll = new ScrollView(this);
         scroll.setFillViewport(true);
@@ -56,6 +53,11 @@ public class HelpActivity extends BaseActivity {
                 LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
         bindRotaryScroll(scroll);
         centerList(scroll, content);
+
+        /* The title scrolls with the list (Wear convention): it is the first
+           row of the content, not a fixed header over it. */
+        content.addView(title, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
 
         TextView lede = Ui.text(this, str(R.string.help_lede), 13, color(R.color.hh_text_dim));
         LinearLayout.LayoutParams ledeLp = new LinearLayout.LayoutParams(

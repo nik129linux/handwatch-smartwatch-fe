@@ -138,13 +138,19 @@ final class Ui {
         return lp;
     }
 
-    /* Params for a chip whose width is its own text (Home's gear chip); the
-       cap comes from fit(). */
-    static LinearLayout.LayoutParams roundWrapLp(Context context, float centerY) {
+    /* Params for a chip whose width is its own text and is measured later
+       (the guide's Saltar): no y guess at build time, fit() caps it. */
+    static LinearLayout.LayoutParams wrapLp(Context context) {
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         lp.gravity = Gravity.CENTER_HORIZONTAL;
         return lp;
+    }
+
+    /* Params for a chip whose width is its own text (Home's gear chip); the
+       cap comes from fit(). */
+    static LinearLayout.LayoutParams roundWrapLp(Context context, float centerY) {
+        return wrapLp(context);
     }
 
     /* Caps a wrap-content chip to the round-safe width of its row. */

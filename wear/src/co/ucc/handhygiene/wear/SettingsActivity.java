@@ -29,8 +29,6 @@ public class SettingsActivity extends BaseActivity {
         root.setBackgroundColor(color(R.color.hh_black));
 
         TextView title = Ui.text(this, str(R.string.settings_title), 16, color(R.color.hh_text));
-        root.addView(title, new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
 
         ScrollView scroll = new ScrollView(this);
         scroll.setFillViewport(true);
@@ -42,6 +40,12 @@ public class SettingsActivity extends BaseActivity {
                 LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
         bindRotaryScroll(scroll);
         centerList(scroll, content);
+
+        /* The title is the first row of the scroller (Wear convention), so
+           it scrolls away with the list instead of hiding the first rows
+           underneath a fixed header. "Idioma" follows immediately. */
+        content.addView(title, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
 
         content.addView(Ui.text(this, str(R.string.settings_language), 13,
                 color(R.color.hh_text_dim)), rowParams(dp(8)));

@@ -171,7 +171,7 @@ ok('no hardcoded user-visible string literals in Java (' + javaFiles.length + ' 
      - a chip is never pinned to the bottom over a scroller;
      - every chip width comes from Ui's round-safe helpers, never from a raw
        MATCH_PARENT or a hardcoded pixel width. */
-var ROUND_HELPER = /Ui\.(?:roundLp|roundWrapLp|roundSafeWidth|columnWidth|rowLp|halfLp|innerLp|fit)\s*\(/;
+var ROUND_HELPER = /Ui\.(?:roundLp|roundWrapLp|wrapLp|roundSafeWidth|columnWidth|rowLp|halfLp|innerLp|fit)\s*\(/;
 
 function javaText(file) {
   return fs.readFileSync(file, 'utf8');
@@ -275,6 +275,55 @@ ok('every screen with a pill uses the round-safe helper');
     pair[0] + ' must centre its list with centerList(scroll, content)');
 });
 ok('Ajustes and Ayuda end their lists with the close chip');
+
+/* The title is the first row of the scroller (Wear convention), not a fixed
+   header: the list can scroll it away instead of sliding rows underneath. */
+[['SettingsActivity.java', 'settings_title'], ['HelpActivity.java', 'help_title']].forEach(function (pair) {
+  var text = javaText(path.join(srcDir, 'co', 'ucc', 'handhygiene', 'wear', pair[0]));
+  assert.ok(new RegExp('Ui\\.text\\(this,\\s*str\\(R\\.string\\.' + pair[1] + '\\)').test(text),
+    pair[0] + ' must build its title from Ui.text');
+  var firstAdd = text.search(/content\.addView\(/);
+  var titleAdd = text.search(/content\.addView\(\s*title\s*,/);
+  assert.ok(titleAdd !== -1,
+    pair[0] + ' must add its title to the scrolling content');
+  assert.strictEqual(titleAdd, firstAdd,
+    pair[0] + ' must add the title as the first row of the scroller (no content above it)');
+  assert.ok(!/root\.addView\(\s*title\s*,/.test(text),
+    pair[0] + ' must not pin the title above the scroller');
+});
+ok('Ajustes and Ayuda make the title the first row of the list');
+
+/* The end of a list pays ~25% of the viewport so the last card can scroll to
+   the middle and its rounded corners are never clipped; the top stays flush
+   so the first row sits right under the title. */
+var baseSource = javaText(path.join(srcDir, 'co', 'ucc', 'handhygiene', 'wear', 'BaseActivity.java'));
+assert.ok(/LIST_END_FRACTION\s*=\s*0\.25f/.test(baseSource),
+  'the list must pay 25% of the viewport at the end');
+assert.ok(/content\.setPadding\(\s*0\s*,\s*0\s*,\s*0\s*,\s*end\s*\)/.test(baseSource),
+  'centerList must leave the top flush and pad only the end');
+ok('lists pad ~25% of the viewport at the end and none at the top');
+
+/* The guide is one measured stack: the title is capped at two lines and
+   auto-sizes down until the measured rows fit, so the dots cannot overlap
+   it at 454 px or at 384 px. No hardcoded y offsets. */
+var guide = javaText(path.join(srcDir, 'co', 'ucc', 'handhygiene', 'wear', 'GuideActivity.java'));
+assert.ok(/setMaxLines\(\s*TITLE_LINES_MAX\s*\)/.test(guide),
+  'the guide title must be capped at two lines');
+assert.ok(/getMeasuredHeight\s*\(\s*\)/.test(guide) ||
+  (/StaticLayout/.test(guide) && /\.getHeight\s*\(\s*\)/.test(guide)),
+  'the guide must compute its spacing from measured text heights');
+assert.ok(/chooseTitleSize\s*\(\s*\)/.test(guide),
+  'the guide must choose the title size from measured text before layout');
+assert.ok(/setTextSize\(\s*TypedValue\.COMPLEX_UNIT_SP/.test(guide),
+  'the guide title must auto-size down to fit');
+assert.ok(!/\b(?:SKIP|NEXT|TITLE|BODY|DOTS|COUNTER)_Y\s*=\s*0\.\d+f/.test(guide),
+  'the guide must not place rows at a hardcoded y fraction');
+assert.ok(!/\bsetY\s*\(|\bsetTranslationY\s*\(|\boffsetTopAndBottom\s*\(/.test(guide),
+  'the guide must lay out by measurement, not by y offsets');
+var guideRows = (guide.match(/stack\.addView\(/g) || []).length;
+assert.ok(guideRows >= 6,
+  'the guide rows must all be children of one measured stack, found ' + guideRows);
+ok('the guide uses one measured stack with an auto-sized title');
 
 /* Round geometry lives in one place: 80% cap, 12% edge inset, real chord. */
 var uiSource = javaText(path.join(srcDir, 'co', 'ucc', 'handhygiene', 'wear', 'Ui.java'));
