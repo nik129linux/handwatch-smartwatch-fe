@@ -159,6 +159,8 @@
   --glow-primary-soft: color-mix(in srgb, var(--color-primary-500) 7%, transparent);
   --veil-cool: color-mix(in srgb, var(--color-spectrum-blue) 9%, transparent);
   --mist-line: color-mix(in srgb, var(--color-neutral-50) 8%, transparent);
+  /* Modal scrim (Settings, guide): a neutral veil, never a colour. */
+  --bg-scrim: color-mix(in srgb, var(--color-neutral-950) 66%, transparent);
 
   /* --- Motion (Family Values) -------------------------------------------
      Two easings only (enter expo, exit — press reuses enter): every duration
@@ -260,6 +262,7 @@
   --glow-primary-soft: color-mix(in srgb, var(--color-spectrum-orange) 6%, transparent);
   --veil-cool: color-mix(in srgb, var(--color-spectrum-blue) 7%, transparent);
   --mist-line: color-mix(in srgb, var(--color-ink) 10%, transparent);
+  --bg-scrim: color-mix(in srgb, var(--color-ink) 54%, transparent);
 }
 
 /* The watch screen stays pure black in both themes: re-scope the dark

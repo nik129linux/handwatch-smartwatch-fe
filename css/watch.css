@@ -902,3 +902,34 @@
   .check { stroke-dashoffset: 0 !important; }
   .wash-ring__arc--done { stroke-dashoffset: 0 !important; }
 }
+
+/* --- Ajustes: compact rows, one value per line, 56px pills --------------- */
+
+.set-watch {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.set-watch__row {
+  justify-content: space-between;
+  padding: 0 var(--sp-5);
+  text-align: left;
+}
+.set-watch__key {
+  font-family: var(--font-body);
+  font-size: var(--w-caption);
+  font-weight: var(--weight-medium);
+  color: var(--text-secondary);
+}
+.set-watch__val {
+  font-family: var(--font-display);
+  font-size: var(--w-body);
+  font-weight: var(--weight-semibold);
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.set-watch__row:active .set-watch__val { color: var(--text-accent); }
+
+@media (prefers-reduced-motion: reduce) {
+  .set-watch__row { transition: none; }
+}
