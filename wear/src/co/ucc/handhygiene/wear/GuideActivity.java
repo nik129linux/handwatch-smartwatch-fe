@@ -10,10 +10,15 @@ import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-/* First-run guide (level 1): three cards, dots, one 56dp pill and Saltar.
-   The crown, a vertical swipe or the pill move between cards. Seen once;
-   replayable from Ajustes. */
+/* First-run guide (level 1): three cards, dots, one primary pill and Saltar
+   as a caption text button under them. The crown, a vertical swipe or the
+   pill move between cards. Seen once; replayable from Ajustes. */
 public class GuideActivity extends BaseActivity {
+    /* Row heights of the two bottom controls, as a fraction of the face: the
+       chip widths are the circle chord at those heights. */
+    private static final float SKIP_Y = 0.82f;
+    private static final float NEXT_Y = 0.92f;
+
     private static final int[] KICKERS = {
             R.string.guide_kicker_1, R.string.guide_kicker_2, R.string.guide_kicker_3
     };
@@ -26,6 +31,7 @@ public class GuideActivity extends BaseActivity {
     private TextView body;
     private TextView counter;
     private LinearLayout dots;
+    private Button skip;
     private Button next;
     private float rotaryAccum = 0f;
     private float touchStartY = Float.NaN;
@@ -43,19 +49,6 @@ public class GuideActivity extends BaseActivity {
         root.setOrientation(LinearLayout.VERTICAL);
         root.setGravity(Gravity.CENTER_HORIZONTAL);
         root.setBackgroundColor(color(R.color.hh_black));
-
-        /* Centered: the top corners of a round screen cut anything parked
-           at the edge (the old Gravity.END pill lost its ends to the mask). */
-        LinearLayout top = new LinearLayout(this);
-        top.setOrientation(LinearLayout.HORIZONTAL);
-        top.setGravity(Gravity.CENTER_HORIZONTAL);
-        Button skip = Ui.pill(this, str(R.string.guide_skip),
-                color(R.color.hh_track), color(R.color.hh_text), Ui.MIN_TOUCH_DP);
-        skip.setMinWidth(dp(72));
-        top.addView(skip, new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
-        root.addView(top, new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
 
         LinearLayout mid = new LinearLayout(this);
         mid.setOrientation(LinearLayout.VERTICAL);
@@ -84,13 +77,21 @@ public class GuideActivity extends BaseActivity {
                 LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         counterLp.topMargin = dp(4);
         meta.addView(counter, counterLp);
+        /* Saltar sits under the dots as a caption-sized text button: 48dp of
+           touch target, no fill, so the pill below stays the only primary
+           action. It used to be a 56dp pill parked on the top cap. */
+        skip = Ui.textButton(this, str(R.string.guide_skip), color(R.color.hh_text_dim));
+        Ui.fit(this, skip, SKIP_Y);
+        LinearLayout.LayoutParams skipLp = Ui.roundWrapLp(this, SKIP_Y);
+        skipLp.topMargin = dp(2);
+        meta.addView(skip, skipLp);
         root.addView(meta, new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
 
         next = Ui.pill(this, str(R.string.guide_next),
-                color(R.color.hh_lime), color(R.color.hh_on_lime), Ui.ROW_DP);
-        LinearLayout.LayoutParams nextLp = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+                color(R.color.hh_lime), color(R.color.hh_on_lime), Ui.MIN_TOUCH_DP);
+        Ui.fit(this, next, NEXT_Y);
+        LinearLayout.LayoutParams nextLp = Ui.roundLp(this, NEXT_Y);
         nextLp.topMargin = dp(6);
         root.addView(next, nextLp);
 
@@ -135,6 +136,9 @@ public class GuideActivity extends BaseActivity {
         });
 
         setContentView(root);
+        /* Tight bands: the guide is a fixed stack, not a list, and its two
+           bottom controls sit close to the caps. */
+        setVerticalBands(0.04f, 0.10f);
         roundInsets(root);
         show(0);
     }

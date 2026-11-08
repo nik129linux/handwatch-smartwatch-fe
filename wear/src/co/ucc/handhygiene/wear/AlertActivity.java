@@ -179,8 +179,7 @@ public class AlertActivity extends BaseActivity {
             }
         });
 
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        LinearLayout.LayoutParams lp = Ui.rowLp(this);
         lp.topMargin = dp(6);
         buttonContainer.addView(btn, lp);
     }

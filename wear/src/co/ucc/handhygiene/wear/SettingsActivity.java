@@ -40,6 +40,7 @@ public class SettingsActivity extends BaseActivity {
         root.addView(scroll, new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
         bindRotaryScroll(scroll);
+        centerList(scroll, content);
 
         content.addView(Ui.text(this, str(R.string.settings_language), 13,
                 color(R.color.hh_text_dim)), rowParams(dp(8)));
@@ -49,14 +50,8 @@ public class SettingsActivity extends BaseActivity {
         final boolean spanish = Lang.ES.equals(Lang.lang(this));
         Button es = languagePill(str(R.string.lang_es), spanish);
         Button en = languagePill(str(R.string.lang_en), !spanish);
-        LinearLayout.LayoutParams halfLp = new LinearLayout.LayoutParams(
-                0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
-        halfLp.rightMargin = dp(4);
-        languages.addView(es, halfLp);
-        LinearLayout.LayoutParams halfLp2 = new LinearLayout.LayoutParams(
-                0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
-        halfLp2.leftMargin = dp(4);
-        languages.addView(en, halfLp2);
+        languages.addView(es, Ui.halfLp(this, 4));
+        languages.addView(en, Ui.halfLp(this, 4));
         content.addView(languages, rowParams(dp(10)));
 
         Button replay = rowButton(str(R.string.settings_replay_guide));
@@ -69,12 +64,13 @@ public class SettingsActivity extends BaseActivity {
         status = Ui.text(this, "", 13, color(R.color.hh_text_dim));
         content.addView(status, rowParams(dp(6)));
 
+        /* Cerrar is the last row of the list, not a fixed footer over it: it
+           used to sit on top of the replay-guide row. */
         Button close = Ui.pill(this, str(R.string.settings_close),
                 color(R.color.hh_track), color(R.color.hh_text), Ui.MIN_TOUCH_DP);
-        LinearLayout.LayoutParams closeLp = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        closeLp.topMargin = dp(10);
-        root.addView(close, closeLp);
+        LinearLayout.LayoutParams closeLp = Ui.rowLp(this);
+        closeLp.topMargin = dp(14);
+        content.addView(close, closeLp);
 
         es.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -134,8 +130,7 @@ public class SettingsActivity extends BaseActivity {
     }
 
     private LinearLayout.LayoutParams rowParams(int topMargin) {
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        LinearLayout.LayoutParams lp = Ui.rowLp(this);
         lp.topMargin = topMargin;
         return lp;
     }

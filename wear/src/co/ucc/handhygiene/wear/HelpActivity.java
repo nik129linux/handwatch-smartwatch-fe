@@ -12,6 +12,10 @@ import android.widget.TextView;
    and a play button that runs the same VibrationEffect waveform the alerts
    use. The crown scrolls the list. */
 public class HelpActivity extends BaseActivity {
+    /* Inner padding of the haptic cards: their play button is that much
+       narrower than the column. */
+    private static final int CARD_PAD_DP = 12;
+
     private static final String[] KINDS = {
             Haptics.REMINDER, Haptics.OK, Haptics.DOUBTFUL, Haptics.END
     };
@@ -51,6 +55,7 @@ public class HelpActivity extends BaseActivity {
         root.addView(scroll, new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
         bindRotaryScroll(scroll);
+        centerList(scroll, content);
 
         TextView lede = Ui.text(this, str(R.string.help_lede), 13, color(R.color.hh_text_dim));
         LinearLayout.LayoutParams ledeLp = new LinearLayout.LayoutParams(
@@ -63,12 +68,13 @@ public class HelpActivity extends BaseActivity {
             content.addView(hapticRow(i), rowParams(dp(6)));
         }
 
+        /* Atrás ends the list instead of hovering over it: the old fixed pill
+           covered the last card's play button. */
         Button back = Ui.pill(this, str(R.string.help_back),
                 color(R.color.hh_track), color(R.color.hh_text), Ui.MIN_TOUCH_DP);
-        LinearLayout.LayoutParams backLp = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        backLp.topMargin = dp(10);
-        root.addView(back, backLp);
+        LinearLayout.LayoutParams backLp = Ui.rowLp(this);
+        backLp.topMargin = dp(12);
+        content.addView(back, backLp);
         back.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -87,7 +93,7 @@ public class HelpActivity extends BaseActivity {
         LinearLayout card = new LinearLayout(this);
         card.setOrientation(LinearLayout.VERTICAL);
         card.setBackground(Ui.rounded(this, color(R.color.hh_track), 14));
-        card.setPadding(dp(12), dp(10), dp(12), dp(10));
+        card.setPadding(dp(CARD_PAD_DP), dp(10), dp(CARD_PAD_DP), dp(10));
 
         card.addView(Ui.text(this, str(NAMES[index]), 15, color(R.color.hh_text)),
                 new LinearLayout.LayoutParams(
@@ -107,16 +113,14 @@ public class HelpActivity extends BaseActivity {
                 Haptics.play(HelpActivity.this, KINDS[index]);
             }
         });
-        LinearLayout.LayoutParams playLp = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        LinearLayout.LayoutParams playLp = Ui.innerLp(this, CARD_PAD_DP);
         playLp.topMargin = dp(8);
         card.addView(play, playLp);
         return card;
     }
 
     private LinearLayout.LayoutParams rowParams(int topMargin) {
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        LinearLayout.LayoutParams lp = Ui.rowLp(this);
         lp.topMargin = topMargin;
         return lp;
     }

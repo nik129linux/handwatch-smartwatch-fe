@@ -164,6 +164,151 @@ assert.deepStrictEqual(literalProblems,
     literalProblems.join('\n'));
 ok('no hardcoded user-visible string literals in Java (' + javaFiles.length + ' files)');
 
+/* -------------------------------------------------------- static layout */
+
+/* The face is round, so layout is checked from the source (the brief's
+   round-screen rules), not only from the APK:
+     - a chip is never pinned to the bottom over a scroller;
+     - every chip width comes from Ui's round-safe helpers, never from a raw
+       MATCH_PARENT or a hardcoded pixel width. */
+var ROUND_HELPER = /Ui\.(?:roundLp|roundWrapLp|roundSafeWidth|columnWidth|rowLp|halfLp|innerLp|fit)\s*\(/;
+
+function javaText(file) {
+  return fs.readFileSync(file, 'utf8');
+}
+
+function buttonNames(text) {
+  var names = [];
+  var re = /\bButton\s+(\w+)\s*=/g;
+  var match;
+  while ((match = re.exec(text))) names.push(match[1]);
+  return names;
+}
+
+/* The expression that built the LayoutParams handed to addView(view, x):
+   inline, a local variable, or a small helper method of the same file. */
+function paramsSource(text, expression) {
+  var expr = expression.trim();
+  if (expr.indexOf('new ') === 0 || expr.indexOf('Ui.') === 0) return expr;
+  var local = expr.match(/^(\w+)$/);
+  if (local) {
+    var assign = new RegExp('(?:LayoutParams\\s+)?' + local[1] + '\\s*=\\s*([^;]+);');
+    var match = text.match(assign);
+    return match ? match[1] : null;
+  }
+  var call = expr.match(/^(\w+)\s*\(/);
+  if (call) {
+    var method = text.match(new RegExp(
+      'LayoutParams\\s+' + call[1] + '\\s*\\([^)]*\\)\\s*\\{([\\s\\S]{0,400})'));
+    return method ? method[1] : null;
+  }
+  return null;
+}
+
+/* One statement per entry, so an inline `new LinearLayout.LayoutParams(...)`
+   does not swallow the next line. */
+function statements(text) {
+  return text.split(';').map(function (chunk) { return chunk; });
+}
+
+var pinnedBottom = [];
+var chipWidths = [];
+javaFiles.forEach(function (file) {
+  var text = javaText(file);
+  var rel = path.relative(WEAR, file);
+  var chips = buttonNames(text);
+  var scrolls = /new ScrollView\(/.test(text);
+
+  chips.forEach(function (name) {
+    /* A chip added to the screen root lives outside the scroller: it is a
+       footer, and on a 227dp face it lands on top of the list. */
+    if (scrolls && new RegExp('\\broot\\.addView\\(\\s*' + name + '\\b').test(text)) {
+      pinnedBottom.push(rel + ' -> root.addView(' + name + ')');
+    }
+  });
+  if (scrolls && /Gravity\.BOTTOM|layout_gravity="bottom"|alignParentBottom/.test(text)) {
+    pinnedBottom.push(rel + ' -> bottom gravity next to a ScrollView');
+  }
+
+  statements(text).forEach(function (statement) {
+    var call = statement.match(/(\w+)\.addView\(\s*(\w+)\s*,\s*([\s\S]*?)\)\s*$/);
+    if (!call) return;
+    if (chips.indexOf(call[2]) === -1) return;
+    var source = paramsSource(text, call[3]);
+    if (source === null) {
+      chipWidths.push(rel + ' -> ' + call[2] + ' has no traceable LayoutParams');
+      return;
+    }
+    if (!ROUND_HELPER.test(source)) {
+      chipWidths.push(rel + ' -> ' + call[2] + ' width from ' +
+        source.replace(/\s+/g, ' ').trim().slice(0, 60));
+    }
+  });
+});
+assert.deepStrictEqual(pinnedBottom, [],
+  'fixed bottom buttons over a scrolling screen (put the chip last in the list):\n' +
+    pinnedBottom.join('\n'));
+ok('no fixed bottom button sits over a scroll container');
+
+assert.deepStrictEqual(chipWidths, [],
+  'chip widths that bypass the round-safe helpers in Ui.java:\n' + chipWidths.join('\n'));
+ok('every chip width comes from a round-safe helper');
+
+/* Any activity that ships a chip must reference the helper. */
+var pillScreens = javaFiles.filter(function (file) {
+  return /Ui\.(?:pill|chip|textButton)\(/.test(javaText(file));
+});
+assert.ok(pillScreens.length >= 4, 'expected the pill screens, found ' + pillScreens.length);
+var noHelper = pillScreens.filter(function (file) { return !ROUND_HELPER.test(javaText(file)); });
+assert.deepStrictEqual(noHelper, [],
+  'screens with pills but no round-safe width: ' +
+    noHelper.map(function (f) { return path.relative(WEAR, f); }).join(', '));
+ok('every screen with a pill uses the round-safe helper');
+
+/* The close chips are the last row of their lists, and both lists pay half a
+   viewport at the top and the bottom so the ends can reach the centre. */
+[['SettingsActivity.java', 'close'], ['HelpActivity.java', 'back']].forEach(function (pair) {
+  var text = javaText(path.join(srcDir, 'co', 'ucc', 'handhygiene', 'wear', pair[0]));
+  assert.ok(new RegExp('content\\.addView\\(\\s*' + pair[1] + ',').test(text),
+    pair[0] + ' must add its ' + pair[1] + ' chip to the scrolling list');
+  assert.ok(/centerList\(\s*scroll\s*,\s*content\s*\)/.test(text),
+    pair[0] + ' must centre its list with centerList(scroll, content)');
+});
+ok('Ajustes and Ayuda end their lists with the close chip');
+
+/* Round geometry lives in one place: 80% cap, 12% edge inset, real chord. */
+var uiSource = javaText(path.join(srcDir, 'co', 'ucc', 'handhygiene', 'wear', 'Ui.java'));
+assert.ok(/MAX_WIDTH_FRACTION\s*=\s*0\.80f/.test(uiSource),
+  'Ui.MAX_WIDTH_FRACTION must cap a chip at 80% of the face');
+assert.ok(/EDGE_INSET_FRACTION\s*=\s*0\.12f/.test(uiSource),
+  'Ui.EDGE_INSET_FRACTION must keep 12% side insets');
+assert.ok(/chordWidth\s*\(\s*Context/.test(uiSource) &&
+  /roundSafeWidth\s*\(\s*Context/.test(uiSource),
+  'Ui must expose chordWidth() and roundSafeWidth()');
+ok('Ui caps chips at the circle chord and 80% of the face');
+
+/* Layout XML, if any is ever added, obeys the same rules. */
+var xmlLayouts = [];
+(function walk(dir) {
+  fs.readdirSync(dir, { withFileTypes: true }).forEach(function (entry) {
+    var full = path.join(dir, entry.name);
+    if (entry.isDirectory()) walk(full);
+    else if (entry.name.endsWith('.xml') && /layout/.test(full)) xmlLayouts.push(full);
+  });
+})(path.join(WEAR, 'res'));
+
+var xmlProblems = [];
+xmlLayouts.forEach(function (file) {
+  var text = fs.readFileSync(file, 'utf8');
+  var scroller = /<(?:ScrollView|ListView|androidx\.wear\.widget\.WearableRecyclerView)/.test(text);
+  if (!scroller) return;
+  if (/layout_alignParentBottom|android:layout_gravity="bottom"|layout_gravity="bottom"/.test(text)) {
+    xmlProblems.push(path.relative(WEAR, file) + ' -> bottom-pinned view next to a scroller');
+  }
+});
+assert.deepStrictEqual(xmlProblems, [], xmlProblems.join('\n'));
+ok('no layout XML pins a view to the bottom over a scroller (' + xmlLayouts.length + ' files)');
+
 /* -------------------------------------------------------- button sizes */
 
 var smallButtons = [];

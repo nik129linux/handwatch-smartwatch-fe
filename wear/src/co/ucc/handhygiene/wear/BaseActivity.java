@@ -68,6 +68,39 @@ abstract class BaseActivity extends Activity {
         scrollTarget = view;
     }
 
+    /* The free band at the top and the bottom of the face. Screens whose
+       rows stack from edge to edge (the guide) ask for a tighter band than
+       the ones that scroll. */
+    private float topBand = 0.05f;
+    private float bottomBand = 0.12f;
+
+    void setVerticalBands(float topFraction, float bottomFraction) {
+        topBand = topFraction;
+        bottomBand = bottomFraction;
+    }
+
+    /**
+     * A list is the only scroller on its screen: pay the top and the bottom
+     * with half a viewport so the first and the last row can settle in the
+     * middle of the face instead of under the round mask. Nothing is pinned
+     * to the bottom any more, so the last row is the close chip itself.
+     */
+    void centerList(final ScrollView scroll, final View content) {
+        scroll.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
+            @Override
+            public void onLayoutChange(View view, int left, int top, int right, int bottom,
+                                       int oldLeft, int oldTop, int oldRight, int oldBottom) {
+                int edge = 0;
+                if (content.getHeight() > scroll.getHeight()) {
+                    edge = Math.max(0, (scroll.getHeight() - dp(Ui.MIN_TOUCH_DP)) / 2);
+                }
+                if (content.getPaddingTop() != edge || content.getPaddingBottom() != edge) {
+                    content.setPadding(0, edge, 0, edge);
+                }
+            }
+        });
+    }
+
     int color(int id) {
         return getResources().getColor(id, getTheme());
     }
@@ -160,16 +193,16 @@ abstract class BaseActivity extends Activity {
     private void padBase(View view) {
         int width = getResources().getDisplayMetrics().widthPixels;
         if (width <= 0) width = dp(227);
-        int side = (int) (width * 0.13f);
-        view.setPadding(side, (int) (width * 0.05f), side, (int) (width * 0.04f));
+        int side = (int) (width * Ui.EDGE_INSET_FRACTION);
+        view.setPadding(side, (int) (width * topBand), side, (int) (width * bottomBand));
     }
 
     private void pad(View view) {
         int width = view.getWidth();
         if (width <= 0) return;
-        int side = Math.max((int) (width * 0.13f), Math.max(insetL, insetR));
-        int top = Math.max((int) (width * 0.05f), insetT);
-        int bottom = Math.max((int) (width * 0.04f), insetB);
+        int side = Math.max((int) (width * Ui.EDGE_INSET_FRACTION), Math.max(insetL, insetR));
+        int top = Math.max((int) (width * topBand), insetT);
+        int bottom = Math.max((int) (width * bottomBand), insetB);
         view.setPadding(side, top, side, bottom);
     }
 }

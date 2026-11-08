@@ -10,6 +10,10 @@ import android.widget.LinearLayout;
 /* Home: the 15-moment ring and one gear pill that opens Ajustes. The
    first-run guide opens on top of Home, exactly once. */
 public class HomeActivity extends BaseActivity {
+    /* The chip's row, as a fraction of the face: its width is the chord
+       there, capped at 80% of the face. */
+    private static final float GEAR_Y = 0.90f;
+
     private HomeView ring;
 
     @Override
@@ -29,8 +33,10 @@ public class HomeActivity extends BaseActivity {
         root.addView(ring, new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
 
-        Button gear = Ui.pill(this, str(R.string.home_settings),
-                color(R.color.hh_track), color(R.color.hh_text), Ui.ROW_DP);
+        /* A 48dp chip, not a quarter-screen bar: the gear icon plus the
+           word, wrap-content and capped to the chord at its row. */
+        Button gear = Ui.chip(this, str(R.string.home_settings), R.drawable.ic_gear,
+                color(R.color.hh_track), color(R.color.hh_text));
         gear.setContentDescription(str(R.string.home_settings_desc));
         gear.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -38,8 +44,8 @@ public class HomeActivity extends BaseActivity {
                 startActivity(new Intent(HomeActivity.this, SettingsActivity.class));
             }
         });
-        LinearLayout.LayoutParams gearLp = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        Ui.fit(this, gear, GEAR_Y);
+        LinearLayout.LayoutParams gearLp = Ui.roundWrapLp(this, GEAR_Y);
         gearLp.topMargin = dp(6);
         root.addView(gear, gearLp);
 
