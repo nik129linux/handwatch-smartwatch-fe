@@ -26,14 +26,15 @@ var watch = (function () {
     washMs: 20000,
     speed: 1,
     pending: false,              /* a patient-zone moment still open */
-    lastMoment: 'before-patient',
-    lastWhy: ''                  /* classifier "why" line for the doubt screen */
+    lastMoment: 'before-patient'
   };
 
   var el = {};
   var current = null;
   var ticker = null;
   var washInt = null;
+  var washTimeouts = [];
+  var washToken = 0;
   var doubtLock = false;   /* one tap closes the doubt screen; a second tap
                               (double click, shaky hand) must not count twice */
   var scaleVal = 1;
@@ -210,7 +211,10 @@ var watch = (function () {
       foot += '<button class="pill pill--ghost" data-act="settings">Watch settings</button>';
 
       return '<div class="home__hero">' +
-          '<div class="ring" style="--ring-size:' + HOME_RING.size + 'px">' + s.markup +
+          '<div class="ring" role="progressbar" aria-valuemin="0" ' +
+            'aria-valuemax="' + state.plan + '" aria-valuenow="' + state.done + '" ' +
+            'aria-label="' + esc(tr('Moments')) + '" ' +
+            'style="--ring-size:' + HOME_RING.size + 'px">' + s.markup +
             '<div class="ring__center">' +
               '<div class="hero-num" data-count="' + state.done + '">' + n(state.done) + '</div>' +
               '<div class="home__of">/ ' + n(state.plan) + '</div>' +
@@ -392,13 +396,15 @@ var watch = (function () {
           '<div class="pause__count" data-pausecount>30:00</div>' +
         '</div>' +
         '<div class="screen__foot">' +
-          '<button class="pill pill--primary" data-act="back">Back</button>' +
+          '<button class="pill pill--primary" data-act="pause-confirm">Silence 30 min</button>' +
+          '<button class="pill pill--secondary" data-act="back">Back</button>' +
         '</div>';
     },
     tick: function (node) {
       var n = node.querySelector('[data-pausecount]');
       if (!n) return;
-      var left = Math.max(0, state.pausedUntil - Date.now());
+      var until = isPaused() ? state.pausedUntil : Date.now() + pauseMs();
+      var left = Math.max(0, until - Date.now());
       n.textContent = pad2(Math.floor(left / 60000)) + ':' + pad2(Math.floor(left / 1000) % 60);
     }
   };
@@ -459,6 +465,27 @@ var watch = (function () {
     }, ms(480));
   }
 
+  /* A wash owns a timer and a few delayed updates. Any screen change,
+     skip, end shift or reset cancels them, so a finished wash can never
+     navigate on top of the screen the person is looking at. */
+  function cancelWash() {
+    if (washInt) {
+      window.clearInterval(washInt);
+      washInt = null;
+    }
+    for (var i = 0; i < washTimeouts.length; i++) window.clearTimeout(washTimeouts[i]);
+    washTimeouts.length = 0;
+    washToken++;
+  }
+  function washLater(fn, delay) {
+    var token = washToken;
+    var id = window.setTimeout(function () {
+      if (token === washToken) fn();
+    }, delay);
+    washTimeouts.push(id);
+    return id;
+  }
+
   function go(name, dir, opts) {
     var def = VIEWS[name];
     if (!def) return null;
@@ -466,6 +493,9 @@ var watch = (function () {
     var from = current;
     var prevScreen = state.screen;
 
+    /* Leaving the wash screen kills its timer. Pause is the exception: a
+       wash already running still finishes (silently) behind the pause. */
+    if (name !== 'lavando' && name !== 'pausa') cancelWash();
     if (name === 'dudoso') doubtLock = false;
 
     if (!opts.noPush) {
@@ -479,6 +509,8 @@ var watch = (function () {
     state.screen = name;
     el.screen.dataset.screen = name;
     el.title.textContent = def.title;
+    /* short spoken name for the screen, not the whole rebuilt tree */
+    if (el.announce) el.announce.textContent = tr(def.title);
     syncPaused();
 
     var node = document.createElement('section');
@@ -555,6 +587,8 @@ var watch = (function () {
     }
     el.count = current.querySelector('.hero-num');
     if (el.count) countTo(el.count, state.done);
+    var bar = current.querySelector('.ring[role="progressbar"]');
+    if (bar) bar.setAttribute('aria-valuenow', String(state.done));
 
     var list = current.querySelector('.home__list');
     var last = state.events[state.events.length - 1];
@@ -580,6 +614,7 @@ var watch = (function () {
   function startWash(opts) {
     opts = opts || {};
     state.speed = opts.speed || 1;
+    cancelWash();
     var dur = ms(state.washMs / state.speed);
     var node = go('lavando', opts.dir || 'fwd');
     var arc = node.querySelector('.wash-ring__arc');
@@ -615,19 +650,19 @@ var watch = (function () {
       foot.innerHTML = '<div class="wash__done"><span class="wash__check">' +
         GLYPH.check + '</span><span class="title">Done</span></div>';
     }
-    window.setTimeout(function () {
+    washLater(function () {
       var c = foot && foot.querySelector('.check');
       if (c) c.classList.add('is-drawn');
     }, ms(60));
-    window.setTimeout(function () {
+    washLater(function () {
       /* QA: a wash that finishes mid-pause still counts, but the watch
          stays silent — pause means no buzz, even a happy one. */
       if (!isPaused()) haptics.play('ok');
-      state.done += 1;
+      state.done = Math.min(state.plan, state.done + 1);
       addEvent({ text: 'Wash · ' + state.bed, kind: 'ok' });
       bump();
     }, ms(820));
-    window.setTimeout(function () { home(); }, ms(1560));
+    washLater(function () { home(); }, ms(1560));
   }
 
   /* ---------------------------------------------------------------- events */
@@ -753,7 +788,7 @@ var watch = (function () {
       case 'done':
         /* QA: stale taps on a detached Reminder pill count nothing. */
         if (state.screen !== 'recordatorio') return;
-        state.done += 1;
+        state.done = Math.min(state.plan, state.done + 1);
         state.pending = false;
         addEvent({ text: 'Marked · ' + state.bed, kind: 'ok' });
         logOutcome('done', false);
@@ -766,7 +801,7 @@ var watch = (function () {
            (or a call after the screen already closed) is ignored. */
         if (state.screen !== 'dudoso' || doubtLock) return;
         doubtLock = true;
-        state.done += 1;
+        state.done = Math.min(state.plan, state.done + 1);
         state.corrections += 1;
         state.pending = false;
         learnFromCorrection();
@@ -785,7 +820,12 @@ var watch = (function () {
         window.setTimeout(function () { home(); }, ms(460));
         break;
       case 'pause':
+        /* open the pause screen; only the explicit confirm really mutes */
+        go('pausa', 'fwd');
+        break;
+      case 'pause-confirm':
         pause();
+        home();
         break;
       case 'resume':
         resume();
@@ -845,6 +885,7 @@ var watch = (function () {
     el.screen = document.getElementById('screen');
     el.viewport = document.getElementById('viewport');
     el.title = document.getElementById('statusTitle');
+    el.announce = document.getElementById('screenAnnounce');
     el.time = document.getElementById('statusTime');
     el.toast = document.getElementById('toast');
     el.toastText = document.getElementById('toastText');
