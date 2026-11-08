@@ -7,8 +7,8 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
 
-/* Home: the 15-moment ring and one gear pill that opens Ajustes. The
-   first-run guide opens on top of Home, exactly once. */
+/* Home: the 15-moment ring and one compact gear chip that opens Ajustes.
+   The first-run guide opens on top of Home, exactly once. */
 public class HomeActivity extends BaseActivity {
     /* The chip's row, as a fraction of the face: its width is the chord
        there, capped at 80% of the face. */

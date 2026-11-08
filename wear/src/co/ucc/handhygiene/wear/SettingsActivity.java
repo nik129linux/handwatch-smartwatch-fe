@@ -9,8 +9,9 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
-/* Ajustes: language endonyms, replay the guide, Ayuda and wipe my data.
-   Reached from the gear pill on Home; the crown scrolls the list. */
+/* Ajustes: language endonyms, replay the guide, Ayuda, wipe my data and,
+   last of the list, Cerrar. Reached from the gear chip on Home; the crown
+   scrolls the list. */
 public class SettingsActivity extends BaseActivity {
     private TextView status;
 
