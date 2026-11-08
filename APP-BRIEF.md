@@ -27,7 +27,7 @@ representative text in both themes (assert 6 elements per theme). Token test mus
 (primary -> #ff0000, nothing keeps rgb(166, 255, 0)).
 
 ## 3. Real desktop app (Electron, already installed in this folder)
-- `main.js`: BrowserWindow 1440x900 (min 1100x760), autoHideMenuBar, title "Hand Hygiene Watch",
+- `main.js`: BrowserWindow 1440x900 (min 1100x640), autoHideMenuBar, title "Hand Hygiene Watch",
   contextIsolation true, loadFile('index.html'). Accelerators: Ctrl+Shift+L theme (call a `window.__toggleTheme`
   hook), F11 fullscreen. The "see what Infection Control sees" link navigates inside the same window and unit.html
   has a "Back to the watch" link. Bundle the Google fonts locally in `fonts/` (curl woff2 from fonts.gstatic.com;

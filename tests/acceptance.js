@@ -378,7 +378,8 @@ async function opaqueScreens(page) {
     [page, '.masthead__title'], [page, '.panel__lede'], [page, '.group__title'],
     [page, '.free-btn'], [page, '#storyClock'], [page, '.note__body'],
     [page, '.haptic-strip__note'], [page, '.vocab__meaning'],
-    [unitPage, '.ucard__note'], [unitPage, '.unit__eyebrow']
+    [unitPage, '.ucard__note'], [unitPage, '.unit__eyebrow'],
+    [unitPage, '.insight__stats'], [unitPage, '.model__cap']
   ];
   for (const theme of ['dark', 'light']) {
     await page.evaluate((t) => window.__setTheme(t), theme);
@@ -573,7 +574,8 @@ async function opaqueScreens(page) {
     [page, '.panel__lede'], [page, '.vocab__meaning'], [page, '.note__body'],
     [page, '.haptic-strip__note'], [page, '.vocab__pattern'], [page, '#storyClock'],
     [unitPage, '.ucard__note'], [unitPage, '.uheat__axis'],
-    [unitPage, '.unit__eyebrow'], [unitPage, '.unotice__lock']
+    [unitPage, '.unit__eyebrow'], [unitPage, '.unotice__lock'],
+    [unitPage, '.insight__stats'], [unitPage, '.model__cap']
   ];
   for (const [p, sel] of contrastPairs) {
     const r = await contrast(p, sel);

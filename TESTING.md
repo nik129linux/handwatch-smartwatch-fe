@@ -1,8 +1,8 @@
 # Testing — read before verifying anything
 
 1. **Scripted acceptance** (regression gate, run after every change):
-   `node tests/acceptance.js` from this directory. Import Playwright by absolute path:
-   `const { chromium } = require('/home/nico/.nvm/versions/node/v22.23.2/lib/node_modules/playwright');`
+   `node tests/acceptance.js` from this directory. Playwright is a local
+   devDependency: `const { chromium } = require('playwright');`
    Load pages with `pathToFileURL(path.resolve('index.html'))`.
 
 2. **playwright-cli** (interactive exploration; state goes to disk):

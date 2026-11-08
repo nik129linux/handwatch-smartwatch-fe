@@ -541,10 +541,14 @@ async function contrast(page, sel) {
   await unit.waitForTimeout(2200);
   ok(await unit.locator('#settingsOpen[aria-label="Configuración"]').count() === 1,
     'unit.html also has the Configuración gear');
-  ok(/1\.284 de 1\.362/.test(await unit.evaluate(() => document.body.innerText)),
+  /* the bars now come from the same generated history as the trend, so the
+     counts are the latest week's (212 of 228); Intl still formats them. */
+  ok(/212 de 228/.test(await unit.evaluate(() => document.body.innerText)),
     'unit numbers use Intl for Spanish');
   ok(/Brier 0,002/.test(await unit.evaluate(() => document.body.innerText)),
     'Spanish decimals use a comma');
+  ok(/4\.578/.test(await unit.evaluate(() => document.body.innerText)),
+    'thousands use Intl for Spanish (4.578 checks)');
   await unit.click('#settingsOpen');
   await unit.waitForTimeout(300);
   ok(await unit.locator('#settingsLayer .settings[aria-modal="true"]').count() === 1,
