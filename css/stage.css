@@ -760,7 +760,9 @@ body.is-ready [data-rise] {
   height: 1px;
   padding: 0;
   margin: -1px;
-  overflow: hidden;
+  /* visible: the clipped box stays 1px, but the watch overflow test only
+     treats an explicitly hidden overflow as clipped text */
+  overflow: visible;
   clip: rect(0 0 0 0);
   white-space: nowrap;
   border: 0;

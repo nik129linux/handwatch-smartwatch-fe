@@ -150,8 +150,11 @@ async function quietGuide(ctx) {
   ok(leftU.length === 0, 'no English left on the unit page', leftU.join(' // '));
   ok(/Mide el proceso/.test(await unit.evaluate(() => document.body.innerText)),
     'the manifesto reads "Mide el proceso"');
-  ok(/1\.284 de 1\.362/.test(await unit.evaluate(() => document.body.innerText)),
+  /* the bars now share the generated history's latest week (212 of 228) */
+  ok(/212 de 228/.test(await unit.evaluate(() => document.body.innerText)),
     'numbers are formatted with Intl for Spanish');
+  ok(/4\.578/.test(await unit.evaluate(() => document.body.innerText)),
+    'thousands use Intl for Spanish');
 
   head('4 · the switch works in place and both languages load clean');
   await page.evaluate(() => { window.__alive = true; watch.state.done = 9; });

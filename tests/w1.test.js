@@ -134,7 +134,10 @@ function watchErrors(page) {
   await unitPage.waitForSelector('#momentBars .ubar');
   await unitPage.waitForTimeout(1200);
   const corrN = await unitPage.locator('#corrN').getAttribute('data-count');
-  ok(corrN === '35', 'unit shows demo 34 + 1 real correction', 'corrN=' + corrN);
+  const demoCorr = await unitPage.evaluate(() => unit.CORRECTIONS);
+  ok(corrN === String(demoCorr + 1),
+    'unit shows the demo history plus 1 real correction',
+    'corrN=' + corrN + ', demo=' + demoCorr);
   /* The only field is "Ask the unit", and it cannot reach a person:
      no select, no other input, and a person question is refused. */
   ok((await unitPage.locator('select').count()) === 0, 'the unit page has no select controls');
