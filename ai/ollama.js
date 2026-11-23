@@ -105,9 +105,63 @@ async function generate(prompt, opts) {
   }
 }
 
-/* One call for the renderer: tags, pick, generate. */
-async function query(prompt, opts) {
+/* Deployed mode: the shared Retoma/Acompaña server on AWS holds the model
+   key; the watch only holds the app key (WATCH_APP_KEY / RETOMA_APP_KEY, or
+   ai/app-key.json written at build, gitignored). No key = local Ollama only. */
+var DEFAULT_API_BASE = 'https://184-72-152-71.sslip.io';
+
+function appKey() {
+  if (process.env.WATCH_APP_KEY) return String(process.env.WATCH_APP_KEY);
+  if (process.env.RETOMA_APP_KEY) return String(process.env.RETOMA_APP_KEY);
   try {
+    var raw = require('fs').readFileSync(require('path').join(__dirname, 'app-key.json'), 'utf8');
+    var key = JSON.parse(raw).key;
+    return typeof key === 'string' ? key : '';
+  } catch (e) {
+    return '';
+  }
+}
+
+function serverBase(opts) {
+  if (opts && opts.baseUrl) return '';           // explicit Ollama URL (tests) wins
+  if (process.env.WATCH_API_BASE) return String(process.env.WATCH_API_BASE).replace(/\/+$/, '');
+  return appKey() ? DEFAULT_API_BASE : '';
+}
+
+async function serverQuery(base, prompt, opts) {
+  try {
+    const res = await withTimeout(fetchImplOf(opts.fetchImpl), base + '/api/watch/query', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-App-Key': appKey() },
+      body: JSON.stringify({ prompt: String(prompt) })
+    }, opts.timeoutMs);
+    if (!res || !res.ok) return { ok: false, reason: 'down' };
+    const data = await res.json();
+    if (!data || !data.ok || typeof data.text !== 'string') return { ok: false, reason: (data && data.reason) || 'down' };
+    return { ok: true, text: data.text, model: data.model || 'server' };
+  } catch (e) {
+    return { ok: false, reason: 'down' };
+  }
+}
+
+async function serverHealth(base, opts) {
+  try {
+    const res = await withTimeout(fetchImplOf(opts.fetchImpl), base + '/api/health', { method: 'GET' }, opts.timeoutMs);
+    return res && res.ok ? { ok: true, models: [], picked: 'server' } : { ok: false, reason: 'down' };
+  } catch (e) {
+    return { ok: false, reason: 'down' };
+  }
+}
+
+/* One call for the renderer: server first when deployed, then local Ollama. */
+async function query(prompt, opts) {
+  opts = opts || {};
+  try {
+    const base = serverBase(opts);
+    if (base) {
+      const r = await serverQuery(base, prompt, opts);
+      if (r.ok) return r;
+    }
     return await generate(prompt, opts);
   } catch (e) {
     return { ok: false, reason: 'down' };
@@ -121,5 +175,7 @@ module.exports = {
   pickModel,
   listModels,
   generate,
-  query
+  query,
+  serverBase,
+  serverHealth
 };

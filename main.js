@@ -71,7 +71,8 @@ function setupAIIPC() {
   ipcMain.handle('ai:health', async () => {
     try {
       if (!Ollama) return { ok: false, reason: 'no-model' };
-      const listed = await Ollama.listModels();
+      const base = Ollama.serverBase && Ollama.serverBase();
+      const listed = base ? await Ollama.serverHealth(base, {}) : await Ollama.listModels();
       if (!listed || !listed.ok) return { ok: false, reason: 'down' };
       return { ok: true, model: listed.picked || null };
     } catch (e) {
