@@ -4,9 +4,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Hand Hygiene Watch</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600&family=Inter:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/fonts.css">
 <link rel="stylesheet" href="css/tokens.css">
 <link rel="stylesheet" href="css/watch.css">
@@ -33,7 +30,7 @@
       </svg>
     </button>
   </div>
-  <h1 class="masthead__title" id="pageTitle" data-blur>Day shift on Unit 4B</h1>
+  <h1 class="masthead__title" id="pageTitle" data-blur data-en="Day shift on Unit 4B">Day shift on Unit 4B</h1>
   <p class="panel__lede masthead__lede" data-rise style="--i:1">The watch taps, never sounds.
     Fix a mark with one tap.</p>
 </header>
@@ -56,7 +53,7 @@
         <button class="side-button" id="sideButton" type="button"
                 aria-label="Side button: who sees this"></button>
 
-        <div class="screen" id="screen" data-screen="home">
+        <div class="screen" id="screen" data-screen="home" aria-live="polite" aria-atomic="false">
           <div class="statusbar">
             <div class="statusbar__title">
               <span class="statusbar__moon" aria-hidden="true">
@@ -66,6 +63,7 @@
               </span>
               <span id="statusTitle">Home</span>
             </div>
+            <span class="sr-only" id="screenAnnounce" aria-live="polite"></span>
             <div class="statusbar__time" id="statusTime">07:02</div>
           </div>
 
@@ -81,6 +79,7 @@
       </div>
     </div>
 
+    <p class="guide-caption" id="guideCaption" hidden></p>
     <p class="stage__sub" id="subtitle" role="status" aria-live="polite"></p>
     <p class="stage__hint">Turn the crown with the mouse wheel · the side button opens privacy</p>
 
@@ -203,6 +202,7 @@
 
 <script src="js/strings-es.js"></script>
 <script src="js/i18n.js"></script>
+<script src="js/prefs.js"></script>
 <script src="js/signal.js"></script>
 <script src="js/model.js"></script>
 <script src="js/model-weights.js"></script>
@@ -217,5 +217,7 @@
 <script src="js/story.js"></script>
 <script src="js/scope.js"></script>
 <script src="js/stage.js"></script>
+<script src="js/settings.js"></script>
+<script src="js/guide.js"></script>
 </body>
 </html>

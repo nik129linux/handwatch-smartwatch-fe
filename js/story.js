@@ -41,7 +41,7 @@ var story = (function () {
     lavado: function (opts) {
       if (watch.isPaused()) {
         pushLog(clockNow(), 'Wash logged quietly', 'ok');
-        watch.state.done += 1;
+        watch.state.done = Math.min(watch.state.plan, watch.state.done + 1);
         watch.addEvent({ text: 'Wash · ' + watch.state.bed, kind: 'ok' });
         Log.record('before-patient', 'done', false);
         watch.bump();
@@ -106,7 +106,6 @@ var story = (function () {
     if (run.verdict === 'unsure') {
       watch.state.doubtWhen = when || 'On exit';
       watch.state.lastMoment = moment;
-      watch.state.lastWhy = Sense.whyLine();
       haptics.play('doubtful');
       Log.record(moment, 'unsure', false);
       /* the console row carries what an explanation needs and nothing
@@ -155,7 +154,7 @@ var story = (function () {
 
   function renderLog() {
     if (!el.log) return;
-    el.log.innerHTML = logLines.map(function (l, i) {
+    el.log.innerHTML = logLines.length ? logLines.map(function (l, i) {
       var row = '<li class="log__row" style="--i:' + i + '">' +
         '<span class="log__time">' + l.time + '</span>' +
         '<span class="log__dot log__dot--' + l.kind + '"></span>' +
@@ -165,7 +164,8 @@ var story = (function () {
           '<span class="log__explain" data-explain="' + i + '" hidden></span>';
       }
       return row + '</li>';
-    }).join('');
+    }).join('')
+      : '<li class="log__empty">Nothing yet</li>';
     el.logCount.textContent = String(logLines.length);
   }
 
@@ -181,8 +181,8 @@ var story = (function () {
     try { transport = AI.browserTransport(); } catch (e) { transport = null; }
     AI.requestExplain(line.facts.entry, line.facts.run, {
       transport: transport,
-      consent: null,
-      onConsent: AI.requestConsent
+      consent: (typeof AIPrefs !== 'undefined') ? AIPrefs.consent() : null,
+      onConsent: (typeof AIPrefs !== 'undefined') ? AIPrefs.ask : AI.requestConsent
     }).then(function (r) {
       if (!r || !r.line) return;
       host.innerHTML = '<p class="log__line"></p><span class="ai-badge"></span>';
@@ -217,18 +217,18 @@ var story = (function () {
   var BEATS = [
     {
       sub: 'Shift starts.',
-      hold: 2400,
+      hold: 7000,
       act: function () { watch.setClock(7, 2); watch.home(); }
     },
     {
       sub: 'The watch buzzes. No sound. The patient never notices.',
-      hold: 3000,
+      hold: 7500,
       act: function () { watch.setClock(7, 4); BUS.zona('Bed 3'); },
       until: function () { return watch.state.screen === 'recordatorio'; }
     },
     {
       sub: 'The wash detects itself. No form exists.',
-      hold: 2600,
+      hold: 7000,
       act: function () { watch.setClock(7, 5); BUS.lavado({ speed: 5 }); },
       until: function () { return watch.state.screen === 'home' && watch.state.done >= 13; },
       after: function () { watch.setClock(7, 6); }
@@ -239,7 +239,7 @@ var story = (function () {
          person wearing it: no fingertip, no deadline, either answer counts. */
       wristSub: 'The watch was wrong. Answer on your wrist: one tap, no form.',
       waitsForWrist: true,
-      hold: 2600,
+      hold: 7000,
       act: function () {
         this.seen = false;
         watch.setClock(7, 14);
@@ -265,26 +265,27 @@ var story = (function () {
     },
     {
       sub: 'In an emergency, the watch stays quiet.',
-      hold: 2400,
+      hold: 6500,
       act: function () { watch.setClock(7, 21); watch.state.bed = 'Bed 5'; BUS.codigo(); },
       until: function () { return watch.state.screen === 'pausa'; }
     },
     {
       sub: 'The reminder came and stayed logged.',
-      hold: 2200,
+      hold: 7000,
       act: function () { BUS.zona('Bed 5'); },
-      after: function () { watch.back(); },
-      settle: function () { return watch.state.screen === 'home'; }
+      /* Leaving is the beat's own action: waiting for Home before calling
+         back() was a deadlock and left ~15 s of dead air on Pause. */
+      after: function () { watch.back(); }
     },
     {
       sub: 'Before entering, the wash anyway.',
-      hold: 2400,
+      hold: 7000,
       act: function () { watch.startWash({ speed: 5 }); },
       settle: function () { return watch.state.screen === 'home' && watch.state.done >= 15; }
     },
     {
       sub: 'Details are yours. The unit sees totals only.',
-      hold: 2800,
+      hold: 7000,
       act: function () {
         watch.resume();
         watch.setClock(19, 0);
@@ -295,7 +296,7 @@ var story = (function () {
     },
     {
       sub: '',
-      hold: 1800,
+      hold: 7000,
       act: function () { watch.go('quien', 'fwd'); },
       until: function () { return watch.state.screen === 'quien'; }
     }
@@ -324,6 +325,9 @@ var story = (function () {
     var token = runToken;
     var waits = beat.waitsForWrist && wristLive();
     say(waits ? beat.wristSub : beat.sub);
+    document.dispatchEvent(new CustomEvent('story:beat', {
+      detail: { index: stepIx - 1, time: Date.now(), length: BEATS.length }
+    }));
 
     if (beat.act) beat.act();
     if (beat.then) beat.then();
@@ -377,6 +381,9 @@ var story = (function () {
     say('');
     el.storyClock.textContent = 'over';
     window.__storyDone = true;
+    document.dispatchEvent(new CustomEvent('story:done', {
+      detail: { time: Date.now() }
+    }));
   }
 
   function skip() {
@@ -414,9 +421,12 @@ var story = (function () {
     st.speed = 1;
     st.pending = false;
     st.lastMoment = 'before-patient';
-    st.lastWhy = '';
     window.__timeScale = 1;
+    /* Reset means reset: the stored log and what the watch learned from
+       corrections go too, not just the counters on screen. */
     try {
+      if (window.Log) Log.clear();
+      if (typeof Calibrate !== 'undefined') Calibrate.reset();
       if (window.Sense) Sense.reset();
       if (window.Scope) Scope.reset();
     } catch (e) { /* first paint before the modules mount */ }
@@ -487,7 +497,8 @@ var story = (function () {
     renderLog();
   }
 
-  return { mount: mount, start: start, stop: stop, reset: reset, BUS: BUS, log: logLines };
+  return { mount: mount, start: start, stop: stop, skip: skip, reset: reset,
+    BUS: BUS, log: logLines };
 })();
 
 /* --- bootstrap ---------------------------------------------------------- */

@@ -464,6 +464,9 @@ body.is-ready [data-rise] {
   margin-top: var(--sp-3);
 }
 .ctl-btn {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   padding: var(--sp-2) var(--sp-3);
   border-radius: var(--radius-pill);
   border: 1px solid transparent;
@@ -567,6 +570,7 @@ body.is-ready [data-rise] {
 /* --- Details: the engine, folded until asked for ------------------------ */
 
 .details > .details__summary {
+  min-height: 44px;
   cursor: pointer;
   list-style: none;
   margin-bottom: 0;
@@ -595,8 +599,8 @@ body.is-ready [data-rise] {
 .vocab__play {
   display: grid;
   place-items: center;
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   flex: none;
   padding: 0;
   border-radius: 50%;
@@ -696,11 +700,12 @@ body.is-ready [data-rise] {
 .log__dot--ok { background: var(--color-primary-500); }
 .log__dot--off { background: transparent; border: 1px solid var(--color-neutral-500); }
 .log__text { color: var(--text-primary); line-height: 1.5; font-variant-numeric: tabular-nums; }
-.log:empty::after {
-  content: 'Nothing yet';
-  color: var(--text-secondary);
+.log__empty {
+  padding: 9px 0;
   font-family: var(--font-mono);
   font-size: 12px;
+  letter-spacing: 0.01em;
+  color: var(--text-secondary);
 }
 
 @keyframes evIn {
@@ -749,8 +754,26 @@ body.is-ready [data-rise] {
    6. unit.html — Control de infecciones, editorial at full scale
    -------------------------------------------------------------------------- */
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  /* visible: the clipped box stays 1px, but the watch overflow test only
+     treats an explicitly hidden overflow as clipped text */
+  overflow: visible;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .unit {
-  padding-bottom: 96px;
+  /* keep the fixed back pill and the fixed no-names notice from sitting
+     on top of content when the page is scrolled to an anchor */
+  padding-bottom: 128px;
+  scroll-padding-top: 72px;
+  scroll-padding-bottom: 128px;
   background:
     radial-gradient(46% 30% at 78% 4%,
       var(--veil-cool) 0%, transparent 70%),
@@ -761,11 +784,13 @@ body.is-ready [data-rise] {
   max-width: 1360px;
   margin: 0 auto;
   padding: var(--sp-20) var(--sp-10) var(--sp-16);
+  overflow-wrap: anywhere;
 }
 .unit__eyebrow {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: var(--sp-4);
+  gap: var(--sp-2) var(--sp-4);
   font-family: var(--font-mono);
   font-size: var(--text-micro);
   letter-spacing: var(--tracking-micro);
@@ -1069,9 +1094,10 @@ body.is-ready [data-rise] {
   background: var(--bg-card);
   border-top: 1px solid var(--border-card);
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: var(--sp-4);
+  gap: var(--sp-2) var(--sp-4);
   font-size: var(--text-caption);
   color: var(--text-secondary);
   /* slides in after the first scroll, expo settle */
@@ -1098,6 +1124,14 @@ body.is-ready [data-rise] {
   .ucard { padding: var(--sp-8) 0; }
   .ucorr { flex-direction: column; align-items: flex-start; gap: var(--sp-4); }
   .unotice { padding: var(--sp-3) var(--sp-5); }
+}
+
+/* Phones: the back pill belongs to the page header, not to the viewport.
+   Fixed, it sat on top of the insight text while scrolling at 390px. */
+@media (max-width: 600px) {
+  .unit { scroll-padding-top: var(--sp-3); }
+  .unit__head { padding-top: var(--sp-8); }
+  .unit__back { position: static; }
 }
 
 /* --------------------------------------------------------------------------
@@ -1332,3 +1366,536 @@ html.is-switching body *::after {
 .lang-toggle + .theme-toggle { margin-left: 0; }
 @media (prefers-reduced-motion: reduce) { .lang-toggle { transition: none; } }
 @media (prefers-reduced-motion: reduce) { .unit__back { transition: none; } }
+
+/* ==========================================================================
+   Settings + three-level guide — shared modal chrome.
+   Tokens only: the scrim, card, borders and text all come from tokens.css.
+   Every target clears 44px; motion honours prefers-reduced-motion.
+   ========================================================================== */
+
+/* the gear that opens Configuración: same footprint as the theme toggle */
+.settings-open {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid var(--border-card);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition:
+    color var(--dur-exit) var(--ease-enter),
+    border-color var(--dur-exit) var(--ease-enter),
+    transform var(--dur-press) var(--ease-enter);
+}
+.settings-open:hover { color: var(--text-primary); border-color: var(--border-strong); }
+.settings-open:active { transform: scale(0.97); }
+.settings-open[aria-expanded="true"] {
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+.settings-open svg { width: 20px; height: 20px; }
+.settings-open + .theme-toggle { margin-left: 0; }
+
+.settings-layer,
+.guide-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: start center;
+  padding: var(--sp-4);
+  overflow-y: auto;
+  background: var(--bg-scrim);
+}
+.settings-layer[hidden],
+.guide-layer[hidden] { display: none; }
+
+.settings,
+.guide {
+  width: min(560px, 100%);
+  margin: auto;
+  padding: var(--sp-6);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-card-watch);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  animation: sheetIn var(--dur-enter) var(--ease-enter) both;
+}
+.guide { width: min(440px, 100%); }
+
+@keyframes sheetIn {
+  from { opacity: 0; transform: translateY(10px) scale(0.985); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.settings__head,
+.guide__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-4);
+}
+.settings__title,
+.guide__title {
+  margin: 3px 0 0;
+  font-family: var(--font-display);
+  font-size: var(--text-subheading);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-subheading);
+  letter-spacing: var(--tracking-subheading);
+  color: var(--text-primary);
+}
+.settings__head .label,
+.guide__head .label { color: var(--text-secondary); }
+
+.settings__close,
+.guide__skip,
+.tip__close {
+  display: grid;
+  place-items: center;
+  flex: none;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 var(--sp-3);
+  border-radius: var(--radius-pill);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  font-size: var(--text-caption);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+  transition:
+    color var(--dur-exit) var(--ease-enter),
+    border-color var(--dur-exit) var(--ease-enter);
+}
+.settings__close { font-size: 22px; padding: 0; width: 44px; height: 44px; }
+.settings__close:hover,
+.guide__skip:hover,
+.tip__close:hover { color: var(--text-primary); border-color: var(--border-strong); }
+
+.settings__tabs {
+  display: flex;
+  gap: var(--sp-2);
+  margin: var(--sp-5) 0 var(--sp-2);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.settings__tab {
+  min-height: 44px;
+  padding: 0 var(--sp-3);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  font-size: var(--text-caption);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+}
+.settings__tab[aria-current="true"] {
+  color: var(--text-primary);
+  border-bottom-color: var(--text-accent);
+}
+
+.set {
+  padding: var(--sp-5) 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.set:last-child { border-bottom: 0; padding-bottom: 0; }
+.set__title {
+  margin: 0 0 var(--sp-1);
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-micro);
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+.set__hint,
+.set__state {
+  margin: 0 0 var(--sp-3);
+  font-size: var(--text-caption);
+  line-height: var(--leading-caption);
+  color: var(--text-secondary);
+}
+.set__state { margin: var(--sp-2) 0 0; color: var(--text-primary); }
+.set__choices { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+.set__choice {
+  min-height: 44px;
+  padding: 0 var(--sp-4);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-card);
+  background: transparent;
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: var(--text-caption);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+  transition:
+    background-color var(--dur-exit) var(--ease-enter),
+    border-color var(--dur-exit) var(--ease-enter),
+    transform var(--dur-press) var(--ease-enter);
+}
+.set__choice:hover { border-color: var(--border-strong); background: var(--bg-raised); }
+.set__choice:active { transform: scale(0.97); }
+.set__choice[aria-pressed="true"] {
+  border-color: var(--text-accent);
+  color: var(--text-accent);
+}
+.set__choice--danger { border-color: var(--border-strong); }
+
+.set__switch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  width: 100%;
+  min-height: 56px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+}
+.set__switch-track {
+  position: relative;
+  display: block;
+  flex: none;
+  width: 52px;
+  height: 30px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-strong);
+  background: var(--bg-raised);
+  transition: background-color var(--dur-exit) var(--ease-enter);
+}
+.set__switch-knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--text-secondary);
+  transition:
+    transform var(--dur-exit) var(--ease-enter),
+    background-color var(--dur-exit) var(--ease-enter);
+}
+.set__switch[aria-checked="true"] .set__switch-track { background: var(--state-primary-dim); }
+.set__switch[aria-checked="true"] .set__switch-knob {
+  transform: translateX(22px);
+  background: var(--color-primary-500);
+}
+
+/* --- Help (level 3) ------------------------------------------------------ */
+
+.help { padding-top: var(--sp-4); }
+.help__lede {
+  margin: 0 0 var(--sp-4);
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+  color: var(--text-primary);
+}
+.help__h {
+  margin: var(--sp-6) 0 var(--sp-3);
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-micro);
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+.help__p {
+  margin: 0 0 var(--sp-3);
+  font-size: var(--text-caption);
+  line-height: var(--leading-caption);
+  color: var(--text-secondary);
+}
+.help__faq { margin: 0; }
+.help__qa { padding: var(--sp-3) 0; border-top: 1px solid var(--border-subtle); }
+.help__qa:first-child { border-top: 0; padding-top: 0; }
+.help__q {
+  margin: 0 0 var(--sp-1);
+  font-size: var(--text-caption);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+}
+.help__a {
+  margin: 0;
+  font-size: var(--text-caption);
+  line-height: var(--leading-caption);
+  color: var(--text-secondary);
+}
+.help__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.help__row {
+  display: grid;
+  grid-template-columns: minmax(96px, 40%) 1fr;
+  gap: var(--sp-3);
+  padding: var(--sp-2) 0;
+  border-top: 1px solid var(--border-subtle);
+}
+.help__row:first-child { border-top: 0; }
+.help__name {
+  margin: 0;
+  font-size: var(--text-caption);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+}
+.help__desc {
+  margin: 0;
+  font-size: var(--text-caption);
+  line-height: var(--leading-caption);
+  color: var(--text-secondary);
+}
+.help__vocab { margin-bottom: var(--sp-2); }
+
+/* --- Guide level 1 ------------------------------------------------------- */
+
+.guide__cards { margin-top: var(--sp-4); }
+.guide__card {
+  padding: var(--sp-2) 0 var(--sp-4);
+  min-height: 210px;
+}
+.guide__card[hidden] { display: none; }
+.guide__step { color: var(--text-secondary); }
+.guide__card-title {
+  margin: var(--sp-3) 0 var(--sp-2);
+  font-family: var(--font-display);
+  font-size: var(--text-heading-sm);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-heading-sm);
+  letter-spacing: var(--tracking-heading-sm);
+  color: var(--text-primary);
+}
+.guide__body {
+  margin: 0 0 var(--sp-3);
+  font-family: var(--font-display);
+  font-size: var(--text-subheading);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-subheading);
+  color: var(--text-accent);
+}
+.guide__note {
+  margin: 0;
+  font-size: var(--text-caption);
+  line-height: var(--leading-caption);
+  color: var(--text-secondary);
+}
+.guide__progress {
+  margin: var(--sp-2) 0 var(--sp-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  letter-spacing: var(--tracking-micro);
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+.guide__dots { display: flex; gap: var(--sp-2); }
+.guide__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border-strong);
+}
+.guide__dot.is-on { background: var(--color-primary-500); }
+.guide__foot {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  margin-top: var(--sp-5);
+}
+.guide__btn {
+  min-height: 48px;
+  flex: 1;
+  padding: 0 var(--sp-4);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-card);
+  background: transparent;
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: var(--text-caption);
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+  transition:
+    background-color var(--dur-exit) var(--ease-enter),
+    border-color var(--dur-exit) var(--ease-enter),
+    transform var(--dur-press) var(--ease-enter);
+}
+.guide__btn:disabled { opacity: 0.38; cursor: not-allowed; }
+.guide__btn:active { transform: scale(0.97); }
+.guide__btn--primary {
+  background: var(--color-primary-500);
+  border-color: var(--color-primary-500);
+  color: var(--text-inverse);
+}
+.guide__btn--primary:hover { background: var(--color-primary-300); }
+
+/* --- Level 1 lives on the watch face ------------------------------------
+   Same tokens as the watch screens: the guide is the screen, not a sheet
+   over the case. Three short cards, dots plus one counter, one 56px pill. */
+.guide-watch {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  border-radius: var(--watch-r);
+  background: var(--bg-screen);
+}
+.guide.guide--watch {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 18px var(--sp-6) 22px;
+  border: 0;
+  border-radius: inherit;
+  background: var(--bg-screen);
+  color: var(--text-primary);
+  overflow: hidden;
+  animation: guideFaceIn var(--dur-enter) var(--ease-enter) both;
+}
+@keyframes guideFaceIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.99); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.guide--watch .guide__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+}
+.guide--watch .guide__back,
+.guide--watch .guide__skip {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 var(--sp-3);
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  font-size: var(--w-caption);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+}
+.guide--watch .guide__back:disabled { opacity: 0.38; cursor: not-allowed; }
+.guide--watch .guide__back:focus-visible,
+.guide--watch .guide__skip:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+.guide--watch .guide__cards {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  margin: 0;
+}
+.guide--watch .guide__card {
+  width: 100%;
+  min-height: 0;
+  padding: 0;
+  text-align: center;
+}
+.guide--watch .guide__card[hidden] { display: none; }
+.guide--watch .guide__card-title {
+  margin: 0 0 var(--sp-3);
+  font-family: var(--font-mono);
+  font-size: var(--w-caption);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-micro);
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+.guide--watch .guide__body {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--w-title);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-subheading);
+  color: var(--text-accent);
+}
+.guide--watch .guide__meta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+  margin: var(--sp-2) 0 var(--sp-3);
+}
+.guide--watch .guide__count {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--w-caption);
+  letter-spacing: var(--tracking-micro);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-secondary);
+}
+.guide--watch .guide__foot { display: block; margin: 0; }
+.guide--watch .guide__next { width: 100%; min-height: 56px; flex: none; }
+
+/* the stage's only level-1 chrome: one small caption under the watch */
+.guide-caption {
+  position: relative;
+  z-index: var(--z-hint);
+  min-height: 0;
+  margin: 0;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  letter-spacing: var(--tracking-micro);
+  color: var(--text-secondary);
+}
+.guide-caption[hidden] { display: none; }
+
+/* --- Guide level 2: the coach mark -------------------------------------- */
+
+.tip {
+  position: fixed;
+  z-index: 55;
+  width: min(280px, calc(100vw - 24px));
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-2) var(--sp-3) var(--sp-4);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  animation: tipIn var(--dur-enter) var(--ease-enter) both;
+}
+.tip__text {
+  flex: 1;
+  margin: 0;
+  padding: var(--sp-2) 0;
+  font-size: var(--text-caption);
+  line-height: var(--leading-caption);
+  color: var(--text-primary);
+}
+@keyframes tipIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .settings,
+  .guide,
+  .guide.guide--watch,
+  .tip { animation: none; }
+  .settings-open,
+  .set__choice,
+  .set__switch-track,
+  .set__switch-knob,
+  .guide__btn,
+  .guide--watch .guide__next,
+  .settings__close,
+  .guide__skip,
+  .tip__close { transition: none; }
+}

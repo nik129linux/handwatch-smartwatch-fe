@@ -1,0 +1,14 @@
+# BRIEF-WEAR — bring the native Wear OS app (wear/) up to the desktop app's level
+Scope: ONLY files under wear/ (src, res, AndroidManifest.xml, build.sh, README.md) plus a new test under tests/. Do not touch js/, css/, *.html, main.js. Do NOT start any emulator (another agent does that next). Code/comments/commits in English; UI copy Spanish (neutral Colombian) + English.
+Read first: wear/src/co/ucc/handhygiene/wear/*.java, wear/res/values/colors.xml, wear/AndroidManifest.xml, wear/build.sh, and for the product rules js/watch.js, js/guide.js, js/settings.js, js/strings-es.js (the desktop simulator is the reference behaviour and copy).
+
+Must deliver (binary):
+1. Language: Spanish by default regardless of device locale; English only when the `lang` extra from the desktop says "en" or the user picks English in Ajustes. Persist in SharedPreferences. All strings in res/values/strings.xml (es, default) + res/values-en/strings.xml; no hardcoded UI strings in Java. Same copy as js/strings-es.js where the screen exists on desktop ("¿Te lavaste?", "Sí, me lavé", "No alcancé", "Anotado. Gracias.", "Momentos", "Ya lo hice", …).
+2. First-run guide (level 1) on the watch: 3 cards — "Te aviso con vibración" / "Si dudo, te pregunto" / "Solo tú lo ves" — max ~4 words per line, dots, one 56dp "Siguiente"/"Empezar" pill, "Saltar". Shown once (SharedPreferences), replayable from Ajustes.
+3. Ajustes screen reachable from Home (rotary/swipe or a gear pill): Idioma (Español/English endonyms), Ver la guía otra vez, Ayuda (the four vibrations: name + one line each, play button that runs the same VibrationEffect waveform), Borrar mis datos.
+4. Home ring: 15 segments for 15 moments (same as desktop's plan); counter clamps at the plan (never "16 / 15").
+5. Every button >= 48dp (today AlertActivity uses 44dp), round-screen safe insets, rotary input scrolls lists, back gesture returns.
+6. Light/dark: the watch face stays black (OLED) — that is intended; just make sure text contrast >= 4.5:1 and accent use matches res/values/colors.xml tokens (no new raw colors in Java; put any new color in colors.xml).
+7. `wear/build.sh` must build cleanly from scratch (`rm -rf wear/out wear/gen wear/obj && wear/build.sh`) with the system javac (`--release 11`). Fix anything that breaks.
+8. Add tests/wear.test.js (Node, no emulator): builds the APK via build.sh, asserts it exists, uses `aapt2 dump strings`/`aapt2 dump resources` (from ~/Android/sdk/build-tools/35.0.0) to assert both locales contain every key, greps Java for hardcoded user-visible string literals (fail if any), asserts no 44dp/smaller button sizes remain. Add it to the package.json "test" script. Full `npm test` must stay green.
+Commit in small steps (git add only your files). Final message: each item PASS/FAIL with evidence, `npm test` counts, and the exact adb commands to install and open each screen (home, guide, ajustes, alert with kind=doubtful) for the next agent.

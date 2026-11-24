@@ -1,16 +1,21 @@
 /* ==========================================================================
-   theme.js — light / dark switch
-   Default = prefers-color-scheme; persisted in localStorage (try/catch);
-   shared between index.html and unit.html through the same key.
+   theme.js — Claro / Oscuro / Sistema
+   Default = light on a fresh profile (never the OS). The choice is stored
+   as 'light' | 'dark' | 'system' in localStorage (try/catch) and shared by
+   index.html and unit.html through the same key. 'system' follows
+   prefers-color-scheme live.
    Runs synchronously in <head> so the first paint already has the theme.
-   Exposes window.__toggleTheme (used by the Electron accelerator) and
-   window.__setTheme (used by the acceptance run).
+   Exposes window.__toggleTheme (Electron accelerator / header shortcut),
+   window.__setTheme (light|dark|system, used by tests and Settings) and
+   window.__themePref (the stored choice).
    ========================================================================== */
 
 (function () {
   'use strict';
 
   var KEY = 'handwatch-theme';
+  var DEFAULT = 'light';
+  var mq = (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)')) || null;
 
   function stored() {
     try { return window.localStorage.getItem(KEY); } catch (e) { return null; }
@@ -18,13 +23,14 @@
   function save(v) {
     try { window.localStorage.setItem(KEY, v); } catch (e) { /* private mode */ }
   }
-  function system() {
-    return (window.matchMedia &&
-      window.matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark';
+  function system() { return (mq && mq.matches) ? 'light' : 'dark'; }
+  function pref() {
+    var s = stored();
+    return (s === 'light' || s === 'dark' || s === 'system') ? s : DEFAULT;
   }
   function current() {
-    var s = stored();
-    return (s === 'light' || s === 'dark') ? s : system();
+    var p = pref();
+    return p === 'system' ? system() : p;
   }
 
   function apply(t) {
@@ -33,6 +39,9 @@
     for (var i = 0; i < btns.length; i++) {
       btns[i].setAttribute('aria-pressed', t === 'light' ? 'true' : 'false');
     }
+    document.dispatchEvent(new CustomEvent('theme:change', {
+      detail: { theme: t, pref: pref() }
+    }));
   }
 
   /* Circular reveal from the toggle point (View Transitions API);
@@ -84,7 +93,22 @@
     } catch (e) { /* already clean */ }
   }
 
+  /* Settings uses this: light | dark | system, persisted as chosen. */
+  function setTheme(v) {
+    if (v !== 'light' && v !== 'dark' && v !== 'system') return pref();
+    save(v);
+    apply(v === 'system' ? system() : v);
+    return v;
+  }
+
   apply(current());
+
+  /* 'Sistema' means live: follow the OS while it is selected. */
+  try {
+    var onSystem = function () { if (pref() === 'system') apply(system()); };
+    if (mq && mq.addEventListener) mq.addEventListener('change', onSystem);
+    else if (mq && mq.addListener) mq.addListener(onSystem);
+  } catch (e) { /* older engine — the stored value still applies */ }
 
   function bind() {
     var btns = document.querySelectorAll('.theme-toggle');
@@ -99,10 +123,6 @@
   }
 
   window.__toggleTheme = toggle;
-  window.__setTheme = function (t) {
-    if (t !== 'light' && t !== 'dark') return current();
-    apply(t);
-    save(t);
-    return t;
-  };
+  window.__setTheme = setTheme;
+  window.__themePref = pref;
 })();

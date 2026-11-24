@@ -1,92 +1,91 @@
-# Demo — Hand Hygiene Watch (2 minutes)
+# Demo — Reloj de Higiene de Manos (2 minutos)
 
-## Launch
+## Arranque
 
-Double-click **Hand Hygiene Watch** in the dock/launcher, or run `npm start`
-from this folder. Everything runs offline in one desktop window.
+Doble clic en **Hand Hygiene Watch** del dock/lanzador, o `npm start` desde
+esta carpeta. Todo corre sin conexión en una sola ventana de escritorio.
 
-## Before class (real watch)
+## Guion del presentador
 
-Watch paired in its companion app, phone on Wi-Fi with **ntfy** subscribed
-to the topic in **Real watch**. Flip **Send to my wrist** on and press
-**Doubtful wash** once: the wrist should buzz with *Did you wash?* in ~5 s.
+**0:00 — La tesis (guía en el reloj).** "Este reloj SE va a equivocar: una
+marca equivocada es una acusación automática contra una enfermera. Por eso
+todo el diseño es corregirla con un toque, sin mostrarla nunca como una
+acusación." La app abre con la **Guía rápida**: tres tarjetas en el reloj
+(**Guía en el reloj** · 1 de 3) — vibración, un toque responde, privacidad.
+Sin formularios, sin nombres.
 
-## Presenter script
+**0:20 — Turno guiado.** Clic en **▶ Turno guiado** (~75 s de historia).
+"El reloj vibra, nunca suena: la vibración llega a la muñeca, nunca frente
+al paciente." Ritmo 2: suena el recordatorio y la pantalla solo muestra
+**Ya lo hice**.
 
-**0:00 — The thesis (Home).** "This watch WILL be wrong — a wrong mark is an
-automatic accusation against a nurse. So the whole design is about correcting
-it with one tap, and never showing it as an accusation." Point at the ring:
-12 of 15 moments, no names anywhere.
+**0:45 — La marca equivocada.** "Aquí está: el reloj se equivocó." La
+pantalla de duda pregunta **¿Te lavaste?** con dos píldoras, sin formulario
+ni campo de motivo. El dedo toca **Sí, me lavé** → brindis **Anotado.
+Gracias.** "Un toque y se acabó. Nunca rojo, nunca la palabra error."
 
-**0:20 — Guided shift.** Click **▶ Guided shift**. "The watch taps, never
-sounds — the buzz reaches the wrist, never in front of the patient."
-Watch beat 2: reminder buzzes, screen shows only *Already did it*.
+**1:10 — La pausa y la privacidad.** **Código azul** → el reloj ofrece
+**Pausa 30 min** y pide confirmar con **Silenciar 30 min**, luna en la
+barra de estado. "En una emergencia el reloj se calla: el aviso llega
+silenciado." Clic en el **botón lateral**: **Quién ve esto** — Tú /
+Control de infecciones / Nadie. "El detalle es tuyo, dura solo 24 h. La
+unidad solo ve totales."
 
-**0:45 — The wrong mark.** "Here it is — the watch was wrong." The doubt
-screen asks *Did you wash?* with two pills, no form, no reason field.
-The fingertip taps **Yes, I did** → toast *Noted. Thanks.* "One tap, gone.
-Never red, never the word error."
+**1:35 — La página de la unidad.** Clic en **Ver lo que ve Control de
+Infecciones**: barras por momento de la OMS, sin nombres. "Mide el
+proceso, no a las personas." En **Pregúntale a la unidad** toca **¿Dónde
+se cae el proceso?**: una línea con el momento más débil, sus números y
+un arreglo de dispensador. Luego escribe *¿Qué enfermera falla más?*:
+rechazo en la página, "esta vista no tiene personas". "La IA responde
+sobre el proceso y no puede responder sobre una persona, porque los datos
+no tienen persona." Con consentimiento (la hoja muestra los totales
+exactos + la pregunta), gemma responde en ~0,5 s con la insignia
+*IA · gemma*; cualquier número fuera de los totales y responden las
+reglas. Calidad del modelo: "El modelo de gestos está entrenado, no
+ajustado a mano: 99% en señales que nunca vio contra 98% de mis reglas
+viejas. Datos sintéticos, lo digo en la página."
 
-**1:10 — The emergency.** Code blue → *Silence 30 min*, moon in the status
-bar. "In an emergency the watch shuts up — the reminder arrives muted."
-Click the **side button**: *Who sees this* — You / Infection control /
-No one. "Details are yours, gone in 24 h. The unit sees totals only."
+**1:50 — Configuración en vivo.** Abre **Configuración**: cambia **Idioma**
+a **English**, toda la app cambia al instante, sin recargar. Cambia **Tema**
+a **Oscuro**. "Se aplica al instante. Sin recargar." Vuelve a **Español**
+y **Claro** para entregar la app como la encontraste.
 
-**1:35 — Free mode.** "Same engine, your hands." Click **Doubtful wash**,
-correct it yourself. Turn the crown with the mouse wheel; **Esc** goes back.
-End on **See what Infection Control sees**: bars by WHO moment, no names,
-*Measure the process, not the people.*
+## Extra: el reloj de verdad (Wear OS)
 
-**1:50 — The AI that helps the unit.** On the unit page, tap
-*Where does the process slip?*: one line with the weakest moment, its
-numbers and a dispenser fix. Then type *Which nurse misses the most?*:
-refused on the page, "This view has no people". "The AI answers about the
-process and cannot answer about a person, because the data has no person."
-In the desktop app the first question shows the consent sheet (the exact
-totals + question), then gemma answers in ~0.5 s with the badge *IA · gemma*;
-any number not in the totals and the rules answer instead.
-Model quality card: "The gesture model is trained, not hand-tuned: 99% on
-streams it never saw vs 98% for my old rules. Synthetic data, I say it on
-the page." Flip **EN | ES** top right: same app in Spanish.
+Con el emulador Wear OS la alerta abre en el reloj con su vibración real.
+Hay 7 capturas en `shots/`: `wear-guide`, `wear-home`, `wear-ajustes`,
+`wear-ayuda`, `wear-dudoso`, `wear-gracias`, `wear-home-en`.
 
-**Show it on a wrist (optional).** With **Send to my wrist** on, every
-haptic also reaches the real watch as a notification. "A cheap watch can't
-run our app, so the phone relays it. Same words, same silence; the tap
-back happens here."
+```bash
+npm run watch   # ~33 s en frío: arranca el emulador hhw_watch e instala y abre la app
+```
 
-## Real vs simulated
+El puente escritorio → reloj: en el panel **Reloj real** activa
+**Enviar a mi muñeca** — ese es el único interruptor que tocas. Cada
+vibración abre la alerta en el reloj con el idioma actual de la página
+(es lo que verifica el paso 3: el mismo comando adb con `lang es`
+muestra *¿Te lavaste?*, con `lang en` muestra *Did you wash?*). Responde
+girando la corona para elegir **Sí, me lavé** / **No alcancé** y
+presionando el segundo botón (o toca; flechas + Enter también sirven).
+La corona como tal es Inicio en Wear OS y nunca llega a las apps.
 
-Real: the trained gesture model (`js/model.js`, softmax regression over the
-features `js/classifier.js` extracts) decides every wash: probability >= 0.75
-sure, 0.4-0.75 unsure, else nothing. Noise makes it wrong, honestly: a quick
-gel rub under noise reads as "gel or nothing?" and the watch asks. Real: Ask
-the unit (rules offline, gemma with consent, grounded). Real: haptic vocabulary over `navigator.vibrate`, 24 h log
-purge, token propagation. Simulated: the sensor stream itself (no hardware),
-the shift script, the unit dashboard numbers.
+## Antes de clase
 
-## Questions a strict reviewer will ask
+- **Internet para el modelo**: las reglas siempre funcionan sin red; gemma
+  (`gemma4:31b-cloud`) corre en ollama.com, así que sin internet las
+  preguntas las responden las reglas escritas (insignia *Reglas*).
+- **Borrar los datos**: en la app, Configuración → Privacidad → **Borrar
+  todos los datos**; en el emulador,
+  `adb -s emulator-5554 shell pm clear co.ucc.handhygiene.wear`
+  (vuelve el español y la guía del primer arranque).
+- **Emulador pre-arrancado**: corre `npm run watch` una vez antes de clase
+  (~33 s en frío, ~1 s en caliente) y deja el reloj en Inicio.
 
-**"Where is the AI, exactly?"** Two places. On the wrist, a trained model
-(not if/else) reads the motion: 1,800 training streams, tested on 360 it
-never saw, 99% vs 98% for hand rules. For the unit, *Ask the unit* answers
-questions with a language model, but only with numbers it was given.
+## Si algo falla
 
-**"Your data is synthetic. So what does 99% prove?"** That the model learned
-the simulator, nothing more; the page says so. The pipeline (features,
-training, held-out test, calibration) is what transfers to real wrist data.
-
-**"Does the question leave the computer?"** Only after consent, and only with
-anonymous totals. Questions about a person are refused before that. The cloud
-model is optional; without it the rules answer.
-
-**"Why not just make the classifier accurate?"** Noise is the hospital:
-water, gloves, gel all look alike at the wrist. The design assumes error and
-puts the nurse as the judge — one tap — instead of chasing 100%.
-
-**"Why no sound at all?"** Sound accuses in front of the patient. Vibration
-is private to the body; four patterns feel different so *reminder* and
-*unsure* can't be confused with the screen in her pocket.
-
-**"Could the unit page identify someone?"** No. Aggregation counts
-`corrected:true` events with no person field (the log schema has none, purge
-at 24 h); there is no filter, no search, no per-person view to abuse.
+- **Modelo caído → reglas**: si Ollama no responde, la página lo dice
+  ("No pude usar el modelo; respondieron las reglas del reloj.") y sigue
+  la demo sin pausa. La insignia lo deja claro.
+- **Emulador trabado → scrcpy**: `scrcpy -s emulator-5554` abre un espejo
+  donde la rueda del mouse es la corona y Enter confirma. Si ni eso,
+  la demo entera funciona sin el emulador: el reloj simulado hace lo mismo.

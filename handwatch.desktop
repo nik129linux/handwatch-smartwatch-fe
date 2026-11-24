@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Hand Hygiene Watch
+Comment=Hand-hygiene smartwatch prototype (Unit 4B)
+Exec=sh -c "npm start"
+Path=/home/nico/Documents/U/Co/U/4s/courses/interfaces/tareas/proyecto final/smartwatch
+Terminal=false
+Icon=/home/nico/Documents/U/Co/U/4s/courses/interfaces/tareas/proyecto final/smartwatch/build/icon.svg
+Categories=Education;
+StartupWMClass=handwatch

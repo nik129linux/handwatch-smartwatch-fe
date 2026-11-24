@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- English is opt-in: only when the desktop sends lang=en or the wearer
+     picks English in Ajustes. Spanish (values/) stays the default. -->
+<resources>
+    <string name="app_name">Hand Hygiene</string>
+
+    <!-- Home -->
+    <string name="home_moments">Moments</string>
+    <string name="home_of">/ %1$d</string>
+    <string name="home_shift">Shift · Unit 4B</string>
+    <string name="home_settings">Settings</string>
+    <string name="home_settings_desc">Open settings</string>
+
+    <!-- Alert -->
+    <string name="alert_doubt_title">Did you wash?</string>
+    <string name="alert_doubt_body">Not sure</string>
+    <string name="alert_reminder_title">Before the patient</string>
+    <string name="alert_ok_title">Noted</string>
+    <string name="alert_end_title">Shift closed</string>
+    <string name="alert_idle_body">Waiting for the shift</string>
+    <string name="answer_yes">Yes, I did</string>
+    <string name="answer_no">Couldn\'t</string>
+    <string name="answer_already">Already did it</string>
+    <string name="noted">Noted. Thanks.</string>
+    <string name="stays">Stays with you.</string>
+
+    <!-- Guide (level 1) -->
+    <string name="guide_kicker_1">What this is</string>
+    <string name="guide_body_1">I warn you with vibration.</string>
+    <string name="guide_kicker_2">The core action</string>
+    <string name="guide_body_2">If I doubt, I ask you.</string>
+    <string name="guide_kicker_3">Privacy and AI</string>
+    <string name="guide_body_3">Only you see this.</string>
+    <string name="guide_next">Next</string>
+    <string name="guide_start">Start</string>
+    <string name="guide_skip">Skip</string>
+    <string name="guide_position">%1$d of %2$d</string>
+
+    <!-- Ajustes -->
+    <string name="settings_title">Watch settings</string>
+    <string name="settings_language">Language</string>
+    <string name="lang_es">Español</string>
+    <string name="lang_en">English</string>
+    <string name="settings_replay_guide">Play the guide again</string>
+    <string name="settings_help">Help</string>
+    <string name="settings_delete">Delete my data</string>
+    <string name="settings_close">Close</string>
+    <string name="delete_done">All data deleted.</string>
+
+    <!-- Ayuda -->
+    <string name="help_title">Help</string>
+    <string name="help_lede">Four patterns. No sound, ever.</string>
+    <string name="help_play">Play</string>
+    <string name="help_play_desc">Play %1$s</string>
+    <string name="help_back">Back</string>
+    <string name="haptic_reminder">Reminder</string>
+    <string name="haptic_reminder_line">Due and missed</string>
+    <string name="haptic_ok">Ok</string>
+    <string name="haptic_ok_line">Wash logged</string>
+    <string name="haptic_doubtful">Doubtful</string>
+    <string name="haptic_doubtful_line">Watch is unsure</string>
+    <string name="haptic_end">End</string>
+    <string name="haptic_end_line">Shift over</string>
+</resources>

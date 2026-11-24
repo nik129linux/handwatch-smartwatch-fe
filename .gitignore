@@ -8,3 +8,5 @@ FIX-AUTO.md
 node_modules/
 *.keystore
 .run.log
+ai/app-key.json
+web-dist/

@@ -26,14 +26,15 @@ var watch = (function () {
     washMs: 20000,
     speed: 1,
     pending: false,              /* a patient-zone moment still open */
-    lastMoment: 'before-patient',
-    lastWhy: ''                  /* classifier "why" line for the doubt screen */
+    lastMoment: 'before-patient'
   };
 
   var el = {};
   var current = null;
   var ticker = null;
   var washInt = null;
+  var washTimeouts = [];
+  var washToken = 0;
   var doubtLock = false;   /* one tap closes the doubt screen; a second tap
                               (double click, shaky hand) must not count twice */
   var scaleVal = 1;
@@ -57,9 +58,17 @@ var watch = (function () {
     return REDUCED ? Math.min(n, 40) : Math.max(16, Math.round(n * s));
   }
 
+  /* Clock times follow the active locale (00-23, Intl). */
   function clock() {
     var d = new Date(state.now);
+    if (typeof I18N !== 'undefined' && I18N.time) return I18N.time(d);
     return pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+  }
+  function n(v) {
+    return (typeof I18N !== 'undefined' && I18N.num) ? I18N.num(v) : String(v);
+  }
+  function tr(s) {
+    return (typeof I18N !== 'undefined' && I18N.t) ? I18N.t(s) : s;
   }
   function setClock(hh, mm) {
     var d = new Date(state.now);
@@ -166,11 +175,11 @@ var watch = (function () {
   function countTo(node, to) {
     var from = parseInt(node.getAttribute('data-count') || '0', 10) || 0;
     node.setAttribute('data-count', String(to));
-    if (from === to || REDUCED) { node.textContent = String(to); return; }
+    if (from === to || REDUCED) { node.textContent = n(to); return; }
     var t0 = performance.now();
     (function step(t) {
       var p = Math.min(1, (t - t0) / 520);
-      node.textContent = String(Math.round(from + (to - from) * (1 - Math.pow(1 - p, 3))));
+      node.textContent = n(Math.round(from + (to - from) * (1 - Math.pow(1 - p, 3))));
       if (p < 1) requestAnimationFrame(step);
     })(t0);
   }
@@ -199,12 +208,16 @@ var watch = (function () {
       var foot = isPaused()
         ? '<button class="pill pill--secondary" data-act="resume">Resume alerts</button>'
         : '<button class="pill pill--ghost" data-act="pause">Pause 30 min</button>';
+      foot += '<button class="pill pill--ghost" data-act="settings">Watch settings</button>';
 
       return '<div class="home__hero">' +
-          '<div class="ring" style="--ring-size:' + HOME_RING.size + 'px">' + s.markup +
+          '<div class="ring" role="progressbar" aria-valuemin="0" ' +
+            'aria-valuemax="' + state.plan + '" aria-valuenow="' + state.done + '" ' +
+            'aria-label="' + esc(tr('Moments')) + '" ' +
+            'style="--ring-size:' + HOME_RING.size + 'px">' + s.markup +
             '<div class="ring__center">' +
-              '<div class="hero-num" data-count="' + state.done + '">' + state.done + '</div>' +
-              '<div class="home__of">/ ' + state.plan + '</div>' +
+              '<div class="hero-num" data-count="' + state.done + '">' + n(state.done) + '</div>' +
+              '<div class="home__of">/ ' + n(state.plan) + '</div>' +
             '</div></div>' +
           '<div class="home__headline">Moments</div>' +
           '<div class="caption home__shift">Shift · Unit 4B</div>' +
@@ -319,15 +332,17 @@ var watch = (function () {
       return '<div class="caption caption--center">Shift · Unit 4B</div>' +
         '<div class="shift__rows">' +
           '<div class="shift__row">' +
-            '<span class="num">' + state.done + ' of ' + state.opportunities + '</span>' +
+            '<span class="num">' + n(state.done) + ' ' + tr('of') + ' ' +
+              n(state.opportunities) + '</span>' +
             '<span class="caption">moments</span></div>' +
           '<div class="shift__row">' +
-            '<span class="num num--accent">' + state.corrections + '</span>' +
+            '<span class="num num--accent">' + n(state.corrections) + '</span>' +
             '<span class="caption">fixed<br>by you</span></div>' +
         '</div>' +
         '<div class="shift__note caption">Only you see this.<br>Gone in 24 h.</div>' +
         '<div class="screen__foot">' +
           '<button class="pill pill--ghost" data-act="home">Back to start</button>' +
+          '<button class="pill pill--ghost" data-act="settings">Watch settings</button>' +
         '</div>';
     }
   };
@@ -343,9 +358,9 @@ var watch = (function () {
       try {
         if (window.Log) kept = window.Log.count();
       } catch (e) { kept = 0; }
-      var youWhat = kept === 0
-        ? 'Empty · 24 h'
-        : kept + (kept === 1 ? ' event, 24 h' : ' events, 24 h');
+      var youWhat;
+      if (kept === 0) youWhat = tr('Empty') + ' · 24 h';
+      else youWhat = n(kept) + ' ' + tr(kept === 1 ? 'event, 24 h' : 'events, 24 h');
       var rows = [
         ['You', youWhat, 'you'],
         ['Infection control', 'unit totals, no names', ''],
@@ -363,6 +378,7 @@ var watch = (function () {
           (learningOn()
             ? '<button class="pill pill--ghost" data-act="reset-learn">Reset learning</button>'
             : '') +
+          '<button class="pill pill--ghost" data-act="settings">Watch settings</button>' +
           '<button class="pill pill--ghost" data-act="back">Close</button>' +
         '</div>';
     }
@@ -380,14 +396,52 @@ var watch = (function () {
           '<div class="pause__count" data-pausecount>30:00</div>' +
         '</div>' +
         '<div class="screen__foot">' +
-          '<button class="pill pill--primary" data-act="back">Back</button>' +
+          '<button class="pill pill--primary" data-act="pause-confirm">Silence 30 min</button>' +
+          '<button class="pill pill--secondary" data-act="back">Back</button>' +
         '</div>';
     },
     tick: function (node) {
       var n = node.querySelector('[data-pausecount]');
       if (!n) return;
-      var left = Math.max(0, state.pausedUntil - Date.now());
+      var until = isPaused() ? state.pausedUntil : Date.now() + pauseMs();
+      var left = Math.max(0, until - Date.now());
       n.textContent = pad2(Math.floor(left / 60000)) + ':' + pad2(Math.floor(left / 1000) % 60);
+    }
+  };
+
+  /* 8 — Settings: compact, glanceable, max ~4 words per line, 56px rows.
+     It writes the same stored values as the page's Configuración panel. */
+  VIEWS.ajustes = {
+    title: 'Watch settings',
+    anim: 'fwd',
+    build: function () {
+      var curLang = 'es';
+      try { if (typeof I18N !== 'undefined') curLang = I18N.lang; } catch (e) { curLang = 'es'; }
+      var langVal = curLang === 'es' ? 'Español' : 'English';
+      var th = 'light';
+      try { th = window.__themePref ? window.__themePref() : 'light'; } catch (e) { th = 'light'; }
+      var themeVal = tr(th === 'dark' ? 'Dark' : th === 'system' ? 'System' : 'Light');
+      var aiVal = tr(AIPrefs.on() ? 'On' : 'Off');
+      var rows = [
+        ['Language', langVal, 'cfg-lang'],
+        ['Theme', themeVal, 'cfg-theme'],
+        ['AI', aiVal, 'cfg-ai'],
+        ['Guide', tr('Watch again'), 'cfg-guide'],
+        ['Help', tr('Open'), 'cfg-help']
+      ];
+      return '<div class="set-watch">' +
+          rows.map(function (r) {
+            return '<button class="pill pill--secondary set-watch__row" type="button" ' +
+              'data-act="' + r[2] + '">' +
+              '<span class="set-watch__key">' + r[0] + '</span>' +
+              '<span class="set-watch__val"' +
+                (r[2] === 'cfg-lang' ? ' lang="' + curLang + '"' : '') + '>' +
+                esc(r[1]) + '</span></button>';
+          }).join('') +
+        '</div>' +
+        '<div class="screen__foot">' +
+          '<button class="pill pill--ghost" data-act="back">Close</button>' +
+        '</div>';
     }
   };
 
@@ -411,6 +465,27 @@ var watch = (function () {
     }, ms(480));
   }
 
+  /* A wash owns a timer and a few delayed updates. Any screen change,
+     skip, end shift or reset cancels them, so a finished wash can never
+     navigate on top of the screen the person is looking at. */
+  function cancelWash() {
+    if (washInt) {
+      window.clearInterval(washInt);
+      washInt = null;
+    }
+    for (var i = 0; i < washTimeouts.length; i++) window.clearTimeout(washTimeouts[i]);
+    washTimeouts.length = 0;
+    washToken++;
+  }
+  function washLater(fn, delay) {
+    var token = washToken;
+    var id = window.setTimeout(function () {
+      if (token === washToken) fn();
+    }, delay);
+    washTimeouts.push(id);
+    return id;
+  }
+
   function go(name, dir, opts) {
     var def = VIEWS[name];
     if (!def) return null;
@@ -418,6 +493,9 @@ var watch = (function () {
     var from = current;
     var prevScreen = state.screen;
 
+    /* Leaving the wash screen kills its timer. Pause is the exception: a
+       wash already running still finishes (silently) behind the pause. */
+    if (name !== 'lavando' && name !== 'pausa') cancelWash();
     if (name === 'dudoso') doubtLock = false;
 
     if (!opts.noPush) {
@@ -431,6 +509,8 @@ var watch = (function () {
     state.screen = name;
     el.screen.dataset.screen = name;
     el.title.textContent = def.title;
+    /* short spoken name for the screen, not the whole rebuilt tree */
+    if (el.announce) el.announce.textContent = tr(def.title);
     syncPaused();
 
     var node = document.createElement('section');
@@ -507,6 +587,8 @@ var watch = (function () {
     }
     el.count = current.querySelector('.hero-num');
     if (el.count) countTo(el.count, state.done);
+    var bar = current.querySelector('.ring[role="progressbar"]');
+    if (bar) bar.setAttribute('aria-valuenow', String(state.done));
 
     var list = current.querySelector('.home__list');
     var last = state.events[state.events.length - 1];
@@ -532,6 +614,7 @@ var watch = (function () {
   function startWash(opts) {
     opts = opts || {};
     state.speed = opts.speed || 1;
+    cancelWash();
     var dur = ms(state.washMs / state.speed);
     var node = go('lavando', opts.dir || 'fwd');
     var arc = node.querySelector('.wash-ring__arc');
@@ -567,19 +650,19 @@ var watch = (function () {
       foot.innerHTML = '<div class="wash__done"><span class="wash__check">' +
         GLYPH.check + '</span><span class="title">Done</span></div>';
     }
-    window.setTimeout(function () {
+    washLater(function () {
       var c = foot && foot.querySelector('.check');
       if (c) c.classList.add('is-drawn');
     }, ms(60));
-    window.setTimeout(function () {
+    washLater(function () {
       /* QA: a wash that finishes mid-pause still counts, but the watch
          stays silent — pause means no buzz, even a happy one. */
       if (!isPaused()) haptics.play('ok');
-      state.done += 1;
+      state.done = Math.min(state.plan, state.done + 1);
       addEvent({ text: 'Wash · ' + state.bed, kind: 'ok' });
       bump();
     }, ms(820));
-    window.setTimeout(function () { home(); }, ms(1560));
+    washLater(function () { home(); }, ms(1560));
   }
 
   /* ---------------------------------------------------------------- events */
@@ -705,7 +788,7 @@ var watch = (function () {
       case 'done':
         /* QA: stale taps on a detached Reminder pill count nothing. */
         if (state.screen !== 'recordatorio') return;
-        state.done += 1;
+        state.done = Math.min(state.plan, state.done + 1);
         state.pending = false;
         addEvent({ text: 'Marked · ' + state.bed, kind: 'ok' });
         logOutcome('done', false);
@@ -718,7 +801,7 @@ var watch = (function () {
            (or a call after the screen already closed) is ignored. */
         if (state.screen !== 'dudoso' || doubtLock) return;
         doubtLock = true;
-        state.done += 1;
+        state.done = Math.min(state.plan, state.done + 1);
         state.corrections += 1;
         state.pending = false;
         learnFromCorrection();
@@ -737,7 +820,12 @@ var watch = (function () {
         window.setTimeout(function () { home(); }, ms(460));
         break;
       case 'pause':
+        /* open the pause screen; only the explicit confirm really mutes */
+        go('pausa', 'fwd');
+        break;
+      case 'pause-confirm':
         pause();
+        home();
         break;
       case 'resume':
         resume();
@@ -752,6 +840,32 @@ var watch = (function () {
         break;
       case 'privacy':
         go('quien', 'fwd');
+        break;
+      case 'settings':
+        go('ajustes', 'fwd');
+        break;
+      case 'cfg-lang':
+        if (typeof I18N !== 'undefined') {
+          I18N.set(I18N.lang === 'es' ? 'en' : 'es');
+        }
+        break;
+      case 'cfg-theme': {
+        var prefs = ['light', 'dark', 'system'];
+        var cur = window.__themePref ? window.__themePref() : 'light';
+        var next = prefs[(prefs.indexOf(cur) + 1) % prefs.length];
+        if (window.__setTheme) window.__setTheme(next);
+        go('ajustes', 'zoom', { noPush: true });
+        break;
+      }
+      case 'cfg-ai':
+        AIPrefs.setOn(!AIPrefs.on());
+        go('ajustes', 'zoom', { noPush: true });
+        break;
+      case 'cfg-guide':
+        if (window.Guide) Guide.openLevel1(0);
+        break;
+      case 'cfg-help':
+        if (window.Settings) Settings.open('help');
         break;
       case 'reset-learn':
         try { if (typeof Calibrate !== 'undefined') Calibrate.reset(); } catch (e) {}
@@ -771,6 +885,7 @@ var watch = (function () {
     el.screen = document.getElementById('screen');
     el.viewport = document.getElementById('viewport');
     el.title = document.getElementById('statusTitle');
+    el.announce = document.getElementById('screenAnnounce');
     el.time = document.getElementById('statusTime');
     el.toast = document.getElementById('toast');
     el.toastText = document.getElementById('toastText');
@@ -803,6 +918,16 @@ var watch = (function () {
     go('home', 'zoom');
     paintSpin();
     fit();
+
+    /* Switching language repaints dynamic screens without a reload. A wash
+       in flight keeps its countdown; every other screen can rebuild. */
+    document.addEventListener('i18n:change', function () {
+      if (state.screen === 'lavando') return;
+      refresh();
+    });
+    document.addEventListener('theme:change', function () {
+      if (state.screen === 'ajustes') refresh();
+    });
   }
 
   /* Fit the whole watch into the stage with one transform. The scale is

@@ -1,0 +1,15 @@
+{
+  "name": "handwatch",
+  "version": "1.0.0",
+  "description": "Hand-hygiene smartwatch prototype with a unit view for infection control",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron . --no-sandbox",
+    "watch": "scripts/watch.sh",
+    "test": "node tests/ai.test.js && node tests/ask.test.js && node tests/calibrate.test.js && node tests/classifier.test.js && node tests/eval.test.js && node tests/model.test.js && node tests/stats.test.js && node tests/timeseries.test.js && node tests/wrist.test.js && node tests/i18n.test.js && node tests/phase-a.test.js && node tests/phase-b.test.js && node tests/phase-b-fix1.test.js && node tests/w1.test.js && node tests/fold.test.js && node tests/wear.test.js && node tests/acceptance.js && xvfb-run -a node tests/electron-smoke.js"
+  },
+  "devDependencies": {
+    "electron": "^44.5.1",
+    "playwright": "^1.65.0"
+  }
+}

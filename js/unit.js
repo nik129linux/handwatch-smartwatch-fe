@@ -9,28 +9,64 @@ var unit = (function () {
 
   /* --- demo data --------------------------------------------------------- */
 
-  var MOMENTS = [
-    { name: 'Before the patient',        done: 1284, total: 1362, pct: 94 },
-    { name: 'Before a clean procedure', done: 402, total: 451, pct: 89 },
-    { name: 'After fluid exposure', done: 191, total: 269, pct: 71 },
-    { name: 'After the patient',      done: 1188, total: 1381, pct: 86 },
-    { name: 'After the surroundings',       done: 508, total: 819, pct: 62 }
-  ];
-
-  /* Washes per hour of the day (00 → 23). The two spikes are the shift start
-     (07) and the shift change (19) — exactly where the unit is weakest. */
-  var HOURS = [
-    0, 0, 0, 0, 0, 2, 9,
-    28, 34, 31, 27, 24, 19,
-    14, 11, 12, 16, 21, 26,
-    33, 29, 12, 5, 1
-  ];
+  /* One seeded six-week history feeds every figure on this page: the bars,
+     the heatmap, the corrections and the charts. No card carries its own
+     invented numbers, so the bars' mean and the last week of the trend are
+     the same number. */
+  var SEED = 7;
 
   /* The ripple starts at the shift-change hour: --i is the distance
      |hour - 19|, so the stagger delay is monotonic in distance outward. */
   var SHIFT_CHANGE = 19;
 
-  var CORRECTIONS = 34;
+  var FALLBACK = {
+    moments: [
+      { name: 'Before the patient',        done: 1284, total: 1362, pct: 94 },
+      { name: 'Before a clean procedure', done: 402, total: 451, pct: 89 },
+      { name: 'After fluid exposure', done: 191, total: 269, pct: 71 },
+      { name: 'After the patient',      done: 1188, total: 1381, pct: 86 },
+      { name: 'After the surroundings',       done: 508, total: 819, pct: 62 }
+    ],
+    hours: [
+      0, 0, 0, 0, 0, 2, 9,
+      28, 34, 31, 27, 24, 19,
+      14, 11, 12, 16, 21, 26,
+      33, 29, 12, 5, 1
+    ],
+    corrections: 34
+  };
+
+  function demoData() {
+    try {
+      if (typeof Dataset === 'undefined' || !Dataset.generate) return null;
+      var data = Dataset.generate(SEED);
+      var lastWeek = data.events.filter(function (e) {
+        return e.week === Dataset.WEEKS - 1;
+      });
+      var byMoment = Dataset.byMoment(lastWeek);
+      var moments = byMoment.map(function (m) {
+        return {
+          name: m.label,
+          done: m.done,
+          total: m.total,
+          pct: Math.round(m.done / Math.max(1, m.total) * 100)
+        };
+      });
+      var hours = [];
+      for (var h = 0; h < 24; h++) hours.push(0);
+      lastWeek.forEach(function (e) { hours[e.hour] += 1; });
+      return {
+        moments: moments,
+        hours: hours,
+        corrections: Dataset.corrections(data.events)
+      };
+    } catch (e) { return null; }
+  }
+
+  var DEMO = demoData() || FALLBACK;
+  var MOMENTS = DEMO.moments;
+  var HOURS = DEMO.hours;
+  var CORRECTIONS = DEMO.corrections;
   var MAX_HOUR = Math.max.apply(null, HOURS);
 
   /* --- render ------------------------------------------------------------ */
@@ -50,6 +86,24 @@ var unit = (function () {
     return 5;
   }
 
+  function num(v) {
+    return (typeof I18N !== 'undefined' && I18N.num) ? I18N.num(v) : String(v);
+  }
+  function tr(s) {
+    return (typeof I18N !== 'undefined' && I18N.t) ? I18N.t(s) : s;
+  }
+
+  /* Answers cite totals: format them for the active locale before they reach
+     the page. The user's own question is never rewritten. */
+  function formatAnswer(s) {
+    try {
+      if (typeof Insights !== 'undefined' && Insights.formatNumbers) {
+        return Insights.formatNumbers(s);
+      }
+    } catch (e) { /* keep the plain text */ }
+    return s;
+  }
+
   function momentBars() {
     var host = document.getElementById('momentBars');
     if (!host) return;
@@ -60,7 +114,7 @@ var unit = (function () {
         '<div class="ubar__top">' +
           '<span class="ubar__name">' + esc(m.name) + '</span>' +
           '<span class="ubar__val">' + m.pct + '%<small>' +
-            m.done + ' of ' + m.total + '</small></span>' +
+            num(m.done) + ' ' + tr('of') + ' ' + num(m.total) + '</small></span>' +
         '</div>' +
         '<div class="ubar__track">' +
           '<span class="ubar__fill" style="--i:' + i + ';--pct:' + m.pct + '%"></span>' +
@@ -76,7 +130,7 @@ var unit = (function () {
     var cells = HOURS.map(function (v, i) {
       return '<span class="uheat__cell" style="--i:' + Math.abs(i - SHIFT_CHANGE) +
         ';background:var(--heat-' + heatStep(v) + ')" ' +
-        'title="' + pad2(i) + ':00 · ' + v + ' washes"></span>';
+        'title="' + pad2(i) + ':00 · ' + num(v) + ' ' + tr('washes') + '"></span>';
     }).join('');
 
     host.innerHTML =
@@ -117,7 +171,7 @@ var unit = (function () {
       var t0 = performance.now();
       (function step(t) {
         var p = Math.min(1, (t - t0) / 700);
-        n.textContent = String(Math.round(total * (1 - Math.pow(1 - p, 3))));
+        n.textContent = num(Math.round(total * (1 - Math.pow(1 - p, 3))));
         if (p < 1) requestAnimationFrame(step);
       })(t0);
       n.setAttribute('data-count', String(total));
@@ -189,12 +243,14 @@ var unit = (function () {
     try { transport = AI.browserTransport(); } catch (e) { transport = null; }
     if (!transport) return;
     btn.hidden = false;
+    if (btn.dataset.bound) return;
+    btn.dataset.bound = '1';
     btn.addEventListener('click', function () {
       btn.disabled = true;
       AI.requestFindings(agg, {
         transport: transport,
-        consent: null,
-        onConsent: AI.requestConsent
+        consent: (typeof AIPrefs !== 'undefined') ? AIPrefs.consent() : null,
+        onConsent: (typeof AIPrefs !== 'undefined') ? AIPrefs.ask : AI.requestConsent
       }).then(function (r) {
         if (r && r.findings && r.findings.length) paintFixes(r.findings, r.source);
       }).catch(function () { /* rules already on screen — keep them */ })
@@ -239,28 +295,40 @@ var unit = (function () {
     var send = form.querySelector('.ask__send');
     var busy = false;
 
-    function show(q, text, source, loading) {
+    function show(q, text, source, loading, failed) {
       box.hidden = false;
       box.classList.toggle('is-loading', !!loading);
       document.getElementById('askQ').textContent = q;
-      document.getElementById('askA').textContent = text;
+      document.getElementById('askA').textContent = formatAnswer(text);
       document.getElementById('askBadge').textContent = source;
+      var fb = document.getElementById('askFallback');
+      if (fb) {
+        fb.hidden = !failed;
+        if (failed) fb.textContent = tr('I could not use the model; the watch rules answered.');
+      }
+      if (!loading) lastAsk = { q: q, facts: facts };
+    }
+
+    function hideEmpty() {
+      var e = document.getElementById('askEmpty');
+      if (e) e.hidden = true;
     }
 
     function run(q) {
       q = String(q || '').trim();
       if (!q || busy) return;
       busy = true;
+      hideEmpty();
       if (send) send.disabled = true;
-      show(q, lang === 'es' ? 'Leyendo los totales…' : 'Reading the totals…', '…', true);
+      show(q, tr('Reading the totals…'), '…', true, false);
       Ask.request(q, facts, {
         transport: transport,
-        consent: null,
-        onConsent: AI.requestConsent
+        consent: (typeof AIPrefs !== 'undefined') ? AIPrefs.consent() : null,
+        onConsent: (typeof AIPrefs !== 'undefined') ? AIPrefs.ask : AI.requestConsent
       }, lang).then(function (r) {
-        show(q, r.answer, r.source, false);
+        show(q, r.answer, r.source, false, !!r.modelFailed);
       }).catch(function () {
-        show(q, Ask.rulesAnswer(facts, Ask.intent(q), lang, q), 'Rules', false);
+        show(q, Ask.rulesAnswer(facts, Ask.intent(q), lang, q), 'Rules', false, true);
       }).then(function () {
         busy = false;
         if (send) send.disabled = false;
@@ -269,6 +337,15 @@ var unit = (function () {
 
     form.addEventListener('submit', function (ev) {
       ev.preventDefault();
+      if (!String(input.value || '').trim()) {
+        var e = document.getElementById('askEmpty');
+        if (e) {
+          e.textContent = tr('Write a question about the moments or the hours.');
+          e.hidden = false;
+        }
+        input.focus();
+        return;
+      }
       run(input.value);
     });
     var chips = document.querySelectorAll('#askChips .ask__chip');
@@ -282,6 +359,30 @@ var unit = (function () {
   }
 
   function pad2(n) { return (n < 10 ? '0' : '') + n; }
+
+  /* Re-render everything that carries a number or a translated word; the
+     underlying demo data and the real log are untouched. */
+  var lastAsk = null;
+
+  function refresh() {
+    momentBars();
+    heatmap();
+    corrections();
+    try {
+      if (typeof Insights !== 'undefined' && Insights.mount) Insights.mount();
+    } catch (e) { /* the bars above already repainted */ }
+    try { fixes(); } catch (e) { /* rules stay on screen */ }
+    /* The answered question keeps its place: re-answer it in the new
+       language from the same facts, never from the network. */
+    var box = document.getElementById('askAnswer');
+    if (box && !box.hidden && lastAsk && typeof Ask !== 'undefined') {
+      var lang = (typeof I18N !== 'undefined') ? I18N.lang : 'en';
+      var a = document.getElementById('askA');
+      if (a) a.textContent = formatAnswer(Ask.rulesAnswer(lastAsk.facts, Ask.intent(lastAsk.q), lang, lastAsk.q));
+      var badge = document.getElementById('askBadge');
+      if (badge) badge.textContent = 'Rules';
+    }
+  }
 
   function mount() {
     momentBars();
@@ -299,6 +400,11 @@ var unit = (function () {
       var back = document.querySelector('.unit__back');
       if (back) window.location.href = back.getAttribute('href');
     });
+    /* Language changes repaint every figure in place: no reload, no loss. */
+    document.addEventListener('i18n:change', function () {
+      refresh();
+      if (typeof I18N !== 'undefined') I18N.apply(document.body);
+    });
     /* the Electron file copy can land after first paint — re-count then */
     if (typeof document !== 'undefined') {
       document.addEventListener('watch:log-sync', corrections);
@@ -307,6 +413,7 @@ var unit = (function () {
 
   return {
     mount: mount,
+    refresh: refresh,
     MOMENTS: MOMENTS,
     HOURS: HOURS,
     CORRECTIONS: CORRECTIONS,

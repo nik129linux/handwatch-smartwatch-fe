@@ -41,13 +41,38 @@
   font-family: var(--font-mono);
   font-size: var(--text-caption);
   line-height: var(--leading-caption);
-  color: var(--text-tertiary);
+  /* secondary, not tertiary: tertiary is 1.75:1 on the dark canvas */
+  color: var(--text-secondary);
   font-variant-numeric: tabular-nums;
+}
+
+/* Every insight card carries the same visible honesty tag. */
+.insight__demo,
+.model__demo {
+  display: inline-block;
+  margin-top: var(--sp-2);
+  padding: 2px 10px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  letter-spacing: var(--tracking-micro);
+  color: var(--text-secondary);
+}
+
+/* The five-column table scrolls inside its card at narrow widths. */
+.model__table-wrap {
+  max-width: 100%;
+  margin-top: var(--sp-4);
+  overflow-x: auto;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  -webkit-overflow-scrolling: touch;
 }
 
 .model__table {
   width: 100%;
-  margin-top: var(--sp-4);
+  min-width: 520px;
   border-collapse: collapse;
   font-size: var(--text-body);
   line-height: var(--leading-body);
@@ -70,7 +95,7 @@
   font-size: var(--text-label);
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
-  color: var(--text-tertiary);
+  color: var(--text-secondary);
   border-top: 0;
 }
 
@@ -90,5 +115,18 @@
   margin-top: var(--sp-2);
   font-size: var(--text-caption);
   line-height: var(--leading-caption);
-  color: var(--text-tertiary);
+  color: var(--text-secondary);
+}
+
+.model__scrollhint {
+  display: none;
+  margin-top: var(--sp-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  letter-spacing: var(--tracking-micro);
+  color: var(--text-secondary);
+}
+
+@media (max-width: 720px) {
+  .model__scrollhint { display: block; }
 }

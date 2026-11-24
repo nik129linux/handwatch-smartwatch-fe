@@ -6,16 +6,15 @@ import android.graphics.Paint;
 import android.graphics.RectF;
 import android.view.View;
 
-/* The Home face: a segmented shift ring (15 segments with gaps) drawn with
-   Canvas, the moment count inside it, and the two labels below. It mirrors
-   the desktop Home without taking any dependency. */
+/* The Home face: a segmented shift ring (15 segments = 15 moments, same as
+   the desktop plan) drawn with Canvas, the moment count inside it and the
+   two labels below. The count is clamped to the plan. */
 public class HomeView extends View {
-    private static final int SEGMENTS = 15;
+    private static final int MAX_SEGMENTS = 15;
     private static final float GAP_DEG = 7f;
 
     private int done = 0;
     private int plan = 15;
-    private String lang = Labels.EN;
 
     private final Paint segPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint numPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -54,18 +53,21 @@ public class HomeView extends View {
         captionPaint.setTextAlign(Paint.Align.CENTER);
     }
 
-    /** Last known shift state: done/plan are already clamped by the caller. */
-    public void setState(int done, int plan, String lang) {
-        this.done = Math.max(0, Math.min(99, done));
-        this.plan = Math.max(0, Math.min(99, plan));
-        this.lang = Labels.normalize(lang);
+    /** Last known shift state. The caller passes raw stored values. */
+    public void setState(int done, int plan) {
+        this.plan = Math.max(1, Math.min(99, plan));
+        this.done = Math.max(0, Math.min(this.plan, done));
         invalidate();
+    }
+
+    private int segments() {
+        return Math.max(1, Math.min(MAX_SEGMENTS, plan));
     }
 
     private int filledSegments() {
         if (plan <= 0) return 0;
-        int n = Math.round(done * SEGMENTS / (float) plan);
-        return Math.max(0, Math.min(SEGMENTS, n));
+        int n = Math.round(done * segments() / (float) plan);
+        return Math.max(0, Math.min(segments(), n));
     }
 
     @Override
@@ -80,13 +82,14 @@ public class HomeView extends View {
         float cy = h * 0.40f;
         float stroke = unit * 0.07f;
         float radius = unit * 0.27f;
-        float step = 360f / SEGMENTS;
+        int count = segments();
+        float step = 360f / count;
         float sweep = step - GAP_DEG;
         int filled = filledSegments();
 
         segPaint.setStrokeWidth(stroke);
         oval.set(cx - radius, cy - radius, cx + radius, cy + radius);
-        for (int i = 0; i < SEGMENTS; i++) {
+        for (int i = 0; i < count; i++) {
             segPaint.setColor(i < filled ? colorLime : colorTrack);
             canvas.drawArc(oval, -90f + i * step, sweep, false, segPaint);
         }
@@ -96,13 +99,16 @@ public class HomeView extends View {
         canvas.drawText(String.valueOf(done), cx, numBaseline, numPaint);
 
         ofPaint.setTextSize(unit * 0.075f);
-        canvas.drawText("/ " + plan, cx, numBaseline + unit * 0.085f, ofPaint);
+        canvas.drawText(getContext().getString(R.string.home_of, plan), cx,
+                numBaseline + unit * 0.085f, ofPaint);
 
         float below = cy + radius + stroke / 2f;
         labelPaint.setTextSize(unit * 0.075f);
-        canvas.drawText(Labels.get(lang, Labels.MOMENTS), cx, below + unit * 0.10f, labelPaint);
+        canvas.drawText(getContext().getString(R.string.home_moments), cx,
+                below + unit * 0.10f, labelPaint);
 
         captionPaint.setTextSize(unit * 0.058f);
-        canvas.drawText(Labels.get(lang, Labels.SHIFT), cx, below + unit * 0.175f, captionPaint);
+        canvas.drawText(getContext().getString(R.string.home_shift), cx,
+                below + unit * 0.175f, captionPaint);
     }
 }

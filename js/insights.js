@@ -40,15 +40,82 @@ var Insights = (function () {
 
   /* canvas text does not pass through the DOM translator */
   function L(s) { return (typeof I18N !== 'undefined') ? I18N.t(s) : s; }
+  function isEs() { return typeof I18N !== 'undefined' && I18N.lang === 'es'; }
+  function locale() { return isEs() ? 'es-CO' : 'en-US'; }
+  /* Every number on this page is formatted for the active locale before it
+     is inserted: 4.578 / 0,001 in Spanish, 4,578 / 0.001 in English. */
+  function num(v, d) {
+    var n = Number(v);
+    if (!isFinite(n)) return String(v);
+    var max = (d == null) ? 20 : d;
+    if (d != null) n = Number(n.toFixed(d));
+    try {
+      return new Intl.NumberFormat(locale(), { maximumFractionDigits: max }).format(n);
+    } catch (e) { return String(n); }
+  }
+  /* one phrase per language; the caller rebuilds on i18n:change */
+  function txt(en, es) { return isEs() ? es : en; }
 
   function pct(v) {
-    return Math.round(v * 100) + '%';
+    return num(Math.round(Number(v) * 100)) + '%';
   }
+  function n0(v) { return num(v); }
 
   function fmtP(p) {
     if (!(p >= 0)) return 'p —';
-    if (p < 0.001) return 'p<0.001';
-    return 'p=' + p.toFixed(3);
+    if (p < 0.001) return 'p<' + num(0.001, 3);
+    return 'p=' + num(p, 3);
+  }
+
+  /* --- number normalisation for the grounding check ----------------------
+     A model may answer 4,578 or 4.578 or 4.578, depending on its habits;
+     all of them mean the same number. Compare canonical values, then
+     re-format the text for the active locale before it reaches the page. */
+
+  function canonical(tok) {
+    var s = String(tok);
+    var lastComma = s.lastIndexOf(',');
+    var lastDot = s.lastIndexOf('.');
+    var dec = Math.max(lastComma, lastDot);
+    var intPart = s;
+    var frac = '';
+    if (dec >= 0) {
+      var tail = s.slice(dec + 1);
+      var both = lastComma >= 0 && lastDot >= 0;
+      var head = s.slice(0, dec);
+      /* "0,001" is a decimal; "4,578" is a thousands group. */
+      var thousands = !both && tail.length === 3 && head !== '0' && head !== '';
+      if (!thousands) { intPart = head; frac = tail; }
+    }
+    intPart = intPart.replace(/[.,]/g, '');
+    return frac ? intPart + '.' + frac : intPart;
+  }
+
+  function numbersIn(text) {
+    var out = {};
+    var hits = String(text).match(/\d+(?:[.,]\d+)*/g) || [];
+    hits.forEach(function (t) {
+      var key = String(Number(canonical(t)));
+      if (key !== 'NaN') out[key] = 1;
+    });
+    return out;
+  }
+
+  /* Re-format every number for the active locale, leaving times ("19:00")
+     and identifiers alone. */
+  function formatNumbers(text) {
+    return String(text == null ? '' : text).replace(/\d+(?:[.,]\d+)*/g,
+      function (tok, offset, whole) {
+        var before = whole.charAt(offset - 1);
+        var after = whole.charAt(offset + tok.length);
+        if (before === ':' || after === ':') return tok;
+        var prompt = canonical(tok);
+        var n = Number(prompt);
+        if (!isFinite(n)) return tok;
+        var frac = prompt.indexOf('.') >= 0 ? prompt.split('.')[1].length : 0;
+        if (frac > 6) frac = 6;
+        return num(n, frac);
+      });
   }
 
   /* --- analysis: one deterministic pass over the seeded history --------- */
@@ -79,18 +146,32 @@ var Insights = (function () {
       });
       elsewhere = rt ? rd / rt : rest;
       var body = b.status === 'worse' ?
-        b.label + ' reads ' + pct(b.rate) + ' (' + b.done + ' of ' + b.total +
-        ', 95% CI ' + pct(b.lo) + '-' + pct(b.hi) + ') against ' +
-        pct(elsewhere) + ' elsewhere; ' + fmtP(b.pAdj) +
-        ' after correction. Move a dispenser to cover this window and recheck at handover.' :
-        b.label + ' reads ' + pct(b.rate) + ' (' + b.done + ' of ' + b.total +
-        ', 95% CI ' + pct(b.lo) + '-' + pct(b.hi) + ') against ' +
-        pct(elsewhere) + ' elsewhere; ' + fmtP(b.pAdj) +
-        ' after correction. Keep the current setup here and recheck next week.';
+        txt(
+          b.label + ' reads ' + pct(b.rate) + ' (' + num(b.done) + ' of ' + num(b.total) +
+          ', 95% CI ' + pct(b.lo) + '-' + pct(b.hi) + ') against ' +
+          pct(elsewhere) + ' elsewhere; ' + fmtP(b.pAdj) +
+          ' after correction. Move a dispenser to cover this window and recheck at handover.',
+          b.label + ' marca ' + pct(b.rate) + ' (' + num(b.done) + ' de ' + num(b.total) +
+          ', IC 95% ' + pct(b.lo) + '-' + pct(b.hi) + ') frente a ' +
+          pct(elsewhere) + ' en el resto; ' + fmtP(b.pAdj) +
+          ' tras la corrección. Mueve un dispensador para cubrir esta franja y revisa en el cambio de turno.'
+        ) :
+        txt(
+          b.label + ' reads ' + pct(b.rate) + ' (' + num(b.done) + ' of ' + num(b.total) +
+          ', 95% CI ' + pct(b.lo) + '-' + pct(b.hi) + ') against ' +
+          pct(elsewhere) + ' elsewhere; ' + fmtP(b.pAdj) +
+          ' after correction. Keep the current setup here and recheck next week.',
+          b.label + ' marca ' + pct(b.rate) + ' (' + num(b.done) + ' de ' + num(b.total) +
+          ', IC 95% ' + pct(b.lo) + '-' + pct(b.hi) + ') frente a ' +
+          pct(elsewhere) + ' en el resto; ' + fmtP(b.pAdj) +
+          ' tras la corrección. Mantén la configuración actual aquí y revisa la próxima semana.'
+        );
       cards.push({
         id: 'bucket-' + b.key,
         kind: 'bucket',
-        title: b.status === 'worse' ? 'Weak window: ' + b.label : 'Strong window: ' + b.label,
+        title: b.status === 'worse'
+          ? txt('Weak window: ' + b.label, 'Franja débil: ' + b.label)
+          : txt('Strong window: ' + b.label, 'Franja fuerte: ' + b.label),
         body: body.slice(0, REWRITE_MAX),
         n: b.total,
         rate: b.rate,
@@ -108,11 +189,17 @@ var Insights = (function () {
       cards.push({
         id: 'trend-change',
         kind: 'change',
-        title: 'Shift at week ' + (change.week + 1),
-        body: ('Compliance moved from ' + pct(change.pre) + ' to ' +
-          pct(change.post) + ' starting week ' + (change.week + 1) +
-          ' (' + totalChecks + ' checks, ' + fmtP(change.p) +
-          '). Keep the handover overlap and recheck in two weeks.'
+        title: txt('Shift at week ' + num(change.week + 1),
+          'Cambio en la semana ' + num(change.week + 1)),
+        body: txt(
+          'Compliance moved from ' + pct(change.pre) + ' to ' +
+          pct(change.post) + ' starting week ' + num(change.week + 1) +
+          ' (' + n0(totalChecks) + ' checks, ' + fmtP(change.p) +
+          '). Keep the handover overlap and recheck in two weeks.',
+          'El cumplimiento pasó de ' + pct(change.pre) + ' a ' +
+          pct(change.post) + ' desde la semana ' + num(change.week + 1) +
+          ' (' + n0(totalChecks) + ' casos, ' + fmtP(change.p) +
+          '). Mantén el traslape del cambio de turno y revisa en dos semanas.'
         ).slice(0, REWRITE_MAX),
         n: totalChecks,
         rate: change.post,
@@ -148,16 +235,14 @@ var Insights = (function () {
   /* --- grounded rewrite of the top 3 cards ------------------------------- */
 
   function promptNumbers(prompt) {
-    var nums = {};
-    var hits = String(prompt).match(/\d+(?:\.\d+)?/g) || [];
-    hits.forEach(function (n) { nums[String(Number(n))] = 1; });
-    return nums;
+    return numbersIn(prompt);
   }
 
   function grounded(text, allowed) {
-    var hits = String(text).match(/\d+(?:\.\d+)?/g) || [];
-    for (var i = 0; i < hits.length; i++) {
-      if (!allowed[String(Number(hits[i]))]) return false;
+    var seen = numbersIn(text);
+    var keys = Object.keys(seen);
+    for (var i = 0; i < keys.length; i++) {
+      if (!allowed[keys[i]]) return false;
     }
     return true;
   }
@@ -281,7 +366,7 @@ var Insights = (function () {
       ctx.stroke();
       ctx.fillStyle = faint;
       ctx.font = '12px "JetBrains Mono", ui-monospace, monospace';
-      ctx.fillText(Math.round(v * 100) + '%', 4, y(v) + 4);
+      ctx.fillText(pct(v), 4, y(v) + 4);
     });
     /* CI band */
     ctx.beginPath();
@@ -405,36 +490,62 @@ var Insights = (function () {
       row.forEach(function (v) { if (v > max) max = v; });
     });
     ctx.clearRect(0, 0, W, H);
-    var head = 22;
-    var cell = Math.min((W - head) / 3, (H - head) / 3);
-    var short = ['wash', 'gel', 'other'];
+    var names = labels.map(function (l) { return L(l); });
     ctx.font = '12px "JetBrains Mono", ui-monospace, monospace';
+    /* The row names get their own gutter, measured from the text itself.
+       Drawing them at the canvas edge and then painting the cells over them
+       clipped "lavado" to "lav" at 390px. */
+    var maxLab = 0;
+    names.forEach(function (s) { maxLab = Math.max(maxLab, ctx.measureText(s).width); });
+    var head = 22;
+    var gutter = Math.ceil(maxLab) + 10;
+    var cell = Math.max(28, Math.min((W - gutter - 4) / 3, (H - head - 4) / 3));
+    var gridW = gutter + cell * 3;
+    var ox = Math.max(0, (W - gridW) / 2);
+    var cellsX = ox + gutter;
+    var layout = { width: W, height: H, cell: cell, gutter: gutter,
+      cellsX: cellsX, offsetX: ox, rows: [], labels: names };
+
     for (var c = 0; c < 3; c++) {
+      var colText = names[c];
+      var colW = ctx.measureText(colText).width;
+      var cx = cellsX + c * cell + cell / 2;
       ctx.fillStyle = faint;
-      ctx.fillText(L(short[c]), head + c * cell + cell / 2 - 14, 14);
-      ctx.fillText(L(short[c]), 2, head + c * cell + cell / 2 + 4);
+      ctx.font = '12px "JetBrains Mono", ui-monospace, monospace';
+      ctx.fillText(colText, cx - colW / 2, 14);
     }
     for (var r = 0; r < 3; r++) {
+      var rowText = names[r];
+      var rowW = ctx.measureText(rowText).width;
+      var rx = cellsX - 8 - rowW;
+      ctx.fillStyle = faint;
+      ctx.font = '12px "JetBrains Mono", ui-monospace, monospace';
+      ctx.fillText(rowText, rx, head + r * cell + cell / 2 + 4);
+      layout.rows.push({ text: rowText, x: rx, y: head + r * cell,
+        w: rowW, h: cell });
+    }
+    for (var rr = 0; rr < 3; rr++) {
       for (var q = 0; q < 3; q++) {
-        var x0 = head + q * cell;
-        var y0 = head + r * cell;
+        var x0 = cellsX + q * cell;
+        var y0 = head + rr * cell;
         ctx.fillStyle = track;
         ctx.fillRect(x0 + 1, y0 + 1, cell - 2, cell - 2);
-        if (r === q && m[r][q] > 0) {
+        if (rr === q && m[rr][q] > 0) {
           ctx.fillStyle = lime;
-          ctx.globalAlpha = 0.15 + 0.55 * (m[r][q] / max);
+          ctx.globalAlpha = 0.15 + 0.55 * (m[rr][q] / max);
           ctx.fillRect(x0 + 1, y0 + 1, cell - 2, cell - 2);
           ctx.globalAlpha = 1;
         }
-        if (m[r][q] > 0) {
+        if (m[rr][q] > 0) {
           ctx.fillStyle = ink;
           ctx.font = '600 13px "JetBrains Mono", ui-monospace, monospace';
-          var s = String(m[r][q]);
-          ctx.fillText(s, x0 + cell / 2 - s.length * 4, y0 + cell / 2 + 5);
+          var s = num(m[rr][q]);
+          ctx.fillText(s, x0 + cell / 2 - ctx.measureText(s).width / 2, y0 + cell / 2 + 5);
           ctx.font = '12px "JetBrains Mono", ui-monospace, monospace';
         }
       }
     }
+    canvas.setAttribute('data-matrix-layout', JSON.stringify(layout));
   }
 
   function paintReliability(canvas, evaluation) {
@@ -465,8 +576,9 @@ var Insights = (function () {
     ctx.font = '12px "JetBrains Mono", ui-monospace, monospace';
     ctx.fillText('0', pad.l - 12, y(0) + 4);
     ctx.fillText('1', pad.l - 12, y(1) + 4);
-    ctx.fillText(L('stated'), W - 52, y(0.06));
-    ctx.fillText(L('hit rate'), 4, pad.t + 4);
+    var stated = L('stated');
+    ctx.fillText(stated, W - pad.r - ctx.measureText(stated).width, y(0.06));
+    ctx.fillText(L('hit rate'), pad.l + 4, pad.t + 10);
     evaluation.reliability.forEach(function (bin) {
       if (!bin.n) return;
       var radius = 3 + 9 * Math.sqrt(bin.n / evaluation.streams);
@@ -477,8 +589,11 @@ var Insights = (function () {
       ctx.fill();
       ctx.globalAlpha = 1;
       ctx.fillStyle = ink;
-      ctx.fillText('n=' + bin.n, x(bin.meanConf) + radius + 3,
-        y(bin.acc) + 4);
+      var tag = 'n=' + num(bin.n);
+      var tw = ctx.measureText(tag).width;
+      var tx = x(bin.meanConf) + radius + 3;
+      if (tx + tw > W - pad.r) tx = x(bin.meanConf) - radius - 3 - tw;
+      ctx.fillText(tag, tx, y(bin.acc) + 4);
     });
   }
 
@@ -491,9 +606,10 @@ var Insights = (function () {
   }
 
   function statLine(c) {
-    return 'n=' + c.n + ' · rate ' + pct(c.rate) +
-      ' · CI ' + pct(c.lo) + '-' + pct(c.hi) +
-      ' · ' + fmtP(c.pAdj) + ' · effect ' + (c.h >= 0 ? '+' : '') + c.h.toFixed(2);
+    return 'n=' + num(c.n) + ' · ' + txt('rate', 'tasa') + ' ' + pct(c.rate) +
+      ' · ' + txt('CI', 'IC') + ' ' + pct(c.lo) + '-' + pct(c.hi) +
+      ' · ' + fmtP(c.pAdj) + ' · ' + txt('effect', 'efecto') + ' ' +
+      (c.h >= 0 ? '+' : '') + num(c.h, 2);
   }
 
   function paintCards(cards) {
@@ -505,6 +621,7 @@ var Insights = (function () {
         '<p class="insight__body" data-insight-id="' + esc(c.id) + '">' +
         esc(c.body) + '</p>' +
         '<p class="insight__stats">' + esc(statLine(c)) + '</p>' +
+        '<span class="insight__demo">' + esc(L('Demo data')) + '</span>' +
         '</li>';
     }).join('');
   }
@@ -515,41 +632,62 @@ var Insights = (function () {
     if (note) {
       var W = (typeof ModelWeights !== 'undefined') ? ModelWeights : null;
       note.textContent = (ev.engine === 'model' && W
-        ? 'Trained model (softmax regression, ' + W.meta.trainSize +
-          ' synthetic training streams) on ' + ev.streams +
-          ' streams it never saw, noise ' + ev.noise + ': accuracy ' +
+        ? txt(
+          'Trained model (softmax regression, ' + num(W.meta.trainSize) +
+          ' synthetic training streams) on ' + num(ev.streams) +
+          ' streams it never saw, noise ' + num(ev.noise, 2) + ': accuracy ' +
           pct(ev.accuracy) + ' vs ' + pct(ev.baseline) +
-          ' for the hand-written rules. Brier ' + ev.brier.toFixed(3) + '. '
-        : ev.streams + ' seeded streams at noise ' + ev.noise +
-          ': accuracy ' + pct(ev.accuracy) + ', Brier ' + ev.brier.toFixed(3) + '. ') +
-        'Synthetic data: it measures the model against the simulator, not a ward.';
+          ' for the hand-written rules. Brier ' + num(ev.brier, 3) + '. ',
+          'Modelo entrenado (regresión softmax, ' + num(W.meta.trainSize) +
+          ' señales sintéticas de entrenamiento) sobre ' + num(ev.streams) +
+          ' señales que nunca vio, ruido ' + num(ev.noise, 2) + ': exactitud ' +
+          pct(ev.accuracy) + ' frente a ' + pct(ev.baseline) +
+          ' de las reglas escritas a mano. Brier ' + num(ev.brier, 3) + '. ')
+        : txt(
+          num(ev.streams) + ' seeded streams at noise ' + num(ev.noise, 2) +
+          ': accuracy ' + pct(ev.accuracy) + ', Brier ' + num(ev.brier, 3) + '. ',
+          num(ev.streams) + ' señales sembradas con ruido ' + num(ev.noise, 2) +
+          ': exactitud ' + pct(ev.accuracy) + ', Brier ' + num(ev.brier, 3) + '. ')) +
+        txt('Synthetic data: it measures the model against the simulator, not a ward.',
+          'Datos sintéticos: mide el modelo contra el simulador, no contra una sala real.');
     }
     var table = document.getElementById('modelTable');
     if (table) {
-      var html = '<tr><th scope="col">Moment</th>' +
-        '<th scope="col">Precision</th><th scope="col">Recall</th>' +
-        '<th scope="col">F1</th><th scope="col">Checks</th></tr>';
+      var html = '<tr><th scope="col">' + txt('Moment', 'Movimiento') + '</th>' +
+        '<th scope="col">' + txt('Precision', 'Precisión') + '</th>' +
+        '<th scope="col">' + txt('Recall', 'Recall') + '</th>' +
+        '<th scope="col">F1</th><th scope="col">' + txt('Checks', 'Casos') + '</th></tr>';
       ev.perClass.forEach(function (c) {
-        html += '<tr><th scope="row">' + esc(c.label) + '</th><td>' +
-          c.precision.toFixed(2) + '</td><td>' + c.recall.toFixed(2) +
-          '</td><td>' + c.f1.toFixed(2) + '</td><td>' + c.support + '</td></tr>';
+        html += '<tr><th scope="row">' + esc(L(c.label)) + '</th><td>' +
+          num(c.precision, 2) + '</td><td>' + num(c.recall, 2) +
+          '</td><td>' + num(c.f1, 2) + '</td><td>' + num(c.support) + '</td></tr>';
       });
       table.innerHTML = html;
     }
     var calib = document.getElementById('calibNote');
     if (calib) {
       var st = analysis.study;
-      calib.textContent = 'After ' + st.corrections + ' corrections: ' +
-        st.sweepAfter + ' of 20 borderline flags still surface (was ' +
-        st.sweepBefore + '), ' + st.solidHeld + ' of ' + st.solidTotal +
-        ' solid detections held, and all ' + st.realFlaggedAfter +
-        ' real flagged streams still surface.';
+      calib.textContent = txt(
+        'After ' + num(st.corrections) + ' corrections: ' +
+        num(st.sweepAfter) + ' of 20 borderline flags still surface (was ' +
+        num(st.sweepBefore) + '), ' + num(st.solidHeld) + ' of ' + num(st.solidTotal) +
+        ' solid detections held, and all ' + num(st.realFlaggedAfter) +
+        ' real flagged streams still surface.',
+        'Tras ' + num(st.corrections) + ' correcciones: ' +
+        num(st.sweepAfter) + ' de 20 marcas límite siguen saliendo (antes ' +
+        num(st.sweepBefore) + '), ' + num(st.solidHeld) + ' de ' + num(st.solidTotal) +
+        ' detecciones sólidas se mantienen y las ' + num(st.realFlaggedAfter) +
+        ' señales reales marcadas siguen saliendo.');
     }
     var fc = document.getElementById('forecastNote');
     if (fc) {
-      fc.textContent = 'Next week reads near ' + pct(analysis.forecast.point) +
+      fc.textContent = txt(
+        'Next week reads near ' + pct(analysis.forecast.point) +
         ' (interval ' + pct(analysis.forecast.lo) + '-' +
-        pct(analysis.forecast.hi) + '). Trend: ' + analysis.trend.verdict + '.';
+        pct(analysis.forecast.hi) + '). Trend: ' + L(analysis.trend.verdict) + '.',
+        'La próxima semana rondaría ' + pct(analysis.forecast.point) +
+        ' (intervalo ' + pct(analysis.forecast.lo) + '-' +
+        pct(analysis.forecast.hi) + '). Tendencia: ' + L(analysis.trend.verdict) + '.');
     }
   }
 
@@ -561,7 +699,7 @@ var Insights = (function () {
   function applyRewrites(rewrites) {
     rewrites.forEach(function (r) {
       var el = document.querySelector('[data-insight-id="' + r.id + '"]');
-      if (el) el.textContent = r.text;
+      if (el) el.textContent = formatNumbers(r.text);
     });
   }
 
@@ -576,16 +714,18 @@ var Insights = (function () {
     } catch (e) { transport = null; }
     if (!transport) return;
     btn.hidden = false;
+    btn._analysis = analysis;
+    if (btn.dataset.bound) return;
+    btn.dataset.bound = '1';
     btn.addEventListener('click', function () {
       btn.disabled = true;
-      var consent = null;
+      var consent = (typeof AIPrefs !== 'undefined') ? AIPrefs.consent() : null;
       var onConsent = null;
       try {
-        if (typeof AI !== 'undefined' && AI.requestConsent) {
-          onConsent = AI.requestConsent;
-        }
+        if (typeof AIPrefs !== 'undefined' && AIPrefs.ask) onConsent = AIPrefs.ask;
+        else if (typeof AI !== 'undefined' && AI.requestConsent) onConsent = AI.requestConsent;
       } catch (e) { onConsent = null; }
-      rewriteTop3(analysis.cards, {
+      rewriteTop3(btn._analysis.cards, {
         transport: transport,
         consent: consent,
         onConsent: onConsent
@@ -625,6 +765,8 @@ var Insights = (function () {
     rewriteTop3: rewriteTop3,
     rewritePrompt: rewritePrompt,
     parseRewrites: parseRewrites,
+    formatNumbers: formatNumbers,
+    numbersIn: numbersIn,
     mount: mount
   };
 })();
