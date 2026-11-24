@@ -36,5 +36,11 @@ fi
 
 [ -f wear/out/hand-hygiene-wear.apk ] || wear/build.sh
 adb -s "$SERIAL" install -r wear/out/hand-hygiene-wear.apk >/dev/null
-adb -s "$SERIAL" shell am start -n co.ucc.handhygiene.wear/.AlertActivity >/dev/null
+# boot_completed fires while Wear OS still shows "Starting...", which swallows
+# the first launch. Retry until the app holds focus (60 s max).
+for _ in $(seq 20); do
+  adb -s "$SERIAL" shell am start -n co.ucc.handhygiene.wear/.AlertActivity >/dev/null 2>&1
+  sleep 3
+  adb -s "$SERIAL" shell dumpsys window | grep -q 'mCurrentFocus.*handhygiene' && break
+done
 echo "Watch ready. (Fallback mirror: scrcpy -s $SERIAL)"
