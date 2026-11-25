@@ -127,7 +127,7 @@ function setupWristIPC() {
     /* The Wear app needs the language and the Home counters with every alert. */
     if (wear) extras += " --es lang '" + m.lang + "' --ei done " + m.done + " --ei plan " + m.plan;
     const cmd = wear
-      ? 'am start -n ' + WEAR + '/.AlertActivity' + extras
+      ? 'am start --activity-clear-task -n ' + WEAR + '/.AlertActivity' + extras
       : 'am broadcast -n ' + RELAY + '/.NotifyReceiver -a ' + RELAY + '.NOTIFY' + extras;
     const out = await adb(['-s', t.serial, 'shell', cmd]);
     return !!out && !/Error|Exception/.test(out);
